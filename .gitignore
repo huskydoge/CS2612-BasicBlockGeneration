@@ -18,3 +18,6 @@ CONFIGURE
 .nia.cache
 .nra.cache
 .csdp.cache
+
+# Other aux files
+*.pdf
