@@ -1,7 +1,15 @@
 # config file
 CONFIGURE
+
+# Makefile
 Makefile
 Makefile.conf
+
+#vscode
+.lh/
+.vscode/
+
+
 # Object files, in general
 *.glob
 *.vo
