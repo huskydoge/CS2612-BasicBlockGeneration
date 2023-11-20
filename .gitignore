@@ -4,6 +4,7 @@ CONFIGURE
 # Makefile
 Makefile
 Makefile.conf
+.Makefile.d
 
 #vscode
 .lh/
