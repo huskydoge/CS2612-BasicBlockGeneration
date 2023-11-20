@@ -1,6 +1,7 @@
 # config file
 CONFIGURE
-
+Makefile
+Makefile.conf
 # Object files, in general
 *.glob
 *.vo
