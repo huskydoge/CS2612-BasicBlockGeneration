@@ -1,3 +1,3 @@
--R . PL  
+-Q . Main
 -R sets SetsClass  
 -R compcert_lib compcert.lib
