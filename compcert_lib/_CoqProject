@@ -1,3 +1,1 @@
--R compcert_lib compcert.lib
--R libs Library
--R sets SetsClass
+-R . compcert.lib
