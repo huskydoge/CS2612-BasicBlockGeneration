@@ -15,15 +15,6 @@ Import ListNotations.
 (* Local Open Scope sets. *)
 
 
-(* Definition void_ptr (A : Type) := option A.
-Definition null_ptr {A : Type} : void_ptr A := None. *)
-(* Definition null_ptr  := void_ptr None. *)
-(* Inductive list (A : Type) : Type :=
-  | nil : list A
-  | cons : A -> list A -> list A. *)
-
-
-
 (* Each assignment statement is evaluated only once*)
 
 Definition var_name: Type := string.
