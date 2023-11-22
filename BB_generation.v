@@ -129,7 +129,7 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
       jump_info := {|
         jump_kind := CJump;
         jump_dist_1 := S (S (BB_next.(block_num))); (* a + 3 *)
-        jump_dist_2 := BB_next.(block_num); (* jump out of the loop *)
+        jump_dist_2 := Some BB_next.(block_num); (* jump out of the loop *)
         jump_condition := Some e
       |}
     |} in
