@@ -62,6 +62,7 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
     let BB_next := {|
       block_num := S(BB_now.(block_num)); (* a + 1 *)
       commands := []; (* 创建一个空的命令列表 *)
+      (* 占位符，后续在递归中会修改 *)
       jump_info := {|
         jump_kind := UJump;
         jump_dist_1 := 0;
@@ -86,7 +87,7 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
       commands := c2;
       jump_info := {|
         jump_kind := UJump;
-        jump_dist_1 := BB_next.(block_num); (* 不知道跳哪去了 *)
+        jump_dist_1 := BB_next.(block_num); (* a + 1 *)
         jump_dist_2 := None; 
         jump_condition := None
       |}
@@ -113,6 +114,7 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
     let BB_next := {|
       block_num := S(BB_now.(block_num)); (* a + 1 *)
       commands := []; (* 创建一个空的命令列表 *)
+      (* 占位符，后续在递归中会修改 *)
       jump_info := {|
         jump_kind := UJump;
         jump_dist_1 := 0;
@@ -127,7 +129,7 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
       jump_info := {|
         jump_kind := CJump;
         jump_dist_1 := S (S (BB_next.(block_num))); (* a + 3 *)
-        jump_dist_2 := None; (* TODO: jump out of the loop *)
+        jump_dist_2 := BB_next.(block_num); (* jump out of the loop *)
         jump_condition := Some e
       |}
     |} in
