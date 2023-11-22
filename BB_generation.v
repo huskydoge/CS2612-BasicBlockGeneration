@@ -1,7 +1,7 @@
 Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 Import ListNotations.
-Require Import PL.grammer.
+Require Import Main.grammer.
 
 (* Create a global variable recording the current block number *)
 Definition global_block_num : nat := 0.
