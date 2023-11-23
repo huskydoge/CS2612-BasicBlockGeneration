@@ -31,11 +31,13 @@ Inductive binop : Type :=
 Inductive unop : Type :=
   | ONot | ONeg.
 
+Inductive Const_or_Var: Type :=
+  | EConst (n : Z): Const_or_Var
+  | EVar (x: var_name): Const_or_Var.
+
 Inductive expr : Type :=
-  | EConst (n: Z): expr
-  | EVar (x: var_name): expr
-  | EBinop (op: binop) (x1 x2: var_name) : expr
-  | EUnop (op: unop) (x: var_name) : expr.
+  | EBinop (op: binop) (e1 e2: Const_or_Var) : expr
+  | EUnop (op: unop) (e1: Const_or_Var) : expr.
 
 
 (* Minimal Compute Unit *)
