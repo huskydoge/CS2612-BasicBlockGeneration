@@ -103,6 +103,9 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
         jump_condition := Some (e);
       |}
     |} in
+    (* 这里有问题，应该是递归定义的，这里要对BB_then 和 BB_else 做基本块生成，但是这样写会报错：
+      Error: Cannot guess decreasing argument of fix. 它说coq无法确认这个规模是在减小。确实，BB_then这里并没有任何关于
+      有多少条指令的说明。 *)
     BB_now' :: (BB_then :: BB_else :: basic_block_gen tl BB_next)
 
   | CWhile pre e body :: t1 => 
