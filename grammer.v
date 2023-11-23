@@ -35,7 +35,7 @@ Inductive expr : Type :=
   | EConst (n: Z): expr
   | EVar (x: var_name): expr
   | EBinop (op: binop) (x1 x2: var_name) : expr
-  | EUnop (op: unop) (e: x) : expr.
+  | EUnop (op: unop) (x: var_name) : expr.
 
 
 (* Minimal Compute Unit *)
