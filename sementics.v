@@ -63,19 +63,6 @@ Definition empty_block := {|
 
 
 (* If all cmds are CAsgn, then the length of the generated BB is 1 *)
-Theorem seq_cmds_single_BB:
-    forall (cmds : list cmd),        
-        is_seq_cmds (cmds) = true -> 
-        length (basic_block_gen cmds empty_block) = 1.
-Proof.
-    intros.
-    unfold is_seq_cmds in H.
-    unfold basic_block_gen.
-    induction cmds.
-    - simpl. reflexivity.
-    - intros. admit.
-Admitted.
-
 
 (* Get the head element of the BB_block *)
 Definition BB_head (cmds : list cmd) : list cmd :=
@@ -84,11 +71,37 @@ Definition BB_head (cmds : list cmd) : list cmd :=
   | h :: _ => h.(cmd)
   end.
 
-  
+Definition remove_head (cmds : list cmd) : list cmd :=
+tl cmds.
+
+(* Prove that the removing the cmd will have the exact same length, probably useful *)
+Lemma seq_cmd_retains_BB:
+    forall (cmds: list cmd) (BB_now: BasicBlock),
+        is_seq_cmds (BB_head cmds) = true ->
+        cmd_list_len cmd_len (BB_head cmds) > 0 -> 
+        length (basic_block_gen (remove_head cmds) BB_now) = length (basic_block_gen cmds BB_now).
+Proof.
+    Admitted.
+
+        
+Theorem seq_cmds_single_BB:
+    forall (cmds : list cmd),        
+        is_seq_cmds cmds = true ->
+        cmd_list_len cmd_len cmds > 0 -> 
+        length (basic_block_gen cmds empty_block) = 1.
+Proof.
+    intros.
+    unfold basic_block_gen.
+    induction cmds.
+    - simpl. reflexivity.
+    - intros. admit.
+Admitted.
+
+
 (* Prove that the generated cmds and the original cmds are exactly the same *)
 Theorem seq_cmds_sound: 
     forall (cmds : list cmd),        
         is_seq_cmds (cmds) = true ->
         BB_head(cmds) = cmds.
 Proof.
-    Admitted.
+Admitted.
