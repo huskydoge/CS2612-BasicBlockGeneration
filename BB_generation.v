@@ -47,13 +47,19 @@ Notation "s '.(jmp)'" := (jump_info s) (at level 1).
       and has a jump information specified by end_info.
 *)
 
+Record basic_block_gen_results : Type := {
+  BasicBlocks: list BasicBlock;
+  current_block_num: nat
+}.
+
+(* Definition of the length of a command *)
 
 
-Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure (cmd_list_len cmd_len cmds)}: list BasicBlock :=
+Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure (cmd_list_len cmd_len cmds)}: basic_block_gen_results:=
   match cmds with
   | [] =>
     (* No more commands, return the current basic block *)
-    [BB_now]
+    {| BasicBlocks := [BB_now]; current_block_num := BB_now.(block_num) |}
  
     (* 这里是表示取列表的头元素为CAsgn的情况，:: tl表示的是[列表剩下的所有元素] *)
   | CAsgn x e :: tl =>
@@ -69,7 +75,7 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
     (*
         Structure: If | Then | Else | Next, each of them represents a basic block
         Corresponds to BB_now' | BB_then | BB_else | BB_next
-        Block_num is set to be a | a + 2 | a + 3 | a + 1
+        Block_num is set to be a | a + 2 ~ b | b + 1 ~ c | a + 1
     *)
     let BB_next := {|
       block_num := S(BB_now.(block_num)); (* a + 1 *)
@@ -94,8 +100,10 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
       |}
     |} in
 
+    let BB_then_generated_results := basic_block_gen c1 BB_then in
+
     let BB_else := {|
-      block_num := S (BB_then.(block_num)); (* a + 3 *)
+      block_num := S (BB_then_generated_results.(current_block_num)); (* current block num +1 *)
       commands := c2;
       jump_info := {|
         jump_kind := UJump;
@@ -104,6 +112,8 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
         jump_condition := None
       |}
     |} in
+
+    let BB_else_generated_results := basic_block_gen c2 BB_else in
 
     let BB_now' := {|
       block_num := BB_now.(block_num);
@@ -115,14 +125,17 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
         jump_condition := Some (e);
       |}
     |} in
-    [BB_now']  ++  basic_block_gen c1 BB_then ++  basic_block_gen c2 BB_else ++ basic_block_gen tl BB_next
 
+    let BB_next_generated_results := basic_block_gen tl BB_next in
+    {| BasicBlocks := [BB_now'] ++ BB_then_generated_results.(BasicBlocks) ++ BB_else_generated_results.(BasicBlocks) ++ BB_next_generated_results.(BasicBlocks);
+       current_block_num := BB_else_generated_results.(current_block_num) |}
   | CWhile pre e body :: tl => 
-    (*
-        Structure: Now | Pre | Body | Next, each of them represents a basic block
-        Corresponds to BB_now' | BB_pre | BB_else | BB_next
-        Block_num is set to be a | a + 2 | a + 3 | a + 1
-    *)
+      (*
+          Structure: Now | Pre | Body | Next, each of them represents a basic block
+          Corresponds to BB_now' | BB_pre | BB_else | BB_next
+          Block_num is set to be a | a + 2 ~ b | b + 1 ~ c| a + 1
+      *)
+    
     let BB_next := {|
       block_num := S(BB_now.(block_num)); (* a + 1 *)
       commands := []; (* 创建一个空的命令列表 *)
@@ -135,6 +148,20 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
       |}
     |} in
     
+    (* 占位，因为pre中要知道自己需要产生多少个BB，来指定自己跳转的位置 (到Body) *)
+    let BB_pre' := {|
+      block_num := S (BB_next.(block_num)); (* a + 2 *)
+      commands := pre;
+      jump_info := {|
+        jump_kind := CJump;
+        jump_dist_1 := S (S (BB_next.(block_num))); (* a + 3 *)
+        jump_dist_2 := Some BB_next.(block_num); (* jump out of the loop *)
+        jump_condition := Some e
+      |}
+    |} in
+
+    let BB_pre_generated_results := basic_block_gen pre BB_pre' in
+
     let BB_pre := {|
       block_num := S (BB_next.(block_num)); (* a + 2 *)
       commands := pre;
@@ -147,7 +174,7 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
     |} in
 
     let BB_body := {|
-      block_num := S (BB_pre.(block_num)); (* a + 3 *)
+      block_num := S (BB_pre_generated_results.(current_block_num)); (* b + 1 *)
       commands := body;
       jump_info := {|
         jump_kind := UJump;
@@ -156,6 +183,8 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
         jump_condition := None
       |}
     |} in
+
+    let BB_body_generated_results := basic_block_gen body BB_body in
 
     let BB_now' := {|
       block_num := BB_now.(block_num);
@@ -167,8 +196,13 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
         jump_condition := None
       |}
     |} in
-    [BB_now'] ++ basic_block_gen pre BB_pre ++ basic_block_gen body BB_body  ++ basic_block_gen tl BB_next
+
+    let BB_next_generated_results := basic_block_gen tl BB_next in
+
+    {| BasicBlocks := [BB_now'] ++ BB_pre_generated_results.(BasicBlocks) ++ BB_body_generated_results.(BasicBlocks) ++ BB_next_generated_results.(BasicBlocks);
+      current_block_num := BB_body_generated_results.(current_block_num) |}
   end.
+
 Next Obligation.
 Proof.
   intros.
