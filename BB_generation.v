@@ -117,7 +117,7 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
     |} in
     [BB_now']  ++  basic_block_gen c1 BB_then ++  basic_block_gen c2 BB_else ++ basic_block_gen tl BB_next
 
-  | CWhile pre e body :: t1 => 
+  | CWhile pre e body :: tl => 
     (*
         Structure: Now | Pre | Body | Next, each of them represents a basic block
         Corresponds to BB_now' | BB_pre | BB_else | BB_next
@@ -167,8 +167,7 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
         jump_condition := None
       |}
     |} in
-    
-    [BB_now'] ++ basic_block_gen pre BB_pre ++ basic_block_gen body BB_body ++ basic_block_gen t1 BB_next
+    [BB_now'] ++ basic_block_gen pre BB_pre ++ basic_block_gen body BB_body  ++ basic_block_gen tl BB_next
   end.
 Next Obligation.
 Proof.
@@ -185,17 +184,46 @@ Proof.
     + unfold cmd_list_len.
       lia.
 Qed.
-
-
-
-
-          
-        
-      
-
-
-
- 
-
-
-
+Next Obligation.
+Proof.
+  intros.
+  unfold cmd_list_len.
+  induction c2 as [| c2_head c2_tail]; simpl.
+  - induction c1 as [| c1_head c1_tail]; simpl.
+    + induction tl as [| tl_head tl_tail]; simpl.
+      * lia.
+      * lia.
+    + lia.
+  - induction c1 as [| c1_head c1_tail]; simpl.
+    + induction tl as [| tl_head tl_tail]; simpl;unfold cmd_list_len;lia.
+    + unfold cmd_list_len.
+      lia.
+Qed.
+Next Obligation.
+Proof.
+  intros.
+  unfold cmd_list_len.
+  induction tl as [| tl_head tl_tail]; simpl.
+  - induction c1 as [| c1_head c1_tail]; simpl.
+    + induction c2 as [| c2_head c2_tail]; simpl.
+      * lia.
+      * lia.
+    + lia.
+  - induction c1 as [| c1_head c1_tail]; simpl.
+    + induction c2 as [| c2_head c2_tail]; simpl;unfold cmd_list_len;lia.
+    + unfold cmd_list_len.
+      lia.
+Qed.
+(* IF Proof Completed *)
+Next Obligation.
+Proof.
+  intros.
+  unfold cmd_list_len.
+  induction pre as [| pre_head pre_tail]; simpl.
+  - lia.
+  -   
+  
+Next Obligation.
+Admitted.
+Next Obligation.
+Admitted.
