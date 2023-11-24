@@ -3,6 +3,13 @@ Require Import Coq.Lists.List.
 Import ListNotations.
 Require Import Main.grammer.
 Require Import Coq.Program.Wf.
+Require Export String.
+Require Export ZArith.
+Require Export Znumtheory.
+Require Export List.
+Require Export Bool.
+Require Export Lia.
+
 
 
 (* Create a global variable recording the current block number *)
@@ -164,4 +171,30 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
     BB_now' :: (BB_pre :: BB_body :: basic_block_gen t1 BB_next)
   end.
 Next Obligation.
-  Admitted.
+Proof.
+  intros.
+  unfold cmd_list_len.
+  induction c1 as [| c1_head c1_tail]; simpl.
+  - induction c2 as [| c2_head c2_tail]; simpl.
+    + induction tl as [| tl_head tl_tail]; simpl.
+      * lia.
+      * lia.
+    + lia.
+  - induction c2 as [| c2_head c2_tail]; simpl.
+    + induction tl as [| tl_head tl_tail]; simpl;unfold cmd_list_len;lia.
+    + unfold cmd_list_len.
+      lia.
+Qed.
+
+
+
+          
+        
+      
+
+
+
+ 
+
+
+
