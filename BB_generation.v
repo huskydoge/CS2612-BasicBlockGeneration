@@ -168,7 +168,7 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
       |}
     |} in
     
-    BB_now' :: (BB_pre :: BB_body :: basic_block_gen t1 BB_next)
+    [BB_now'] ++ basic_block_gen pre BB_pre ++ basic_block_gen body BB_body ++ basic_block_gen t1 BB_next
   end.
 Next Obligation.
 Proof.
@@ -185,6 +185,7 @@ Proof.
     + unfold cmd_list_len.
       lia.
 Qed.
+
 
 
 
