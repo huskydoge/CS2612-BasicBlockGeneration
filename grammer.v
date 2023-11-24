@@ -11,7 +11,6 @@ Local Open Scope Z.
 Require Import Coq.Init.Specif.
 Require Import Coq.Lists.List.
 Require Import Coq.Strings.String.
-Import ListNotations.
 (* Local Open Scope sets. *)
 
 
@@ -45,7 +44,6 @@ Inductive cmd: Type :=
 | CAsgn (x: var_name) (e: expr)
 | CIf (e: expr) (c1 c2: list cmd)
 | CWhile (pre: list cmd) (e: expr) (body: list cmd).
-
 
 
 Section cmd_len.
