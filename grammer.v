@@ -44,3 +44,24 @@ Inductive cmd: Type :=
 | CIf (e: expr) (c1 c2: list cmd)
 | CWhile (pre: list cmd) (e: expr) (body: list cmd).
 
+
+
+Section cmd_len.
+
+Variable cmd_len : cmd -> nat.
+
+
+Fixpoint cmd_list_len (cl : list cmd) : nat :=
+  match cl with
+  | [] => 0
+  | c :: tl => cmd_len c + cmd_list_len tl
+  end.
+
+End cmd_len.
+
+Fixpoint cmd_len (c : cmd) : nat :=
+  match c with
+  | CAsgn _ _ => 1
+  | CIf _ c1 c2 => 1 + cmd_list_len cmd_len c1 + cmd_list_len cmd_len c2
+  | CWhile _ _ body => 1 + cmd_list_len cmd_len body
+  end.

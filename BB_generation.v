@@ -15,7 +15,7 @@ Inductive JumpKind : Type :=
 Record BlockInfo : Type := {
   jump_kind : JumpKind; (* Represents the type of jump instruction *)
   jump_dist_1 : nat; (* Represents the target block's identifier or label *)
-  jump_dist_2 : option nat; (* Represents the target block's identifier or label, used for if branches *)
+  jump_dist_2 : option nat; (* Represents the target block's identifier or label, used for CJump *)
   jump_condition : option expr (* Represents the condition for conditional jumps, if any *)
 }.
 
@@ -37,6 +37,7 @@ Notation "s '.(jmp)'" := (jump_info s) (at level 1).
     - BB_now is the currently constructed basic block, which starts with an empty list of commands 
       and has a jump information specified by end_info.
 *)
+
 Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock :=
   match cmds with
   | [] =>
@@ -103,7 +104,7 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
         jump_condition := Some (e);
       |}
     |} in
-    BB_now' :: (BB_then :: BB_else :: basic_block_gen tl BB_next)
+    [BB_now']  ++  basic_block_gen c1 BB_then ++  basic_block_gen c2 BB_else ++ basic_block_gen tl BB_next
 
   | CWhile pre e body :: t1 => 
     (*
@@ -135,7 +136,7 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
     |} in
 
     let BB_body := {|
-      block_num := S (BB_pre.(block_num));
+      block_num := S (BB_pre.(block_num)); (* a + 3 *)
       commands := body;
       jump_info := {|
         jump_kind := UJump;
