@@ -52,7 +52,6 @@ Section cmd_len.
 
 Variable cmd_len : cmd -> nat.
 
-
 Fixpoint cmd_list_len (cl : list cmd) : nat :=
   match cl with
   | [] => 0

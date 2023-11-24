@@ -2,6 +2,8 @@ Require Import Coq.Strings.String.
 Require Import Coq.Lists.List.
 Import ListNotations.
 Require Import Main.grammer.
+Require Import Coq.Program.Wf.
+
 
 (* Create a global variable recording the current block number *)
 Definition global_block_num : nat := 0.
@@ -38,12 +40,14 @@ Notation "s '.(jmp)'" := (jump_info s) (at level 1).
       and has a jump information specified by end_info.
 *)
 
-Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock :=
+
+
+Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure (cmd_list_len cmd_len cmds)}: list BasicBlock :=
   match cmds with
   | [] =>
     (* No more commands, return the current basic block *)
     [BB_now]
-
+ 
     (* 这里是表示取列表的头元素为CAsgn的情况，:: tl表示的是[列表剩下的所有元素] *)
   | CAsgn x e :: tl =>
     (* Add the assignment command to the current basic block *)
@@ -159,3 +163,5 @@ Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock 
     
     BB_now' :: (BB_pre :: BB_body :: basic_block_gen t1 BB_next)
   end.
+Next Obligation.
+  Admitted.
