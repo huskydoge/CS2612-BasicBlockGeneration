@@ -27,29 +27,6 @@ Fixpoint is_seq_cmds (cmds : list cmd) : bool :=
   end.
 
 
-Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): list BasicBlock :=
-match cmds with
-| [] =>
-    (* No more commands, return the current basic block *)
-    [BB_now]
-
-    (* 这里是表示取列表的头元素为CAsgn的情况，:: tl表示的是[列表剩下的所有元素] *)
-| CAsgn x e :: tl =>
-    (* Add the assignment command to the current basic block *)
-    let BB_next := {|
-    block_num := BB_now.(block_num); (* 这里block_num是不改的 *)
-    commands := BB_now.(commands) ++ [CAsgn x e]; (* 这里是把CAsgn x e加到commands的末尾 *)
-    jump_info := BB_now.(jump_info) (* 这里其实还是空 *)
-    |} in
-    basic_block_gen tl BB_next (* 用剩下的cmd和更新后的BB来进一步递归 *)
-
-| CIf e c1 c2 :: tl => []
-
-| CWhile pre e body :: tl => []
-
-end.
-
-
 Definition empty_block := {|
     block_num := 0;
     commands := [];
