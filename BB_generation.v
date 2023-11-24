@@ -172,58 +172,48 @@ Program Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock) {measure 
 Next Obligation.
 Proof.
   intros.
-  unfold cmd_list_len.
-  induction c1 as [| c1_head c1_tail]; simpl.
-  - induction c2 as [| c2_head c2_tail]; simpl.
-    + induction tl as [| tl_head tl_tail]; simpl.
-      * lia.
-      * lia.
-    + lia.
-  - induction c2 as [| c2_head c2_tail]; simpl.
-    + induction tl as [| tl_head tl_tail]; simpl;unfold cmd_list_len;lia.
-    + unfold cmd_list_len.
-      lia.
-Qed.
-Next Obligation.
-Proof.
-  intros.
-  unfold cmd_list_len.
   induction c2 as [| c2_head c2_tail]; simpl.
-  - induction c1 as [| c1_head c1_tail]; simpl.
-    + induction tl as [| tl_head tl_tail]; simpl.
-      * lia.
-      * lia.
-    + lia.
-  - induction c1 as [| c1_head c1_tail]; simpl.
-    + induction tl as [| tl_head tl_tail]; simpl;unfold cmd_list_len;lia.
-    + unfold cmd_list_len.
-      lia.
+  - lia.
+  - lia.
 Qed.
 Next Obligation.
 Proof.
   intros.
-  unfold cmd_list_len.
+  induction c1 as [| c1_head c1_tail]; simpl.
+  - lia.
+  - lia.
+Qed.
+Next Obligation.
+Proof.
+  intros.
   induction tl as [| tl_head tl_tail]; simpl.
-  - induction c1 as [| c1_head c1_tail]; simpl.
-    + induction c2 as [| c2_head c2_tail]; simpl.
-      * lia.
-      * lia.
-    + lia.
-  - induction c1 as [| c1_head c1_tail]; simpl.
-    + induction c2 as [| c2_head c2_tail]; simpl;unfold cmd_list_len;lia.
-    + unfold cmd_list_len.
-      lia.
+  - lia.
+  - lia.
 Qed.
 (* IF Proof Completed *)
 Next Obligation.
 Proof.
   intros.
-  unfold cmd_list_len.
   induction pre as [| pre_head pre_tail]; simpl.
   - lia.
-  -   
-  
+  - lia. 
+Qed.
 Next Obligation.
-Admitted.
+Proof.
+  intros.
+  induction body as [| body_head body_tail]; simpl.
+  - lia.
+  - lia.
+Qed.
+
 Next Obligation.
-Admitted.
+Proof.
+  intros.
+  induction tl as [| tl_head tl_tail]; simpl.
+  - lia.
+  - lia.
+Qed.
+
+
+Check basic_block_gen.
+

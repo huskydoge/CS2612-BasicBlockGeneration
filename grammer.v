@@ -62,5 +62,5 @@ Fixpoint cmd_len (c : cmd) : nat :=
   match c with
   | CAsgn _ _ => 1
   | CIf _ c1 c2 => 1 + cmd_list_len cmd_len c1 + cmd_list_len cmd_len c2
-  | CWhile _ _ body => 1 + cmd_list_len cmd_len body
+  | CWhile pre _ body => 1 + cmd_list_len cmd_len body + cmd_list_len cmd_len pre
   end.
