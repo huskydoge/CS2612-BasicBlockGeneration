@@ -249,5 +249,10 @@ Proof.
 Qed.
 
 
-Check basic_block_gen.
+Definition get_basic_block_gen_num (cmds: list cmd) (BB_now: BasicBlock) : nat :=
+  (basic_block_gen cmds BB_now).(current_block_num).
+
+
+Definition get_basic_block_gen_list (cmds: list cmd) (BB_now: BasicBlock) : list BasicBlock :=
+  (basic_block_gen cmds BB_now).(BasicBlocks).
 
