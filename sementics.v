@@ -55,7 +55,7 @@ Lemma seq_cmd_retains_BB:
     forall (asgn: cmd) (cmds: list cmd) (BB_now: BasicBlock),
         is_seq_cmds (BB_head cmds) = true ->
         is_seq_cmds [asgn] = true ->
-        cmd_list_len cmd_len (BB_head cmds) > 0 -> 
+        cmd_list_len cmd_len (BB_head cmds) > 1 -> 
         length (basic_block_gen (asgn :: cmds) BB_now) = length (basic_block_gen cmds BB_now).
 Proof.
   intros.
