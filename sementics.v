@@ -43,7 +43,7 @@ Definition empty_block := {|
 
 (* Get the head element of the BB_block *)
 Definition BB_head (cmds: list cmd) : list cmd :=
-  match basic_block_gen cmds empty_block with
+  match (basic_block_gen cmds empty_block).(BasicBlocks) with
   | [] => []
   | h :: _ => h.(cmd)
   end.
@@ -53,10 +53,8 @@ Definition BB_head (cmds: list cmd) : list cmd :=
 (* Prove that the adding an CAsgn cmd will have the exact same length, probably useful *)
 Lemma seq_cmd_retains_BB:
     forall (asgn: cmd) (cmds: list cmd) (BB_now: BasicBlock),
-        is_seq_cmds (BB_head cmds) = true ->
         is_seq_cmds [asgn] = true ->
-        cmd_list_len cmd_len (BB_head cmds) > 0 -> 
-        length (basic_block_gen (asgn :: cmds) BB_now) = length (basic_block_gen cmds BB_now).
+        length (basic_block_gen (asgn :: cmds) BB_now).(BasicBlocks) = length (basic_block_gen cmds BB_now).(BasicBlocks).
 Proof.
   intros.
   induction cmds.
