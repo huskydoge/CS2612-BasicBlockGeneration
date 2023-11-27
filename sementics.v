@@ -64,18 +64,6 @@ Definition BB_head (cmds: list cmd) : list cmd :=
   | [] => []
   | h :: _ => h.(cmd)
   end.
-
-
-  Example forall_ex1: forall (X: Type) (P Q R: X -> Prop),
-  (forall x: X, P x -> Q x -> R x) ->
-  (forall x: X, P x /\ Q x -> R x).
-Proof.
-  intros X P Q R H x [HP HQ].
-  pose proof H x HP HQ.
-  apply H0.
-Qed.
-
-
   
 (*证明两个BB list相加后求长度和分别求长度再相加效果一致*)
 Lemma distributive_length_add: forall (BBs1: list BasicBlock) (BBs2: list BasicBlock),
