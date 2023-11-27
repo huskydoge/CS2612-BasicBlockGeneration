@@ -48,31 +48,22 @@ Definition BB_head (cmds: list cmd) : list cmd :=
   | h :: _ => h.(cmd)
   end.
 
-Definition is_CAsgn (cmd: cmd) : bool :=
-  match cmd with
-  | CAsgn _ _ => true
-  | _ => false
-  end.
-
 
 (* Prove that the adding an CAsgn cmd will have the exact same length, probably useful *)
 Lemma seq_cmd_retains_BB:
     forall (asgn: cmd) (cmds: list cmd) (BB_now: BasicBlock),
-        is_CAsgn asgn = true ->
+        is_seq_cmds [asgn] = true ->
         ((list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) BB_now).(current_block_num)) = ((list_cmd_BB_gen cmd_BB_gen cmds BB_now).(current_block_num)).
 Proof.
   intros.
   induction cmds.
-  * induction asgn; unfold is_CAsgn in H.
+  * induction asgn; unfold is_seq_cmds in H.
     - unfold list_cmd_BB_gen.
       simpl; reflexivity.
     - discriminate.
     - discriminate.
-  * induction asgn; unfold is_CAsgn in H.
-    - unfold list_cmd_BB_gen at 1.
-      simpl.
-      unfold list_cmd_BB_gen at 1 in IHcmds.
-      simpl in IHcmds.
+  * induction asgn; unfold is_seq_cmds in H.
+    - simpl.
       admit.
       
 
@@ -94,6 +85,19 @@ Proof.
     + simpl. lia.
 Qed.
 
+Lemma seq_cmd_aux1:
+  forall (cmds: list cmd) (cmd: cmd),
+    is_seq_cmds [cmd] = true ->
+    is_seq_cmds (cmd :: cmds) = true ->
+    is_seq_cmds cmds = true.
+Proof.
+  intros cmds cmd H1 H2.
+  destruct cmds.
+  - unfold is_seq_cmds. tauto.
+  - simpl in H1, H2. simpl.
+    admit.
+Admitted.
+
 
 Theorem seq_cmds_single_BB:
     forall (cmds : list cmd),        
@@ -102,12 +106,12 @@ Theorem seq_cmds_single_BB:
 Proof.
   intros.
   induction cmds.
-  - simpl. reflexivity.
-  - intros. simpl.
+  - simpl in H. discriminate.
+  - intros.
     destruct a.
-    + apply IHcmds in H.
-      simpl.
-
+    + pose proof seq_cmd_retains_BB.
+      * 
+      admit.
     + simpl in H. inversion H.
     + simpl in H. inversion H. 
 Admitted.
@@ -117,17 +121,17 @@ Admitted.
 Theorem seq_cmds_sound: 
     forall (cmds : list cmd),        
         is_seq_cmds (cmds) = true ->
-        BB_head(cmds) = cmds.
+        BB_head (cmds) = cmds.
 Proof. 
   intros.
   induction cmds.
   - simpl. reflexivity.
   - simpl.
     destruct a.
-    + unfold BB_head.
-      simpl. 
-      apply IHcmds in H.
-      
+    + apply IHcmds in H.
+      unfold BB_head.
+      unfold BB_head in H.
+      simpl.
       admit.
     + simpl in H. inversion H.
     + simpl in H. inversion H.
