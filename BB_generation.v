@@ -111,7 +111,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
   match c with
   | CAsgn x e => 
     (* update BB_now*)
-    let BB_now := last BBs
+    let BB_now := last BBs in
+
     let BB_now' := {|
       block_num := BB_now.(block_num);
       commands := BB_now.(commands) ++ [CAsgn x e];
@@ -123,7 +124,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
     |}
 
   | CIf e c1 c2 =>
-    let BB_now := last BBs
+    let BB_now := last BBs in
 
 
     (* Then Branch*)
@@ -157,12 +158,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
     block_num := S(BB_else_generated_results.(current_block_num));
     commands := []; (* 创建一个空的命令列表 *)
     (* 占位, 无实际作用*)
-    jump_info := {|
-      jump_kind := UJump;
-      jump_dist_1 := BB_now.(jump_info);
-      jump_dist_2 := None;
-      jump_condition := None
-      |}
+    jump_info := BB_now.(jump_info)
 
     |} in
     let BB_now' := {|
@@ -207,7 +203,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
        current_block_num := BB_next.(block_num) |}
     
   | CWhile pre e body => 
-    let BB_now = last BBs
+    let BB_now := last BBs in
 
     (* 占位，因为pre中要知道自己需要产生多少个BB，来指定自己跳转的位置 (到Body) *)
     let BB_pre := {|
@@ -216,8 +212,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
         jump_info := {|
           jump_kind := CJump;
           jump_dist_1 := 10;
-          jump_dist_2 := Some BB_next.(block_num); (* jump out of the loop *)
-          jump_condition := Some e
+          jump_dist_2 := None; (* jump out of the loop *)
+          jump_condition := None
         |}
     |} in
 
@@ -245,12 +241,12 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
       |}
     |} in
 
-    let BB_body_generated_results := list_cmd_BB_gen cmd_BB_gen body [BB_body]
+    let BB_body_generated_results := list_cmd_BB_gen cmd_BB_gen body [BB_body] in
 
     let BB_next := {|
       block_num := S (BB_body_generated_results.(current_block_num));
       commands := [];
-      jump_info := BB_now.jump_info
+      jump_info := BB_now.(jump_info)
     |} in
 
     let BB_pre' := {|
@@ -267,8 +263,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
     let BB_pre_generated_results' := list_cmd_BB_gen cmd_BB_gen pre [BB_pre'] in
 
       
-    {| BasicBlocks := (delete_last BBs) ++ [BB_now'] ++ BB_pre_generated_results_.(BasicBlocks) ++ BB_body_generated_results.(BasicBlocks);
-        current_block_num := BB_next.(current_block_num) |}
+    {| BasicBlocks := (delete_last BBs) ++ [BB_now'] ++ BB_pre_generated_results'.(BasicBlocks) ++ BB_body_generated_results.(BasicBlocks) ++ [BB_next];
+        current_block_num := BB_next.(block_num) |}
   end.
 
 
