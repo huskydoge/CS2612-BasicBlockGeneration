@@ -59,12 +59,12 @@ Record basic_block_gen_results : Type := {
 Notation "s '.(BasicBlocks)'" := (BasicBlocks s) (at level 1).
 Notation "s '.(current_block_num)'" := (current_block_num s) (at level 1).
 
-Fixpoint last (l: list BasicBlock) (d: BasicBlock) : BasicBlock :=
-  match l with
-    | [] => d
-    | [a] => a
-    | a :: l => last l d
-  end.
+  Fixpoint last (l:list BasicBlock) (d:BasicBlock) : BasicBlock :=
+    match l with
+      | [] => d
+      | [a] => a
+      | a :: l => last l d
+    end.
 
 
 (* 空基本块，用于寻找BB list中最后一个元素时候的默认值处理*)
@@ -89,12 +89,20 @@ Fixpoint list_cmd_BB_gen (cmds: list cmd) (BB_now: BasicBlock): basic_block_gen_
   match cmds with
   | [] => {| BasicBlocks := [BB_now]; current_block_num := BB_now.(block_num) |}
   | cmd :: tl => 
-    let cmd_BB_result := cmd_BB_gen (cmd) (BB_now) in  (* 先对列表第一个cmd进行处理，返回results *)
-    let tl_BB_result := list_cmd_BB_gen (tl) (last cmd_BB_result.(BasicBlocks) EmptyBlock ) in  (* 对剩下的cmd进行处理，返回results *)
-    {| 
-      BasicBlocks := cmd_BB_result.(BasicBlocks) ++ tl_BB_result.(BasicBlocks);
-      current_block_num := tl_BB_result.(current_block_num) |}
+    match cmd with
+    | CAsgn _ _ => 
+      let cmd_BB_result := cmd_BB_gen cmd BB_now in
+      let tl_BB_result := list_cmd_BB_gen tl (last cmd_BB_result.(BasicBlocks) EmptyBlock) in
+      {| BasicBlocks := tl_BB_result.(BasicBlocks);
+         current_block_num := tl_BB_result.(current_block_num) |}
+    | _ => 
+      let cmd_BB_result := cmd_BB_gen cmd BB_now in
+      let tl_BB_result := list_cmd_BB_gen tl (last cmd_BB_result.(BasicBlocks) EmptyBlock) in
+      {| BasicBlocks := cmd_BB_result.(BasicBlocks) ++ tl_BB_result.(BasicBlocks);
+         current_block_num := tl_BB_result.(current_block_num) |}
+    end
   end.
+
 
 
   

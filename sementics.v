@@ -106,8 +106,8 @@ Proof.
   - intros. simpl.
     destruct a.
     + apply IHcmds in H.
-      simpl. 
-      admit.
+      simpl.
+
     + simpl in H. inversion H.
     + simpl in H. inversion H. 
 Admitted.
@@ -120,16 +120,15 @@ Theorem seq_cmds_sound:
         BB_head(cmds) = cmds.
 Proof. 
   intros.
-  unfold BB_head.
-  unfold list_cmd_BB_gen.
   induction cmds.
   - simpl. reflexivity.
   - simpl.
-      destruct a.
-      + simpl. 
-        apply IHcmds in H.
-        
-        admit.
-      + simpl in H. inversion H.
-      + simpl in H. inversion H.
+    destruct a.
+    + unfold BB_head.
+      simpl. 
+      apply IHcmds in H.
+      
+      admit.
+    + simpl in H. inversion H.
+    + simpl in H. inversion H.
 Admitted.
