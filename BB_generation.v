@@ -58,88 +58,30 @@ Variable cmd_BB_gen : cmd -> BasicBlock -> basic_block_gen_results.
 
 Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): basic_block_gen_results :=
   match cmds with
-  | [] =>
-    (* No more commands, return the current basic block *)
-    {| BasicBlocks := [BB_now]; current_block_num := BB_now.(block_num) |}
-  
-  | CAsgn x e :: tl =>
-    (* Add the assignment command to the current basic block *)
-    let BB_next := {|
-      block_num := BB_now.(block_num); (* 这里block_num是不改的 *)
-      commands := BB_now.(commands) ++ [CAsgn x e]; (* 这里是把CAsgn x e加到commands的末尾 *)
-      jump_info := BB_now.(jump_info) (* 这里其实还是空 *)
-    |} in
-
-    let cmd_BB_result := cmd_BB_gen (CAsgn x e) BB_now in
-
-    {| 
-      BasicBlocks := cmd_BB_result.(BasicBlocks) ++ (basic_block_gen tl BB_next).(BasicBlocks); 
-      current_block_num := BB_now.(block_num) |} (* 用剩下的cmd和更新后的BB来进一步递归 *)
-  
-  | CIf e c1 c2 :: tl => 
-    let BB_if_branch := cmd_BB_gen (CIf e c1 c2) BB_now in 
-
-    (* ! 这里的block_num怎么传还没想好，可能要继续在basic_block_gen_results里添加两个跳转编号，用于then/else or pre/body *)
-
-    let BB_now' := {|
-      block_num := BB_now.(block_num);
-      commands := BB_now.(commands);
-      jump_info := {|
-        jump_kind := CJump;
-        jump_dist_1 := BB_now.(block_num); (* TODO *)
-        jump_dist_2 := Some (BB_now.(block_num)); (* TODO *)
-        jump_condition := Some (e);
-      |}
-    |} in
-
-    let BB_next := {|
-      block_num := S (BB_now.(block_num)); (* TODO *)
-      commands := []; (* 创建一个空的命令列表 *)
-      (* 占位符，后续在递归中会修改 *)
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := 0;
-        jump_dist_2 := None;
-        jump_condition := None
-      |}
-    |} in
-
-    {| 
-      BasicBlocks := [BB_now] ++ BB_if_branch.(BasicBlocks) ++ (basic_block_gen tl BB_next).(BasicBlocks); 
-      current_block_num := BB_now.(block_num) |}
-
-  | CWhile pre e body :: tl => 
-
-    let BB_next := {|
-      block_num := S(BB_now.(block_num)); (* a + 1 *)
-      commands := []; (* 创建一个空的命令列表 *)
-      (* 占位符，后续在递归中会修改 *)
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := 0;
-        jump_dist_2 := None;
-        jump_condition := None
-      |}
-    |} in
-
-    let BB_now' := {|
-      block_num := BB_now.(block_num); (* TODO *)
-      commands := BB_now.(commands);
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := BB_now.(block_num); (* TODO *)
-        jump_dist_2 := None;
-        jump_condition := None
-      |}
-    |} in
-
-    let BB_while_branch := cmd_BB_gen (CWhile pre e body) BB_now in
+  | cmd :: tl => 
+    let cmd_BB_result := cmd_BB_gen cmd BB_now in
 
     {|
-      BasicBlocks := [BB_now'] ++ BB_while_branch.(BasicBlocks) ++ (basic_block_gen tl BB_next).(BasicBlocks);
-      current_block_num := BB_next.(block_num)
-    |}
+      BasicBlocks := cmd_BB_result.(BasicBlocks) ++ (basic_block_gen tl BB_now).(BasicBlocks);
 
+      current_block_num := BB_now.(block_num);
+    |}
+  | _ => 
+    let empty_block := {|
+      block_num := BB_now.(block_num); (* TODO *)
+      commands := [];
+      jump_info := {|
+        jump_kind := UJump;
+        jump_dist_1 := 0; 
+        jump_dist_2 := None;
+        jump_condition := None
+      |}
+    |} in
+    {|
+      BasicBlocks := [empty_block];
+
+      current_block_num := empty_block.(block_num);
+    |}
   end.
 End basic_block_gen.
 
