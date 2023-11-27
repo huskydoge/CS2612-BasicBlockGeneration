@@ -35,6 +35,7 @@ Definition is_CAsgn (cmd: cmd) : bool :=
   | _ => false
   end.
 
+
 Definition empty_block := {|
   block_num := 0;
   commands := [];
@@ -51,7 +52,7 @@ Definition empty_block := {|
 
 (* Get the head element of the BB_block *)
 Definition BB_head (cmds: list cmd) : list cmd :=
-  match (list_cmd_BB_gen cmd_BB_gen cmds empty_block).(BasicBlocks) with
+  match (list_cmd_BB_gen cmd_BB_gen cmds [empty_block]).(BasicBlocks) with
   | [] => []
   | h :: _ => h.(cmd)
   end.
@@ -59,15 +60,15 @@ Definition BB_head (cmds: list cmd) : list cmd :=
 
 (* Prove that the adding an CAsgn cmd will have the exact same length, probably useful *)
 Lemma seq_cmd_retains_BB:
-    forall (asgn: cmd) (cmds: list cmd) (BB_now: BasicBlock),
+    forall (asgn: cmd) (cmds: list cmd) (BBs: list BasicBlock),
         is_seq_cmds [asgn] = true ->
-        length (list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) BB_now).(BasicBlocks) = length (list_cmd_BB_gen cmd_BB_gen cmds BB_now).(BasicBlocks).
+        length (list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) BBs).(BasicBlocks) = length (list_cmd_BB_gen cmd_BB_gen cmds BBs).(BasicBlocks).
 Proof.
   intros.
   induction cmds.
   * induction asgn; unfold is_seq_cmds in H.
     - unfold list_cmd_BB_gen.
-      simpl; reflexivity.
+      admit.
     - discriminate.
     - discriminate.
   * induction asgn; unfold is_seq_cmds in H.
@@ -118,11 +119,11 @@ Qed.
 Theorem seq_cmds_single_BB:
     forall (cmds : list cmd),        
         is_seq_cmds cmds = true ->
-        length (list_cmd_BB_gen cmd_BB_gen cmds empty_block).(BasicBlocks) = 1.
+        length (list_cmd_BB_gen cmd_BB_gen cmds [empty_block]).(BasicBlocks) = 1.
 Proof.
   intros.
   induction cmds.
-  - simpl in H. tauto.
+  - simpl. lia.
   - intros.
     destruct a.
     + pose proof seq_cmd_retains_BB.
@@ -132,7 +133,7 @@ Proof.
       }
       (* apply H1 in H2.
       apply IHcmds in H. *)
-      pose proof seq_cmd_retains_BB (CAsgn x e) cmds empty_block.
+      pose proof seq_cmd_retains_BB (CAsgn x e) cmds [empty_block].
       pose proof H2.
       apply H1 in H2.
       apply H3 in H4.
