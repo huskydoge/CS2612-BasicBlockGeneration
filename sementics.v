@@ -47,6 +47,7 @@ Definition empty_block := {|
     |}
 |}.
 
+
 (* Not Empty BB *)
 Definition not_empty_BBs (BBs: list BasicBlock) :bool := 
   match BBs with
@@ -54,6 +55,9 @@ Definition not_empty_BBs (BBs: list BasicBlock) :bool :=
   | _  => true
   end.
    
+
+
+  
 
 
 (* If all cmds are CAsgn, then the length of the generated BB is 1 *)
@@ -75,26 +79,95 @@ Proof.
   - intros BBs2. rewrite <- IHBBs1. reflexivity.
 Qed.
 
+(* 定义一个函数，删除列表中的最后一个元素 *)
+Fixpoint remove_last {X : Type} (l : list X) : list X :=
+  match l with
+  | [] => [] (* 空列表返回空 *)
+  | [x] => [] (* 单元素列表返回空 *)
+  | x :: xs => x :: remove_last xs (* 递归地删除最后一个元素 *)
+  end.
 
+Lemma length_cons : forall (X : Type) (x : X) (l : list X),
+  length (x :: l) = S (length l).
+Proof.
+  intros X x l. simpl. reflexivity.
+Qed.
 
+Lemma length_move_front_to_back : forall (X : Type) (a : X) (xl : list X),
+  length (a :: xl) = length (xl ++ [a]).
+Proof.
+  intros X a xl.
+  simpl.
+  rewrite app_length.
+  simpl.
+  rewrite Nat.add_1_r.
+  reflexivity.
+Qed.
 
-Lemma delete_one_add_one_length: forall (BBs: list BasicBlock) (BB: BasicBlock),
-  not_empty_BBs BBs = true->
-  length (delete_last BBs ++ [BB]) = length BBs.
+(* 一个列表，删除最后一个元素会让它的长度减少 1 *)
+Lemma remove_last_decreases_length : forall (X : Type) (l : list X) (e: X),
+  length (remove_last (l ++ [e])) = length l.
+Proof.
+  intros X l H.
+  induction l as [| x xs IH].
+  - simpl. reflexivity.
+  - simpl.
+    assert (xs ++ [H] <> []). {
+      induction xs.
+        + discriminate.
+        + discriminate.
+    }
+    destruct (xs ++ [H]).
+    + contradiction H0;reflexivity.
+    + rewrite length_cons.
+      rewrite IH.
+      reflexivity.
+Qed.
+
+Lemma length_remove_last : forall (X : Type) (e : X) (l : list X),
+  length (remove_last (l ++ [e])) = length (remove_last (e :: l)).
+Proof.
+  intros X e l.
+  destruct l as [| x l'].
+  - simpl. reflexivity.
+  - simpl. 
+    assert (l' ++ [e] <> []). {
+      induction l'.
+      + discriminate.
+      + discriminate.
+    }
+    destruct (l' ++ [e]).
+    + contradiction H; reflexivity.
+    + simpl. 
+
+  (* 这里我们需要展开 remove_last 的定义来继续证明，依赖于具体的 remove_last 定义 *)
+Abort.
+
+Lemma BB_delete_last_length: forall (BBs: list BasicBlock) (BB: BasicBlock),
+length (remove_last (BBs ++ [BB])) = length BBs.
+Proof.
+  intros BBs BB.
+  apply remove_last_decreases_length.
+Qed.
+
+  
+
+Lemma BB_add_equal: forall (BBs: list BasicBlock) (BB: BasicBlock),
+  [BB] ++ BBs = BB :: BBs.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma delete_one_add_one_length: forall (BB_pre: list BasicBlock) (BB_tail: BasicBlock) (BB_new: BasicBlock),
+  length (remove_last (BB_pre ++ [BB_tail]) ++ [BB_new]) = length (BB_pre ++ [BB_tail]).
 Proof.
   intros.
-  destruct BBs.
-  + discriminate.
-  + simpl.
-    pose proof distributive_length_add (match BBs with
-    | [] => []
-    | _ :: _ => b :: delete_last BBs
-    end) ([BB]).
-    rewrite <- H0.
-    simpl.
-
-
-
+  rewrite <- distributive_length_add.
+  rewrite BB_delete_last_length.
+  rewrite <- distributive_length_add.
+  simpl.
+  reflexivity.
+Qed.
 
 (* Prove that the adding an CAsgn cmd will have the exact same length, probably useful *)
 Lemma seq_cmd_retains_BB:
