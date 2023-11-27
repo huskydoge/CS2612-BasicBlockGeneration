@@ -59,12 +59,12 @@ Record basic_block_gen_results : Type := {
 Notation "s '.(BasicBlocks)'" := (BasicBlocks s) (at level 1).
 Notation "s '.(current_block_num)'" := (current_block_num s) (at level 1).
 
-  Fixpoint last (l:list BasicBlock) (d:BasicBlock) : BasicBlock :=
-    match l with
-      | [] => d
-      | [a] => a
-      | a :: l => last l d
-    end.
+Fixpoint last (l: list BasicBlock) (d: BasicBlock) : BasicBlock :=
+  match l with
+    | [] => d
+    | [a] => a
+    | a :: l => last l d
+  end.
 
 
 (* 空基本块，用于寻找BB list中最后一个元素时候的默认值处理*)

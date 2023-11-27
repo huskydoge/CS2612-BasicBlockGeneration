@@ -72,15 +72,13 @@ Proof.
     - unfold list_cmd_BB_gen at 1.
       simpl.
       unfold list_cmd_BB_gen at 1 in IHcmds.
-      induction cmds in IHcmds.
-      +  
+      simpl in IHcmds.
+      admit.
+      
 
     - discriminate.
     - discriminate.
-Qed.
-  
-
-  Admitted.
+Admitted.
     
 
 Lemma cmd_list_len_nonneg:
@@ -100,19 +98,16 @@ Qed.
 Theorem seq_cmds_single_BB:
     forall (cmds : list cmd),        
         is_seq_cmds cmds = true ->
-        cmd_list_len cmd_len cmds > 0 -> 
-        length (list_cmd_BB_gen cmds empty_block) = 1.
+        length (list_cmd_BB_gen cmd_BB_gen cmds empty_block).(BasicBlocks) = 1.
 Proof.
   intros.
-  unfold list_cmd_BB_gen.
   induction cmds.
   - simpl. reflexivity.
   - intros. simpl.
     destruct a.
-    + simpl. 
-      apply IHcmds in H.
-      * admit.
-      * pose proof cmd_list_len_nonneg cmds. admit.  
+    + apply IHcmds in H.
+      simpl. 
+      admit.
     + simpl in H. inversion H.
     + simpl in H. inversion H. 
 Admitted.
