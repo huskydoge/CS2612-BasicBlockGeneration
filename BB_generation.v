@@ -11,9 +11,12 @@ Require Export Bool.
 Require Export Lia.
 
 
+(* Block Number 0 ~ 10 are reserved*)
+
+Definition BB0 : nat := 0.
 
 (* Create a global variable recording the current block number *)
-Definition global_block_num : nat := 0.
+Definition global_block_num : nat := 10.
   
 Inductive JumpKind : Type :=
 | UJump  (* Represents an unconditional jump *)
@@ -36,6 +39,7 @@ Record BasicBlock : Type := {
   jump_info : BlockInfo (* Defines the jump information *)
 }.
 
+
 Notation "s '.(block_num)'" := (block_num s) (at level 1).
 Notation "s '.(cmd)'" := (commands s) (at level 1).
 Notation "s '.(jump_info)'" := (jump_info s) (at level 1).
@@ -52,141 +56,226 @@ Record basic_block_gen_results : Type := {
   current_block_num: nat
 }.
 
+Notation "s '.(BasicBlocks)'" := (BasicBlocks s) (at level 1).
+Notation "s '.(current_block_num)'" := (current_block_num s) (at level 1).
+
+  Fixpoint last (l:list BasicBlock) (d:BasicBlock) : BasicBlock :=
+    match l with
+      | [] => d
+      | [a] => a
+      | a :: l => last l d
+    end.
+
+
+(* 空基本块，用于寻找BB list中最后一个元素时候的默认值处理*)
+Definition EmptyBlock : BasicBlock := {|
+  block_num := 10;
+  commands := [];
+  jump_info := {|
+    jump_kind := UJump;
+    jump_dist_1 := 10;
+    jump_dist_2 := None;
+    jump_condition := None
+  |}
+|}.
+
+
 Section basic_block_gen.
 
 Variable cmd_BB_gen : cmd -> BasicBlock -> basic_block_gen_results.
 
-Fixpoint basic_block_gen (cmds: list cmd) (BB_now: BasicBlock): basic_block_gen_results :=
+
+Fixpoint list_cmd_BB_gen (cmds: list cmd) (BB_now: BasicBlock): basic_block_gen_results :=
   match cmds with
-  | [] =>
-    (* No more commands, return the current basic block *)
-    {| BasicBlocks := [BB_now]; current_block_num := BB_now.(block_num) |}
-  
-  | CAsgn x e :: tl =>
-    (* Add the assignment command to the current basic block *)
-    let BB_next := {|
-      block_num := BB_now.(block_num); (* 这里block_num是不改的 *)
-      commands := BB_now.(commands) ++ [CAsgn x e]; (* 这里是把CAsgn x e加到commands的末尾 *)
-      jump_info := BB_now.(jump_info) (* 这里其实还是空 *)
-    |} in
-
-    let cmd_BB_result := cmd_BB_gen (CAsgn x e) BB_now in
-
+  | [] => {| BasicBlocks := [BB_now]; current_block_num := BB_now.(block_num) |}
+  | cmd :: tl => 
+    let cmd_BB_result := cmd_BB_gen (cmd) (BB_now) in  (* 先对列表第一个cmd进行处理，返回results *)
+    let tl_BB_result := list_cmd_BB_gen (tl) (last cmd_BB_result.(BasicBlocks) EmptyBlock ) in  (* 对剩下的cmd进行处理，返回results *)
     {| 
-      BasicBlocks := cmd_BB_result.(BasicBlocks) ++ (basic_block_gen tl BB_next).(BasicBlocks); 
-      current_block_num := BB_now.(block_num) |} (* 用剩下的cmd和更新后的BB来进一步递归 *)
-  
-  | CIf e c1 c2 :: tl => 
-    let BB_if_branch := cmd_BB_gen (CIf e c1 c2) BB_now in 
-
-    (* ! 这里的block_num怎么传还没想好，可能要继续在basic_block_gen_results里添加两个跳转编号，用于then/else or pre/body *)
-
-    let BB_now' := {|
-      block_num := BB_now.(block_num);
-      commands := BB_now.(commands);
-      jump_info := {|
-        jump_kind := CJump;
-        jump_dist_1 := BB_now.(block_num); (* TODO *)
-        jump_dist_2 := Some (BB_now.(block_num)); (* TODO *)
-        jump_condition := Some (e);
-      |}
-    |} in
-
-    let BB_next := {|
-      block_num := S (BB_now.(block_num)); (* TODO *)
-      commands := []; (* 创建一个空的命令列表 *)
-      (* 占位符，后续在递归中会修改 *)
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := 0;
-        jump_dist_2 := None;
-        jump_condition := None
-      |}
-    |} in
-
-    {| 
-      BasicBlocks := [BB_now] ++ BB_if_branch.(BasicBlocks) ++ (basic_block_gen tl BB_next).(BasicBlocks); 
-      current_block_num := BB_now.(block_num) |}
-
-  | CWhile pre e body :: tl => 
-
-    let BB_next := {|
-      block_num := S(BB_now.(block_num)); (* a + 1 *)
-      commands := []; (* 创建一个空的命令列表 *)
-      (* 占位符，后续在递归中会修改 *)
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := 0;
-        jump_dist_2 := None;
-        jump_condition := None
-      |}
-    |} in
-
-    let BB_now' := {|
-      block_num := BB_now.(block_num); (* TODO *)
-      commands := BB_now.(commands);
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := BB_now.(block_num); (* TODO *)
-        jump_dist_2 := None;
-        jump_condition := None
-      |}
-    |} in
-
-    let BB_while_branch := cmd_BB_gen (CWhile pre e body) BB_now in
-
-    {|
-      BasicBlocks := [BB_now'] ++ BB_while_branch.(BasicBlocks) ++ (basic_block_gen tl BB_next).(BasicBlocks);
-      current_block_num := BB_next.(block_num)
-    |}
-
+      BasicBlocks := cmd_BB_result.(BasicBlocks) ++ tl_BB_result.(BasicBlocks);
+      current_block_num := tl_BB_result.(current_block_num) |}
   end.
+
+
+  
 End basic_block_gen.
 
 
 Fixpoint cmd_BB_gen (c: cmd) (BB_now: BasicBlock) : basic_block_gen_results :=
   match c with
+  | CAsgn x e => 
+    (* update BB_now*)
+    let BB_now' := {|
+      block_num := BB_now.(block_num);
+      commands := BB_now.(commands) ++ [CAsgn x e];
+      jump_info := BB_now.(jump_info)
+    |} in
+    {| 
+      BasicBlocks := [BB_now'];
+      current_block_num := BB_now'.(block_num)
+    |}
+
   | CIf e c1 c2 =>
+    let BB_next := {|
+    block_num := 10;
+    commands := []; (* 创建一个空的命令列表 *)
+    (* 占位, 无实际作用*)
+    jump_info := {|
+      jump_kind := UJump;
+      jump_dist_1 := 10;
+      jump_dist_2 := None;
+      jump_condition := None
+      |}
+    |} in
 
-    let c1_base_block := {|
-      block_num := S (BB_now.(block_num)); (* TODO *)
-      commands := [];
+    (* Then Branch*)
+    let BB_then := {|
+    block_num := S (BB_now.(block_num)); (* a + 2 *)
+    commands := c1;
+    jump_info := {|
+      jump_kind := UJump;
+      jump_dist_1 := BB_next.(block_num); 
+      jump_dist_2 := None; 
+      jump_condition := None
+      |}
+    |} in
+    let BB_then_generated_results := list_cmd_BB_gen cmd_BB_gen c1 BB_then in
+
+    (* Else Branch*)
+    let BB_else := {|
+      block_num := S (BB_then_generated_results.(current_block_num)); (* current block num +1 *)
+      commands := c2;
       jump_info := {|
         jump_kind := UJump;
-        jump_dist_1 := 0; 
+        jump_dist_1 := BB_next.(block_num); 
+        jump_dist_2 := None; 
+        jump_condition := None
+      |}
+    |} in
+
+    let BB_else_generated_results := list_cmd_BB_gen cmd_BB_gen c2 BB_else in
+
+    let BB_now' := {|
+    block_num := BB_now.(block_num);
+    commands := BB_now.(commands);
+    jump_info := {|
+      jump_kind := CJump;
+      jump_dist_1 := BB_then.(block_num);
+      jump_dist_2 := Some (BB_else.(block_num));
+      jump_condition := Some (e);
+      |}
+    |} in
+
+    (* We should now correct the jump info of BB_then and BB_else*)
+    let BB_then' := {|
+      block_num := BB_then.(block_num);
+      commands := c1;
+      jump_info := {|
+        jump_kind := UJump;
+        jump_dist_1 := S (BB_else_generated_results.(current_block_num)); 
+        jump_dist_2 := None; 
+        jump_condition := None
+      |}
+    |} in
+
+    let BB_then_generated_results' := list_cmd_BB_gen cmd_BB_gen c1 BB_then' in
+
+    let BB_else' := {|
+      block_num := BB_else.(block_num);
+      commands := c2;
+      jump_info := {|
+        jump_kind := UJump;
+        jump_dist_1 := S (BB_else_generated_results.(current_block_num)); 
+        jump_dist_2 := None; 
+        jump_condition := None
+      |}
+    |} in
+
+    let BB_else_generated_results' := list_cmd_BB_gen cmd_BB_gen c2 BB_else' in
+
+    {| BasicBlocks := [BB_now'] ++ BB_then_generated_results'.(BasicBlocks) ++ BB_else_generated_results'.(BasicBlocks);
+       current_block_num := BB_else_generated_results'.(current_block_num) |}
+    
+  | CWhile pre e body => 
+    let BB_next := {|
+      block_num := 10; 
+      commands := []; (* 创建一个空的命令列表 *)
+      (* 占位, 目前暂不知道BBnext的blocknum，因而pre其实也不知道跳转到哪里。我们需要先知道PRE和BODY产生了多少BB *)
+      jump_info := {|
+        jump_kind := UJump;
+        jump_dist_1 := 10;
         jump_dist_2 := None;
         jump_condition := None
       |}
     |} in
 
-    let BB_c1 := basic_block_gen cmd_BB_gen c1 c1_base_block in
+    (* 占位，因为pre中要知道自己需要产生多少个BB，来指定自己跳转的位置 (到Body) *)
+    let BB_pre := {|
+        block_num := S (BB_now.(block_num)); 
+        commands := pre;
+        jump_info := {|
+          jump_kind := CJump;
+          jump_dist_1 := 10;
+          jump_dist_2 := Some BB_next.(block_num); (* jump out of the loop *)
+          jump_condition := Some e
+        |}
+    |} in
 
-    let c2_base_block := {|
-      block_num := S (BB_c1.(current_block_num)); (* TODO *)
-      commands := [];
+    let BB_pre_generated_results := list_cmd_BB_gen cmd_BB_gen pre BB_pre in
+
+    let BB_pre' := {|
+      block_num := S (BB_next.(block_num)); 
+      commands := pre;
+      jump_info := {|
+        jump_kind := CJump;
+        jump_dist_1 := S(BB_pre_generated_results.(current_block_num)); (* jump to the body *)
+        jump_dist_2 := Some BB_next.(block_num); (* jump out of the loop *)
+        jump_condition := Some e
+      |}
+    |} in
+
+    let BB_body := {|
+      block_num := S (BB_pre_generated_results.(current_block_num));
+      commands := body;
       jump_info := {|
         jump_kind := UJump;
-        jump_dist_1 := 0; 
+        jump_dist_1 := BB_pre'.(block_num); 
         jump_dist_2 := None;
         jump_condition := None
       |}
     |} in
 
-    let BB_c2 := basic_block_gen cmd_BB_gen c2 c2_base_block in
+    let BB_body_generated_results := list_cmd_BB_gen cmd_BB_gen body BB_body in
 
-    {|
-      BasicBlocks := BB_c1.(BasicBlocks) ++ BB_c2.(BasicBlocks);
-      current_block_num := BB_c2.(current_block_num)
-    |}
+    let BB_now' := {|
+      block_num := BB_now.(block_num); 
+      commands := BB_now.(commands);
+      jump_info := {|
+        jump_kind := UJump;
+        jump_dist_1 := BB_pre'.(block_num); (* update jump info*)
+        jump_dist_2 := None;
+        jump_condition := None
+      |}
+    |} in
 
+    let out_loop := Some (S(BB_body_generated_results.(current_block_num))) in
+    (* 更正pre 跳转的位置*)
+    let BB_pre_ := {|
+      block_num := S (BB_next.(block_num)); 
+      commands := pre;
+      jump_info := {|
+        jump_kind := CJump;
+        jump_dist_1 := BB_body.(block_num); (* jump to the body *)
+        jump_dist_2 := out_loop ; (* jump out of the loop *)
+        jump_condition := Some e
+      |}
+    |} in
 
-  | CWhile pre e body => {| 
-      BasicBlocks := [];
-      current_block_num := BB_now.(block_num)
-    |}
-
-  | _ => {| 
-      BasicBlocks := [];
-      current_block_num := BB_now.(block_num)
-    |}
+    let BB_pre_generated_results_ := list_cmd_BB_gen cmd_BB_gen pre BB_pre_ in
+      
+    {| BasicBlocks := [BB_now'] ++ BB_pre_generated_results_.(BasicBlocks) ++ BB_body_generated_results.(BasicBlocks);
+        current_block_num := BB_body_generated_results.(current_block_num) |}
   end.
+
+
+Check cmd_BB_gen.
