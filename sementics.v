@@ -47,6 +47,14 @@ Definition empty_block := {|
     |}
 |}.
 
+(* Not Empty BB *)
+Definition not_empty_BBs (BBs: list BasicBlock) :bool := 
+  match BBs with
+  | [] => false
+  | _  => true
+  end.
+   
+
 
 (* If all cmds are CAsgn, then the length of the generated BB is 1 *)
 
@@ -58,18 +66,62 @@ Definition BB_head (cmds: list cmd) : list cmd :=
   end.
 
 
+  Example forall_ex1: forall (X: Type) (P Q R: X -> Prop),
+  (forall x: X, P x -> Q x -> R x) ->
+  (forall x: X, P x /\ Q x -> R x).
+Proof.
+  intros X P Q R H x [HP HQ].
+  pose proof H x HP HQ.
+  apply H0.
+Qed.
+
+
+  
+(*证明两个BB list相加后求长度和分别求长度再相加效果一致*)
+Lemma distributive_length_add: forall (BBs1: list BasicBlock) (BBs2: list BasicBlock),
+  length (BBs1) + length (BBs2) = length (BBs1 ++ BBs2).
+Proof.
+  intros BBs1.
+  induction BBs1; simpl.
+  - reflexivity.
+  - intros BBs2. rewrite <- IHBBs1. reflexivity.
+Qed.
+
+
+
+
+Lemma delete_one_add_one_length: forall (BBs: list BasicBlock) (BB: BasicBlock),
+  not_empty_BBs BBs = true->
+  length (delete_last BBs ++ [BB]) = length BBs.
+Proof.
+  intros.
+  destruct BBs.
+  + discriminate.
+  + simpl.
+    pose proof distributive_length_add (match BBs with
+    | [] => []
+    | _ :: _ => b :: delete_last BBs
+    end) ([BB]).
+    rewrite <- H0.
+    simpl.
+
+
+
+
 (* Prove that the adding an CAsgn cmd will have the exact same length, probably useful *)
 Lemma seq_cmd_retains_BB:
     forall (asgn: cmd) (cmds: list cmd) (BBs: list BasicBlock),
-        is_seq_cmds [asgn] = true ->
+        is_seq_cmds [asgn] = true -> 
+        not_empty_BBs BBs = true ->
         length (list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) BBs).(BasicBlocks) = length (list_cmd_BB_gen cmd_BB_gen cmds BBs).(BasicBlocks).
 Proof.
   intros.
   induction cmds.
-  * induction asgn; unfold is_seq_cmds in H.
-    - unfold list_cmd_BB_gen.
-      admit.
-    - discriminate.
+  * induction asgn; unfold is_seq_cmds in H; simpl.
+    - 
+
+
+
     - discriminate.
   * induction asgn; unfold is_seq_cmds in H.
     - simpl.
