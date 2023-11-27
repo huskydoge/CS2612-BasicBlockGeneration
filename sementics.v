@@ -6,6 +6,8 @@ Require Import Coq.ZArith.ZArith.
 Require Import Coq.Classes.Morphisms.
 Require Import Coq.Init.Specif.
 Require Import Coq.Lists.List.
+Require Import Coq.Logic.Classical_Prop.
+
 
 Require Import Main.grammer.
 Require Import Main.BB_generation.
@@ -26,6 +28,12 @@ Fixpoint is_seq_cmds (cmds : list cmd) : bool :=
 
   end.
 
+
+Definition is_CAsgn (cmd: cmd) : bool :=
+  match cmd with
+  | CAsgn _ _ => true
+  | _ => false
+  end.
 
 Definition empty_block := {|
   block_num := 0;
@@ -53,7 +61,7 @@ Definition BB_head (cmds: list cmd) : list cmd :=
 Lemma seq_cmd_retains_BB:
     forall (asgn: cmd) (cmds: list cmd) (BB_now: BasicBlock),
         is_seq_cmds [asgn] = true ->
-        ((list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) BB_now).(current_block_num)) = ((list_cmd_BB_gen cmd_BB_gen cmds BB_now).(current_block_num)).
+        length (list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) BB_now).(BasicBlocks) = length (list_cmd_BB_gen cmd_BB_gen cmds BB_now).(BasicBlocks).
 Proof.
   intros.
   induction cmds.
@@ -86,17 +94,25 @@ Proof.
 Qed.
 
 Lemma seq_cmd_aux1:
-  forall (cmds: list cmd) (cmd: cmd),
-    is_seq_cmds [cmd] = true ->
-    is_seq_cmds (cmd :: cmds) = true ->
+  forall (cmds: list cmd) (c1: cmd),
+    is_seq_cmds [c1] = true ->
+    is_seq_cmds (c1 :: cmds) = true ->
     is_seq_cmds cmds = true.
 Proof.
-  intros cmds cmd H1 H2.
-  destruct cmds.
-  - unfold is_seq_cmds. tauto.
-  - simpl in H1, H2. simpl.
-    admit.
-Admitted.
+  intros.
+  unfold is_seq_cmds in H.
+  assert((is_CAsgn c1) = true). {
+    unfold is_CAsgn. 
+    apply H.
+  }
+  unfold is_seq_cmds in H0. 
+  destruct c1.
+  + unfold is_seq_cmds.
+    apply H0.
+  + discriminate.
+  + discriminate.
+Qed.
+  
 
 
 Theorem seq_cmds_single_BB:
@@ -106,16 +122,28 @@ Theorem seq_cmds_single_BB:
 Proof.
   intros.
   induction cmds.
-  - simpl in H. discriminate.
+  - simpl in H. tauto.
   - intros.
     destruct a.
     + pose proof seq_cmd_retains_BB.
-      * 
-      admit.
+      pose proof seq_cmd_aux1 cmds (CAsgn x e).
+      assert ((is_seq_cmds [CAsgn x e]) = true). {
+        unfold is_seq_cmds. tauto.
+      }
+      (* apply H1 in H2.
+      apply IHcmds in H. *)
+      pose proof seq_cmd_retains_BB (CAsgn x e) cmds empty_block.
+      pose proof H2.
+      apply H1 in H2.
+      apply H3 in H4.
+      apply IHcmds in H2.
+      simpl in H4. simpl.
+      rewrite H4.
+      apply H2.
+      apply H.
     + simpl in H. inversion H.
     + simpl in H. inversion H. 
-Admitted.
-
+Qed.
 
 (* Prove that the generated cmds and the original cmds are exactly the same *)
 Theorem seq_cmds_sound: 
