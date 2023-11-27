@@ -76,13 +76,6 @@ Proof.
   - intros BBs2. rewrite <- IHBBs1. reflexivity.
 Qed.
 
-(* 定义一个函数，删除列表中的最后一个元素 *)
-Fixpoint remove_last {X : Type} (l : list X) : list X :=
-  match l with
-  | [] => [] (* 空列表返回空 *)
-  | [x] => [] (* 单元素列表返回空 *)
-  | x :: xs => x :: remove_last xs (* 递归地删除最后一个元素 *)
-  end.
 
 Lemma length_cons : forall (X : Type) (x : X) (l : list X),
   length (x :: l) = S (length l).
@@ -148,6 +141,9 @@ Proof.
   simpl.
   reflexivity.
 Qed.
+
+
+(* Preparations =======================================================================================================================*)
 
 (* Prove that the adding an CAsgn cmd will have the exact same length, probably useful *)
 Lemma seq_cmd_retains_BB:

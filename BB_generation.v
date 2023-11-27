@@ -78,12 +78,12 @@ Fixpoint last (l: list BasicBlock) : BasicBlock :=
     | a :: l => last l
   end.
 
-Fixpoint delete_last  (l : list BasicBlock) : list BasicBlock :=
-  match l with
-  | [] => []
-  | [x] => [] (* delete the last element *)
-  | x :: xs => x :: delete_last xs
-  end.
+Fixpoint remove_last {X : Type} (l : list X) : list X :=
+    match l with
+    | [] => [] (* 空列表返回空 *)
+    | [x] => [] (* 单元素列表返回空 *)
+    | x :: xs => x :: remove_last xs (* 递归地删除最后一个元素 *)
+    end.
 
 (*考虑将已经生成的所有basicblock作为输入*)
 Section basic_block_gen.
@@ -119,7 +119,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
       jump_info := BB_now.(jump_info)
     |} in
     {| 
-      BasicBlocks := delete_last BBs ++ [BB_now'];
+      BasicBlocks := remove_last BBs ++ [BB_now'];
       current_block_num := BB_now'.(block_num)
     |}
 
@@ -199,7 +199,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
 
     let BB_else_generated_results' := list_cmd_BB_gen cmd_BB_gen c2 [BB_else'] in
 
-    {| BasicBlocks := (delete_last BBs)++[BB_now'] ++ BB_then_generated_results'.(BasicBlocks) ++ BB_else_generated_results'.(BasicBlocks)++[BB_next];
+    {| BasicBlocks := (remove_last BBs)++[BB_now'] ++ BB_then_generated_results'.(BasicBlocks) ++ BB_else_generated_results'.(BasicBlocks)++[BB_next];
        current_block_num := BB_next.(block_num) |}
     
   | CWhile pre e body => 
@@ -263,7 +263,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
     let BB_pre_generated_results' := list_cmd_BB_gen cmd_BB_gen pre [BB_pre'] in
 
       
-    {| BasicBlocks := (delete_last BBs) ++ [BB_now'] ++ BB_pre_generated_results'.(BasicBlocks) ++ BB_body_generated_results.(BasicBlocks) ++ [BB_next];
+    {| BasicBlocks := (remove_last BBs) ++ [BB_now'] ++ BB_pre_generated_results'.(BasicBlocks) ++ BB_body_generated_results.(BasicBlocks) ++ [BB_next];
         current_block_num := BB_next.(block_num) |}
   end.
 
