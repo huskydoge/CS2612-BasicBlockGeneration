@@ -16,6 +16,7 @@ Local Open Scope bool.
 Local Open Scope list.
 Local Open Scope nat.
 
+(* 判断 cmds 是不是一串 CAsgn*)
 Fixpoint is_seq_cmds (cmds : list cmd) : bool :=
   match cmds with
   | [] => true
@@ -28,7 +29,7 @@ Fixpoint is_seq_cmds (cmds : list cmd) : bool :=
 
   end.
 
-
+(* 判断 一个 cmd 是不是 CAsgn*)
 Definition is_CAsgn (cmd: cmd) : bool :=
   match cmd with
   | CAsgn _ _ => true
@@ -55,10 +56,6 @@ Definition not_empty_BBs (BBs: list BasicBlock) :bool :=
   | _  => true
   end.
    
-
-
-  
-
 
 (* If all cmds are CAsgn, then the length of the generated BB is 1 *)
 
@@ -124,25 +121,7 @@ Proof.
       reflexivity.
 Qed.
 
-Lemma length_remove_last : forall (X : Type) (e : X) (l : list X),
-  length (remove_last (l ++ [e])) = length (remove_last (e :: l)).
-Proof.
-  intros X e l.
-  destruct l as [| x l'].
-  - simpl. reflexivity.
-  - simpl. 
-    assert (l' ++ [e] <> []). {
-      induction l'.
-      + discriminate.
-      + discriminate.
-    }
-    destruct (l' ++ [e]).
-    + contradiction H; reflexivity.
-    + simpl. 
-
-  (* 这里我们需要展开 remove_last 的定义来继续证明，依赖于具体的 remove_last 定义 *)
-Abort.
-
+(* 一个BasicBlocks列表，删除最后一个元素会让它的长度减少 1 *)
 Lemma BB_delete_last_length: forall (BBs: list BasicBlock) (BB: BasicBlock),
 length (remove_last (BBs ++ [BB])) = length BBs.
 Proof.
@@ -151,13 +130,14 @@ Proof.
 Qed.
 
   
-
+(* BasicBlocks的两种连接方式等价 *)
 Lemma BB_add_equal: forall (BBs: list BasicBlock) (BB: BasicBlock),
   [BB] ++ BBs = BB :: BBs.
 Proof.
   reflexivity.
 Qed.
 
+(* 一个BasicBlocks列表，删除最后一个元素再加上一个元素的长度不变 *)
 Lemma delete_one_add_one_length: forall (BB_pre: list BasicBlock) (BB_tail: BasicBlock) (BB_new: BasicBlock),
   length (remove_last (BB_pre ++ [BB_tail]) ++ [BB_new]) = length (BB_pre ++ [BB_tail]).
 Proof.
@@ -171,10 +151,9 @@ Qed.
 
 (* Prove that the adding an CAsgn cmd will have the exact same length, probably useful *)
 Lemma seq_cmd_retains_BB:
-    forall (asgn: cmd) (cmds: list cmd) (BBs: list BasicBlock),
+    forall (asgn: cmd) (cmds: list cmd) (BB_pre: list BasicBlock) (BB_tail: BasicBlock),
         is_seq_cmds [asgn] = true -> 
-        not_empty_BBs BBs = true ->
-        length (list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) BBs).(BasicBlocks) = length (list_cmd_BB_gen cmd_BB_gen cmds BBs).(BasicBlocks).
+        length (list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) (BB_pre ++ [BB_tail])).(BasicBlocks) = length (list_cmd_BB_gen cmd_BB_gen cmds (BB_pre ++ [BB_tail])).(BasicBlocks).
 Proof.
   intros.
   induction cmds.
