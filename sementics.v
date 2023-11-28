@@ -154,10 +154,8 @@ Proof.
   intros.
   induction cmds.
   * induction asgn; unfold is_seq_cmds in H; simpl.
-    - 
-
-
-
+    - admit.
+    - admit.
     - discriminate.
   * induction asgn; unfold is_seq_cmds in H.
     - simpl.
@@ -202,8 +200,7 @@ Proof.
   + discriminate.
 Qed.
   
-
-
+(* 如果cmds均为顺序执行的语句，那么只会产生一个BB *)
 Theorem seq_cmds_single_BB:
     forall (cmds : list cmd),        
         is_seq_cmds cmds = true ->
@@ -221,7 +218,7 @@ Proof.
       }
       (* apply H1 in H2.
       apply IHcmds in H. *)
-      pose proof seq_cmd_retains_BB (CAsgn x e) cmds [empty_block].
+      pose proof seq_cmd_retains_BB (CAsgn x e) cmds [] empty_block.
       pose proof H2.
       apply H1 in H2.
       apply H3 in H4.
