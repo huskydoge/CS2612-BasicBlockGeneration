@@ -90,8 +90,6 @@ Fixpoint list_cmd_BB_gen (cmds: list cmd) (BBs: list BasicBlock)(BB_now: BasicBl
       BBn := tl_BB_result.(BBn);
       current_block_num := tl_BB_result.(current_block_num) |}
   end.
-
-
   
 End basic_block_gen.
 
