@@ -91,6 +91,7 @@ Section basic_block_gen.
 Variable cmd_BB_gen : cmd -> list BasicBlock -> basic_block_gen_results.
 
 
+
 Fixpoint list_cmd_BB_gen (cmds: list cmd) (BBs: list BasicBlock): basic_block_gen_results :=
   match cmds with
   | [] => {| BasicBlocks := BBs; current_block_num := (last BBs).(block_num) |}
@@ -102,17 +103,8 @@ Fixpoint list_cmd_BB_gen (cmds: list cmd) (BBs: list BasicBlock): basic_block_ge
       current_block_num := tl_BB_result.(current_block_num) |}
   end.
 
-
-  
-End basic_block_gen.
-
-
-Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
-  match c with
-  | CAsgn x e => 
-    (* update BB_now*)
+  Definition CAsgn_branch (c: cmd) (BBs: list BasicBlock) (x: var_name) (e: expr): basic_block_gen_results :=
     let BB_now := last BBs in
-
     let BB_now' := {|
       block_num := BB_now.(block_num);
       commands := BB_now.(commands) ++ [CAsgn x e];
@@ -121,89 +113,89 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
     {| 
       BasicBlocks := remove_last BBs ++ [BB_now'];
       current_block_num := BB_now'.(block_num)
+    |}.
+    
+Definition CIf_branch (c: cmd) (BBs: list BasicBlock) (e: expr) (c1: list cmd) (c2: list cmd) :basic_block_gen_results :=
+  let BB_now := last BBs in
+
+  (* Then Branch*)
+  let BB_then := {|
+  block_num := S (BB_now.(block_num)); (* a + 2 *)
+  commands := [];
+  jump_info := {|
+    jump_kind := UJump;
+    jump_dist_1 := 10; 
+    jump_dist_2 := None; 
+    jump_condition := None
     |}
+  |} in
+  let BB_then_generated_results := list_cmd_BB_gen c1 [BB_then] in
 
-  | CIf e c1 c2 =>
-    let BB_now := last BBs in
-
-
-    (* Then Branch*)
-    let BB_then := {|
-    block_num := S (BB_now.(block_num)); (* a + 2 *)
+  (* Else Branch*)
+  let BB_else := {|
+    block_num := S (BB_then_generated_results.(current_block_num)); (* current block num +1 *)
     commands := [];
     jump_info := {|
       jump_kind := UJump;
       jump_dist_1 := 10; 
       jump_dist_2 := None; 
       jump_condition := None
-      |}
-    |} in
-    let BB_then_generated_results := list_cmd_BB_gen cmd_BB_gen c1 [BB_then] in
- 
-    (* Else Branch*)
-    let BB_else := {|
-      block_num := S (BB_then_generated_results.(current_block_num)); (* current block num +1 *)
-      commands := [];
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := 10; 
-        jump_dist_2 := None; 
-        jump_condition := None
-      |}
-    |} in
+    |}
+  |} in
 
-    let BB_else_generated_results := list_cmd_BB_gen cmd_BB_gen c2 [BB_else] in
+  let BB_else_generated_results := list_cmd_BB_gen c2 [BB_else] in
 
-    let BB_next := {|
-    block_num := S(BB_else_generated_results.(current_block_num));
-    commands := []; (* 创建一个空的命令列表 *)
-    (* 占位, 无实际作用*)
-    jump_info := BB_now.(jump_info)
+  let BB_next := {|
+  block_num := S(BB_else_generated_results.(current_block_num));
+  commands := []; (* 创建一个空的命令列表 *)
+  (* 占位, 无实际作用*)
+  jump_info := BB_now.(jump_info)
 
-    |} in
-    let BB_now' := {|
-    block_num := BB_now.(block_num);
-    commands := BB_now.(commands);
+  |} in
+  let BB_now' := {|
+  block_num := BB_now.(block_num);
+  commands := BB_now.(commands);
+  jump_info := {|
+    jump_kind := CJump;
+    jump_dist_1 := BB_then.(block_num);
+    jump_dist_2 := Some (BB_else.(block_num));
+    jump_condition := Some (e);
+    |}
+  |} in
+
+  (* We should now correct the jump info of BB_then and BB_else*)
+  let BB_then' := {|
+    block_num := BB_then.(block_num);
+    commands := c1;
     jump_info := {|
-      jump_kind := CJump;
-      jump_dist_1 := BB_then.(block_num);
-      jump_dist_2 := Some (BB_else.(block_num));
-      jump_condition := Some (e);
-      |}
-    |} in
+      jump_kind := UJump;
+      jump_dist_1 := BB_next.(block_num); 
+      jump_dist_2 := None; 
+      jump_condition := None
+    |}
+  |} in
 
-    (* We should now correct the jump info of BB_then and BB_else*)
-    let BB_then' := {|
-      block_num := BB_then.(block_num);
-      commands := c1;
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := BB_next.(block_num); 
-        jump_dist_2 := None; 
-        jump_condition := None
-      |}
-    |} in
+  let BB_then_generated_results' := list_cmd_BB_gen c1 [BB_then'] in
 
-    let BB_then_generated_results' := list_cmd_BB_gen cmd_BB_gen c1 [BB_then'] in
+  let BB_else' := {|
+    block_num := BB_else.(block_num);
+    commands := c2;
+    jump_info := {|
+      jump_kind := UJump;
+      jump_dist_1 := BB_next.(block_num); 
+      jump_dist_2 := None; 
+      jump_condition := None
+    |}
+  |} in
 
-    let BB_else' := {|
-      block_num := BB_else.(block_num);
-      commands := c2;
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := BB_next.(block_num); 
-        jump_dist_2 := None; 
-        jump_condition := None
-      |}
-    |} in
+  let BB_else_generated_results' := list_cmd_BB_gen c2 [BB_else'] in
 
-    let BB_else_generated_results' := list_cmd_BB_gen cmd_BB_gen c2 [BB_else'] in
-
-    {| BasicBlocks := (remove_last BBs)++[BB_now'] ++ BB_then_generated_results'.(BasicBlocks) ++ BB_else_generated_results'.(BasicBlocks)++[BB_next];
-       current_block_num := BB_next.(block_num) |}
+  {| BasicBlocks := (remove_last BBs)++[BB_now'] ++ BB_then_generated_results'.(BasicBlocks) ++ BB_else_generated_results'.(BasicBlocks)++[BB_next];
+     current_block_num := BB_next.(block_num) |}.
     
-  | CWhile pre e body => 
-    let BB_now := last BBs in
+
+Definition CWhile_branch (c: cmd) (BBs: list BasicBlock) (pre: list cmd) (e: expr) (body: list cmd) :basic_block_gen_results :=
+  let BB_now := last BBs in
 
     (* 占位，因为pre中要知道自己需要产生多少个BB，来指定自己跳转的位置 (到Body) *)
     let BB_pre := {|
@@ -217,7 +209,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
         |}
     |} in
 
-    let BB_pre_generated_results := list_cmd_BB_gen cmd_BB_gen pre [BB_pre] in
+    let BB_pre_generated_results := list_cmd_BB_gen pre [BB_pre] in
 
     let BB_now' := {|
       block_num := BB_now.(block_num); 
@@ -241,7 +233,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
       |}
     |} in
 
-    let BB_body_generated_results := list_cmd_BB_gen cmd_BB_gen body [BB_body] in
+    let BB_body_generated_results := list_cmd_BB_gen body [BB_body] in
 
     let BB_next := {|
       block_num := S (BB_body_generated_results.(current_block_num));
@@ -260,11 +252,29 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
       |}
     |} in
 
-    let BB_pre_generated_results' := list_cmd_BB_gen cmd_BB_gen pre [BB_pre'] in
+    let BB_pre_generated_results' := list_cmd_BB_gen pre [BB_pre'] in
 
       
     {| BasicBlocks := (remove_last BBs) ++ [BB_now'] ++ BB_pre_generated_results'.(BasicBlocks) ++ BB_body_generated_results.(BasicBlocks) ++ [BB_next];
-        current_block_num := BB_next.(block_num) |}
+        current_block_num := BB_next.(block_num) |}.
+
+
+End basic_block_gen.
+  
+
+
+Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock) : basic_block_gen_results :=
+  match c with
+  | CAsgn x e => 
+    (* update BB_now*)
+    CAsgn_branch (c) (BBs) (x) (e)
+
+  | CIf e c1 c2 =>
+    CIf_branch cmd_BB_gen c BBs e c1 c2
+    
+  | CWhile pre e body => 
+    CWhile_branch cmd_BB_gen c BBs pre e body
+    
   end.
 
 

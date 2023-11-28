@@ -77,6 +77,7 @@ Proof.
 Qed.
 
 
+(**增加一个元素，长度 + 1*)
 Lemma length_cons : forall (X : Type) (x : X) (l : list X),
   length (x :: l) = S (length l).
 Proof.
@@ -123,12 +124,15 @@ Proof.
 Qed.
 
   
-(* BasicBlocks的两种连接方式等价 *)
-Lemma BB_add_equal: forall (BBs: list BasicBlock) (BB: BasicBlock),
-  [BB] ++ BBs = BB :: BBs.
+(* list的两种连接方式等价 *)
+Lemma app_single_cons_eq : forall (A : Type) (x : A) (l : list A),
+  [x] ++ l = x :: l.
 Proof.
+  intros A x l.
+  simpl.
   reflexivity.
 Qed.
+
 
 (* 一个BasicBlocks列表，删除最后一个元素再加上一个元素的长度不变 *)
 Lemma delete_one_add_one_length: forall (BB_pre: list BasicBlock) (BB_tail: BasicBlock) (BB_new: BasicBlock),
@@ -142,6 +146,43 @@ Proof.
   reflexivity.
 Qed.
 
+(* 一个BasicBlocks列表，删除最后一个元素的后的长度 + 1等于原长度 *)
+Lemma delete_one_add_one_eq: forall (BB_pre: list BasicBlock) (BB_tail: BasicBlock),
+  length (remove_last (BB_pre ++ [BB_tail])) + 1 = length (BB_pre ++ [BB_tail]).
+Proof.
+  intros.
+  rewrite <- distributive_length_add.
+  rewrite BB_delete_last_length.
+  simpl.
+  reflexivity.
+Qed.
+
+(* 移除一个列表的最后一个元素*)
+(* Lemma *)
+
+Lemma equal_BB_remove: forall (BB_pre: list BasicBlock) (BB_tail: BasicBlock) (x: var_name) (e: expr), 
+  let BBs := BB_pre ++ [BB_tail] in 
+length (remove_last BBs ++
+[{|
+   block_num := (last BBs).(block_num);
+   commands := (last BBs).(cmd) ++ [CAsgn x e];
+   jump_info := (last BBs).(jump_info)
+ |}]) = length BBs.
+Proof.
+  intros.
+  rewrite <- distributive_length_add;simpl.
+  apply delete_one_add_one_eq.
+Qed.
+
+
+Lemma plus_one_Sn : forall n : nat, S n = 1 + n.
+Proof.
+  intros n.
+  rewrite <- plus_n_Sm.
+  rewrite <- plus_n_O.
+  reflexivity.
+Qed.
+
 
 (* Preparations =======================================================================================================================*)
 
@@ -152,19 +193,41 @@ Lemma seq_cmd_retains_BB:
         length (list_cmd_BB_gen cmd_BB_gen ([asgn] ++ cmds) (BB_pre ++ [BB_tail])).(BasicBlocks) = length (list_cmd_BB_gen cmd_BB_gen cmds (BB_pre ++ [BB_tail])).(BasicBlocks).
 Proof.
   intros.
-  induction cmds.
-  * induction asgn; unfold is_seq_cmds in H; simpl.
-    - admit.
-    - admit.
+  destruct cmds.
+  * destruct asgn; unfold is_seq_cmds in H; simpl.
+    - rewrite <- distributive_length_add;simpl.
+      rewrite remove_last_decreases_length.
+      rewrite <- distributive_length_add; simpl;reflexivity.
     - discriminate.
-  * induction asgn; unfold is_seq_cmds in H.
-    - simpl.
-      admit.
+    - discriminate.
+  * destruct asgn; unfold is_seq_cmds in H.
+    - remember (BB_pre ++ [BB_tail]) as BBs.
+      remember (c :: cmds) as commands.
+      rewrite app_single_cons_eq.
+      unfold list_cmd_BB_gen;simpl.
+      remember (remove_last BBs ++
+      [{|
+         block_num := (last BBs).(block_num);
+         commands := (last BBs).(cmd) ++ [CAsgn x e];
+         jump_info := (last BBs).(jump_info)
+       |}]) as BB_l1.
+       assert (commands <> []). {
+        rewrite Heqcommands.
+        discriminate.
+       }
+       induction commands;simpl.
+       ** discriminate.
+       ** destruct commands;simpl.
+          -- unfold cmd_BB_gen. 
+              destruct a;simpl.
+              ++ unfold CAsgn_branch;simpl; rewrite <- distributive_length_add;rewrite <- distributive_length_add;simpl.
+                 rewrite HeqBB_l1. rewrite BB_delete_last_length. reflexivity.
+              ++ rewrite  <- !distributive_length_add;simpl; rewrite plus_one_Sn. rewrite  <- !distributive_length_add;simpl.
+                 apply equal_BB_remove.
       
-
     - discriminate.
     - discriminate.
-Admitted.
+Qed.
     
 
 Lemma cmd_list_len_nonneg:
