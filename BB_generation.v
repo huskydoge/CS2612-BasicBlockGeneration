@@ -263,8 +263,9 @@ This function merge the result to a whole list of basicblock*)
 Definition to_result (r: basic_block_gen_results) :
 list BasicBlock := r.(BasicBlocks) ++ [r.(BBn)].
 
-
-
+(*main function, which generates BBs for the whole cmds*)
+Definition BB_gen (cmds: list cmd):
+list BasicBlock := to_result (list_cmd_BB_gen cmd_BB_gen cmds [] EmptyBlock).
 
 
 
