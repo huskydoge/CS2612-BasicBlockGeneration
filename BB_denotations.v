@@ -75,9 +75,18 @@ End EDenote.
 
 Import EDenote.
 
-Notation "x '.(nrm)'" := (nrm x) (at level 1).
-Notation "x '.(err)'" := (err x) (at level 1).
+Notation "x '.(nrm)'" := (EDenote.nrm x) (at level 1).
+Notation "x '.(err)'" := (EDenote.err x) (at level 1).
 
+Ltac any_nrm x := exact (EDenote.nrm x).
+
+Ltac any_err x := exact (EDenote.err x).
+
+Notation "x '.(nrm)'" := (ltac:(any_nrm x))
+  (at level 1, only parsing).
+
+Notation "x '.(err)'" := (ltac:(any_err x))
+  (at level 1, only parsing).
 
 Definition const_sem (n: Z): EDenote :=
   {|
@@ -97,11 +106,13 @@ Definition var_sem (X: var_name): EDenote :=
   |}.
 
 
+(**变量与常量构成element，与compiler.pdf一致*)
 Definition element_sem (e: element): EDenote :=
   match e with 
   | EConst n => const_sem n
   | EVar var_name => var_sem var_name
   end.
+
 
 
 Definition arith_sem1 Zfun (D1 D2: EDenote): EDenote :=
@@ -363,7 +374,7 @@ Definition asgn_sem
   {|
     nrm := fun s1 s2 =>
       exists i,
-        D.(nrm) s1 i /\ s2 X = Vint i /\
+        EDenote.nrm D s1 i /\ s2 X = Vint i /\
         (forall Y, X <> Y -> s2 Y = s1 Y);
     err := D.(err);
     inf := ∅;
