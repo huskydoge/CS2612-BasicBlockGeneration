@@ -55,7 +55,6 @@ Record basic_block_gen_results : Type := {
   BasicBlocks: list BasicBlock; (* already finished blocks*)
   BBn: BasicBlock; (* current_block_num should be the block num of BB_now, I think *)
   current_block_num: nat
- 
 }.
 
 Notation "s '.(BasicBlocks)'" := (BasicBlocks s) (at level 1).
@@ -96,13 +95,13 @@ Fixpoint list_cmd_BB_gen (cmds: list cmd) (BBs: list BasicBlock)(BB_now: BasicBl
   
 End basic_block_gen.
 
-
-Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) : basic_block_gen_results :=
+(* 实际上BB_num 就是 BB*)
+Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num: nat) : basic_block_gen_results :=
   match c with
   | CAsgn x e => 
     (* update BB_now*)
     let BB_now' := {|
-      block_num := BB_now.(block_num);
+      block_num := BB_num;
       commands := BB_now.(commands) ++ [CAsgn x e];
       jump_info := BB_now.(jump_info)
     |} in
@@ -114,46 +113,20 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) : basic_
 
   | CIf e c1 c2 =>
     (* Then Branch*)
-    let BB_then := {|
-    block_num := S (BB_now.(block_num)); (* a + 2 *)
-    commands := [];
-    jump_info := {|
-      jump_kind := UJump;
-      jump_dist_1 := 10; 
-      jump_dist_2 := None; 
-      jump_condition := None
-      |}
-    |} in
-    let BB_then_generated_results := list_cmd_BB_gen cmd_BB_gen c1 [] BB_then in
+    let BB_then_num := (list_cmd_BB_gen cmd_BB_gen c1 [] EmptyBlock S(BB_num)).(current_block_num) in
  
     (* Else Branch*)
-    let BB_else := {|
-      block_num := S (BB_then_generated_results.(current_block_num)); (* current block num +1 *)
-      commands := [];
-      jump_info := {|
-        jump_kind := UJump;
-        jump_dist_1 := 10; 
-        jump_dist_2 := None; 
-        jump_condition := None
-      |}
-    |} in
+    let BB_else_num := (list_cmd_BB_gen cmd_BB_gen c2 [] EmptyBlock S(BB_then_num)).(current_block_num) in
 
-    let BB_else_generated_results := list_cmd_BB_gen cmd_BB_gen c2 [] BB_else in
+    let BB_next_num := S(BB_else_num) in
 
-    let BB_next := {|
-    block_num := S(BB_else_generated_results.(current_block_num));
-    commands := []; (* 创建一个空的命令列表 *)
-    (* 占位, 无实际作用*)
-    jump_info := BB_now.(jump_info)
-
-    |} in
     let BB_now' := {|
-    block_num := BB_now.(block_num);
+    block_num := BB_num;
     commands := BB_now.(commands);
     jump_info := {|
       jump_kind := CJump;
-      jump_dist_1 := BB_then.(block_num);
-      jump_dist_2 := Some (BB_else.(block_num));
+      jump_dist_1 := BB_then_num;
+      jump_dist_2 := Some (BB_else_num);
       jump_condition := Some (e);
       |}
     |} in
