@@ -183,13 +183,11 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
     |} in
 
     let BB_else_generated_results' := list_cmd_BB_gen cmd_BB_gen c2 [] BB_else' BB_else_num in
-
     {| BasicBlocks := BBs++[BB_now'] ++ BB_then_generated_results'.(BasicBlocks) ++ [BB_then_generated_results'.(BBn)] ++ BB_else_generated_results'.(BasicBlocks) ++ [BB_else_generated_results'.(BBn)]; BBn := BB_next;
        current_block_num := BB_next.(block_num) |}
     
   | CWhile pre e body => 
 
-    (* 占位，因为pre中要知道自己需要产生多少个BB，来指定自己跳转的位置 (到Body) *)
     let BB_pre_num := (S BB_num) in 
     let BB_pre_last_num := (list_cmd_BB_gen cmd_BB_gen pre [] EmptyBlock BB_pre_num).(current_block_num) in
     let BB_body_num := (S BB_pre_last_num) in 
@@ -217,8 +215,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       jump_condition := Some e
       |}
     |} in
+    
     let BB_pre_generated_results := list_cmd_BB_gen cmd_BB_gen pre [] BB_pre BB_pre_num in
-
 
     let BB_body := {|
       block_num := BB_body_num;
