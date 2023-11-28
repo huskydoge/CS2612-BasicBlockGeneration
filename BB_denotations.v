@@ -357,6 +357,18 @@ Notation "x '.(err)'" := (CDenote.err x)
 Notation "x '.(inf)'" := (CDenote.inf x)
   (at level 1).
 
+Ltac any_nrm x ::=
+  match type of x with
+  | EDenote => exact (EDenote.nrm x)
+  | CDenote => exact (CDenote.nrm x)
+  end.
+
+Ltac any_err x ::=
+  match type of x with
+  | EDenote => exact (EDenote.err x)
+  | CDenote => exact (CDenote.err x)
+  end.
+
 (** 空语句的语义：*)
 
 Definition skip_sem: CDenote :=
@@ -374,7 +386,7 @@ Definition asgn_sem
   {|
     nrm := fun s1 s2 =>
       exists i,
-        EDenote.nrm D s1 i /\ s2 X = Vint i /\
+        D.(nrm) s1 i /\ s2 X = Vint i /\
         (forall Y, X <> Y -> s2 Y = s1 Y);
     err := D.(err);
     inf := ∅;
