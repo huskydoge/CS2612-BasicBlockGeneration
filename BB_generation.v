@@ -97,6 +97,27 @@ Fixpoint list_cmd_BB_gen (cmds: list cmd) (BBs: list BasicBlock)(BB_now: BasicBl
 End basic_block_gen.
 
 
+
+Section cmd_list_BB_num.
+
+Variable cmd_BB_num : cmd -> nat -> nat.
+
+Fixpoint cmd_list_BB_num (cl : list cmd) (num: nat) : nat :=
+  match cl with
+  | [] => 0
+  | cmd :: tl => cmd_BB_num cmd num + cmd_list_BB_num tl num
+  end.
+
+End cmd_list_BB_num.
+
+Fixpoint cmd_BB_num (c : cmd) (num: nat) : nat :=
+  match c with
+  | CAsgn _ _ => 0
+  | CIf _ c1 c2 => 2 + cmd_list_BB_num cmd_BB_num c1 num + cmd_list_BB_num cmd_BB_num c2 num
+  | CWhile pre _ body => 2 + cmd_list_BB_num cmd_BB_num pre num + cmd_list_BB_num cmd_BB_num body num
+  end.
+
+
 Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) : basic_block_gen_results :=
   match c with
   | CAsgn x e => 
@@ -263,7 +284,7 @@ This function merge the result to a whole list of basicblock*)
 Definition to_result (r: basic_block_gen_results) :
 list BasicBlock := r.(BasicBlocks) ++ [r.(BBn)].
 
-(*main function, which generates BBs for the whole cmds*)
+(* main function, which generates BBs for the whole cmds *)
 Definition BB_gen (cmds: list cmd):
 list BasicBlock := to_result (list_cmd_BB_gen cmd_BB_gen cmds [] EmptyBlock).
 
