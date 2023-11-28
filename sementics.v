@@ -61,7 +61,7 @@ Definition not_empty_BBs (BBs: list BasicBlock) :bool :=
 
 (* Get the head element of the BB_block *)
 Definition BB_head (cmds: list cmd) : list cmd :=
-  match (list_cmd_BB_gen cmd_BB_gen cmds [empty_block]).(BasicBlocks) with
+  match (list_cmd_BB_gen cmd_BB_gen cmds [EmptyBlock] EmptyBlock 0).(BasicBlocks) with
   | [] => []
   | h :: _ => h.(cmd)
   end.
@@ -94,6 +94,14 @@ Proof.
   rewrite Nat.add_1_r.
   reflexivity.
 Qed.
+
+(* 定义一个函数，删除列表中的最后一个元素 *)
+Fixpoint remove_last {X : Type} (l : list X) : list X :=
+  match l with
+  | [] => [] (* 空列表返回空 *)
+  | [x] => [] (* 单元素列表返回空 *)
+  | x :: xs => x :: remove_last xs (* 递归地删除最后一个元素 *)
+  end.
 
 (* 一个列表，删除最后一个元素会让它的长度减少 1 *)
 Lemma remove_last_decreases_length : forall (X : Type) (l : list X) (e: X),
@@ -157,31 +165,6 @@ Proof.
   reflexivity.
 Qed.
 
-(* 移除一个列表的最后一个元素*)
-(* Lemma *)
-
-Lemma equal_BB_remove: forall (BB_pre: list BasicBlock) (BB_tail: BasicBlock) (x: var_name) (e: expr), 
-  let BBs := BB_pre ++ [BB_tail] in 
-length (remove_last BBs ++
-[{|
-   block_num := (last BBs).(block_num);
-   commands := (last BBs).(cmd) ++ [CAsgn x e];
-   jump_info := (last BBs).(jump_info)
- |}]) = length BBs.
-Proof.
-  intros.
-  rewrite <- distributive_length_add;simpl.
-  apply delete_one_add_one_eq.
-Qed.
-
-
-Lemma plus_one_Sn : forall n : nat, S n = 1 + n.
-Proof.
-  intros n.
-  rewrite <- plus_n_Sm.
-  rewrite <- plus_n_O.
-  reflexivity.
-Qed.
 
 
 (* Preparations =======================================================================================================================*)
