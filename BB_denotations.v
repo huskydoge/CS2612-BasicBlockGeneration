@@ -12,63 +12,34 @@ Local Open Scope sets.
 Require Import Main.grammer.
 Require Import Main.cmd_denotations.
 
-
-
 Import Denotation.
-
-
-
-Definition state: Type := var_name -> int64.
+Import EDenote.
+Import CDenote.
 
 Record BB_state: Type := {
   BB_num: nat;
   st: state
 }.
-Module CDenote.
 
-Record CDenote: Type := {
-  nrm: state -> state -> Prop;
-  err: state -> Prop;
-  inf: state -> Prop
-}.
-  
-End CDenote.
-
-Import CDenote.
-
-Module EDenote.
-
-Record EDenote: Type := {
-  nrm: state -> int64 -> Prop;
-  err: state -> Prop;
-}.
-
-End EDenote.
-
-Import EDenote.
 
 Module BDenote.
-
 Record BDenote: Type := {
   nrm: BB_state -> BB_state -> Prop;
   err: BB_state -> Prop;
   inf: BB_state -> Prop
 }.
-
 End BDenote.
+
 Import BDenote.
 
 Ltac any_nrm x := exact (EDenote.nrm x).
-
 Ltac any_err x := exact (EDenote.err x).
-
 Ltac any_nrm x ::=
   match type of x with
   | EDenote => exact (EDenote.nrm x)
   | CDenote => exact (CDenote.nrm x)
   | BDenote => exact (BDenote.nrm x)
   end.
-
 Ltac any_err x ::=
   match type of x with
   | EDenote => exact (EDenote.err x)
@@ -78,7 +49,6 @@ Ltac any_err x ::=
 
 Notation "x '.(nrm)'" := (ltac:(any_nrm x))
   (at level 1, only parsing).
-
 Notation "x '.(err)'" := (ltac:(any_err x))
   (at level 1, only parsing).
 
@@ -91,7 +61,6 @@ Definition ujmp_sem (jum_dist: nat): BDenote :=
     err := ∅;
     inf := ∅;
   |}.
-
 
 
 Definition test_true_jmp (D: EDenote):
@@ -119,9 +88,6 @@ Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :
               | Some jmp_dist2 => cjmp_sem jmp_dist1 jmp_dist2 D
               end
   end.
-
-Check seq_sem.
-
 
 Definition single_step_sem (cmds: CDenote)(jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
   {|
