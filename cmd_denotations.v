@@ -418,46 +418,45 @@ Module WhileSem.
   Fixpoint iter_nrm_lt_n
              (D0: EDenote)
              (D1: CDenote)
+             (PRE: CDenote)
              (n: nat):
     state -> state -> Prop :=
     match n with
     | O => ∅
     | S n0 =>
-        (test_true D0 ∘
-           ((D1.(nrm) ∘ iter_nrm_lt_n D0 D1 n0))) ∪
-        (test_false D0)
+        (PRE.(nrm) ∘ test_true D0 ∘ ((D1.(nrm) ∘ iter_nrm_lt_n D0 D1 PRE n0))) ∪
+        (PRE.(nrm) ∘ (test_false D0))
     end.
   
   Fixpoint iter_err_lt_n
              (D0: EDenote)
              (D1: CDenote)
+             (PRE: CDenote)
              (n: nat): state -> Prop :=
     match n with
     | O => ∅
     | S n0 =>
-       (test_true D0 ∘
-          ((D1.(nrm) ∘ iter_err_lt_n D0 D1 n0) ∪
-           D1.(err))) ∪
-        D0.(err)
+       PRE.(err) ∪ (PRE.(nrm) ∘ test_true D0 ∘ ((D1.(nrm) ∘ iter_err_lt_n D0 D1 PRE n0) ∪ D1.(err))) ∪ (PRE.(nrm) ∘ D0.(err))
     end.
   
   Definition is_inf
                (D0: EDenote)
                (D1: CDenote)
+               (PRE: CDenote)
                (X: state -> Prop): Prop :=
-    X ⊆ test_true D0 ∘
+    X ⊆ PRE.(nrm) ∘ test_true D0 ∘
           ((D1.(nrm) ∘ X) ∪
            D1.(inf)).
-  
   End WhileSem.
 
 Definition while_sem
   (D0: EDenote)
-  (D1: CDenote): CDenote :=
+  (D1: CDenote)
+  (PRE: CDenote): CDenote :=
 {|
-nrm := ⋃ (WhileSem.iter_nrm_lt_n D0 D1);
-err := ⋃ (WhileSem.iter_err_lt_n D0 D1);
-inf := Sets.general_union (WhileSem.is_inf D0 D1);
+nrm := ⋃ (WhileSem.iter_nrm_lt_n D0 D1 PRE);
+err := ⋃ (WhileSem.iter_err_lt_n D0 D1 PRE);
+inf := Sets.general_union (WhileSem.is_inf D0 D1 PRE);
 |}.
   
 Definition if_sem
