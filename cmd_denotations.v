@@ -340,8 +340,6 @@ Module CDenote.
 
 Record CDenote: Type := {
   nrm: state -> state -> Prop;
-  brk: state -> state -> Prop;
-  cnt: state -> state -> Prop;
   err: state -> Prop;
   inf: state -> Prop
 }.
@@ -380,27 +378,6 @@ Definition skip_sem: CDenote :=
     inf := ∅;
   |}.
 
-(** Break语句的语义 *)
-
-Definition brk_sem: CDenote :=
-  {|
-    nrm := ∅;
-    brk := Rels.id;
-    cnt := ∅;
-    err := ∅;
-    inf := ∅;
-  |}.
-
-(** Continue语句的语义 *)
-
-Definition cnt_sem: CDenote :=
-  {|
-    nrm := ∅;
-    brk := ∅;
-    cnt := Rels.id;
-    err := ∅;
-    inf := ∅;
-  |}.
 
 (** 赋值语句的语义：*)
 
@@ -447,9 +424,7 @@ Module WhileSem.
     | O => ∅
     | S n0 =>
         (test_true D0 ∘
-           ((D1.(nrm) ∘ iter_nrm_lt_n D0 D1 n0) ∪
-            (D1.(cnt) ∘ iter_nrm_lt_n D0 D1 n0) ∪
-             D1.(brk))) ∪
+           ((D1.(nrm) ∘ iter_nrm_lt_n D0 D1 n0))) ∪
         (test_false D0)
     end.
   
@@ -462,7 +437,6 @@ Module WhileSem.
     | S n0 =>
        (test_true D0 ∘
           ((D1.(nrm) ∘ iter_err_lt_n D0 D1 n0) ∪
-           (D1.(cnt) ∘ iter_err_lt_n D0 D1 n0) ∪
            D1.(err))) ∪
         D0.(err)
     end.
@@ -473,7 +447,6 @@ Module WhileSem.
                (X: state -> Prop): Prop :=
     X ⊆ test_true D0 ∘
           ((D1.(nrm) ∘ X) ∪
-           (D1.(cnt) ∘ X) ∪
            D1.(inf)).
   
   End WhileSem.
@@ -484,10 +457,6 @@ Definition if_sem
   {|
     nrm := (test_true D0 ∘ D1.(nrm)) ∪
     (test_false D0 ∘ D2.(nrm));
-    brk := (test_true D0 ∘ D1.(brk)) ∪
-    (test_false D0 ∘ D2.(brk));
-    cnt := (test_true D0 ∘ D1.(cnt)) ∪
-    (test_false D0 ∘ D2.(cnt));
     err := D0.(err) ∪
     (test_true D0 ∘ D1.(err)) ∪
     (test_false D0 ∘ D2.(err));
