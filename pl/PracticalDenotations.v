@@ -908,7 +908,8 @@ Definition test_false (D: EDenote):
   state -> state -> Prop :=
   Rels.test (fun s => D.(nrm) s (Int64.repr 0)).
 
-Definition if_sem
+
+  Definition if_sem
              (D0: EDenote)
              (D1 D2: CDenote): CDenote :=
   {|

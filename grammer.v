@@ -14,6 +14,7 @@ Require Import Coq.Strings.String.
 (* Local Open Scope sets. *)
 
 
+
 (* Each assignment statement is evaluated only once*)
 
 Definition var_name: Type := string.

@@ -340,6 +340,8 @@ Module CDenote.
 
 Record CDenote: Type := {
   nrm: state -> state -> Prop;
+  brk: state -> state -> Prop;
+  cnt: state -> state -> Prop;
   err: state -> Prop;
   inf: state -> Prop
 }.
@@ -378,6 +380,28 @@ Definition skip_sem: CDenote :=
     inf := ∅;
   |}.
 
+(** Break语句的语义 *)
+
+Definition brk_sem: CDenote :=
+  {|
+    nrm := ∅;
+    brk := Rels.id;
+    cnt := ∅;
+    err := ∅;
+    inf := ∅;
+  |}.
+
+(** Continue语句的语义 *)
+
+Definition cnt_sem: CDenote :=
+  {|
+    nrm := ∅;
+    brk := ∅;
+    cnt := Rels.id;
+    err := ∅;
+    inf := ∅;
+  |}.
+
 (** 赋值语句的语义：*)
 
 Definition asgn_sem
@@ -401,4 +425,77 @@ Definition seq_sem (D1 D2: CDenote): CDenote :=
     inf := D1.(inf) ∪ (D1.(nrm) ∘ D2.(inf));
   |}.
 
+
+  Definition test_true (D: EDenote):
+  state -> state -> Prop :=
+  Rels.test
+    (fun s =>
+       exists i, D.(nrm) s i /\ Int64.signed i <> 0).
+
+Definition test_false (D: EDenote):
+  state -> state -> Prop :=
+  Rels.test (fun s => D.(nrm) s (Int64.repr 0)).
+
+
+Module WhileSem.
+  Fixpoint iter_nrm_lt_n
+             (D0: EDenote)
+             (D1: CDenote)
+             (n: nat):
+    state -> state -> Prop :=
+    match n with
+    | O => ∅
+    | S n0 =>
+        (test_true D0 ∘
+           ((D1.(nrm) ∘ iter_nrm_lt_n D0 D1 n0) ∪
+            (D1.(cnt) ∘ iter_nrm_lt_n D0 D1 n0) ∪
+             D1.(brk))) ∪
+        (test_false D0)
+    end.
+  
+  Fixpoint iter_err_lt_n
+             (D0: EDenote)
+             (D1: CDenote)
+             (n: nat): state -> Prop :=
+    match n with
+    | O => ∅
+    | S n0 =>
+       (test_true D0 ∘
+          ((D1.(nrm) ∘ iter_err_lt_n D0 D1 n0) ∪
+           (D1.(cnt) ∘ iter_err_lt_n D0 D1 n0) ∪
+           D1.(err))) ∪
+        D0.(err)
+    end.
+  
+  Definition is_inf
+               (D0: EDenote)
+               (D1: CDenote)
+               (X: state -> Prop): Prop :=
+    X ⊆ test_true D0 ∘
+          ((D1.(nrm) ∘ X) ∪
+           (D1.(cnt) ∘ X) ∪
+           D1.(inf)).
+  
+  End WhileSem.
+  
+Definition if_sem
+  (D0: EDenote)
+  (D1 D2: CDenote): CDenote :=
+{|
+nrm := (test_true D0 ∘ D1.(nrm)) ∪
+(test_false D0 ∘ D2.(nrm));
+brk := (test_true D0 ∘ D1.(brk)) ∪
+(test_false D0 ∘ D2.(brk));
+cnt := (test_true D0 ∘ D1.(cnt)) ∪
+(test_false D0 ∘ D2.(cnt));
+err := D0.(err) ∪
+(test_true D0 ∘ D1.(err)) ∪
+(test_false D0 ∘ D2.(err));
+inf := (test_true D0 ∘ D1.(inf)) ∪
+(test_false D0 ∘ D2.(inf))
+|}.
+
+
+
 End Denotation.
+
