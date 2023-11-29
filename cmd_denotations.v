@@ -403,7 +403,7 @@ Definition seq_sem (D1 D2: CDenote): CDenote :=
   |}.
 
 
-  Definition test_true (D: EDenote):
+Definition test_true (D: EDenote):
   state -> state -> Prop :=
   Rels.test
     (fun s =>

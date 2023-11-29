@@ -75,7 +75,7 @@ Definition EmptyBlock : BasicBlock := {|
 
 (*名字瞎起的，可以改一下*)
 (*When finishing all block generations,
-the record still remains a BBs and aBBn, which is indeed completed.
+the record still remains a BBs and a BBn, which is indeed completed.
 This function merge the result to a whole list of basicblock*)
 Definition to_result (r: basic_block_gen_results) :
 list BasicBlock := r.(BasicBlocks) ++ [r.(BBn)].
