@@ -450,6 +450,15 @@ Module WhileSem.
            D1.(inf)).
   
   End WhileSem.
+
+Definition while_sem
+  (D0: EDenote)
+  (D1: CDenote): CDenote :=
+{|
+nrm := ⋃ (WhileSem.iter_nrm_lt_n D0 D1);
+err := ⋃ (WhileSem.iter_err_lt_n D0 D1);
+inf := Sets.general_union (WhileSem.is_inf D0 D1);
+|}.
   
 Definition if_sem
   (D0: EDenote)
