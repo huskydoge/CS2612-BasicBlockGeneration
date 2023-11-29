@@ -155,7 +155,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |}
     |} in
 
-    let BB_then_generated_results := list_cmd_BB_gen cmd_BB_gen c1 [] BB_then BB_num1 in
+    let BB_then_generated_results := list_cmd_BB_gen cmd_BB_gen c1 (BBs++[BB_now']) BB_then BB_num1 in
 
     let BB_num2 := BB_then_generated_results.(next_block_num) in
 
@@ -170,7 +170,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |}
     |} in
 
-    let BB_else_generated_results := list_cmd_BB_gen cmd_BB_gen c2 [] BB_else BB_num2 in
+    let BB_else_generated_results := list_cmd_BB_gen cmd_BB_gen c2 (to_result(BB_then_generated_results)) BB_else BB_num2 in
   
     let BB_num3 := BB_else_generated_results.(next_block_num) in
 
@@ -180,7 +180,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       jump_info := BB_now.(jump_info)
       |} in
 
-    {| BasicBlocks := BBs++[BB_now'] ++ to_result(BB_then_generated_results) ++ to_result(BB_else_generated_results); BBn := BB_next;
+    {| BasicBlocks := to_result(BB_else_generated_results);
+       BBn := BB_next;
        next_block_num := BB_num3 |}
     
   | CWhile pre e body => 
@@ -212,7 +213,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |}
     |} in
     
-    let BB_pre_generated_results := list_cmd_BB_gen cmd_BB_gen pre [] BB_pre BB_num1 in
+    let BB_pre_generated_results := list_cmd_BB_gen cmd_BB_gen pre (BBs++[BB_now']) BB_pre BB_num1 in
 
     let BB_num2 := BB_pre_generated_results.(next_block_num) in
 
@@ -227,7 +228,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |}
     |} in
 
-    let BB_body_generated_results := list_cmd_BB_gen cmd_BB_gen body [] BB_body BB_num2 in
+    let BB_body_generated_results := list_cmd_BB_gen cmd_BB_gen body (to_result(BB_pre_generated_results)) BB_body BB_num2 in
     
     let BB_num3 := BB_body_generated_results.(next_block_num) in
 
@@ -237,7 +238,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       jump_info := BB_now.(jump_info)
     |} in
       
-    {| BasicBlocks := BBs ++ [BB_now'] ++ to_result(BB_pre_generated_results) ++ to_result(BB_body_generated_results); BBn := BB_next;
+    {| BasicBlocks := to_result(BB_pre_generated_results) ; 
+      BBn := BB_next;
        next_block_num := BB_num3 |}
   end.
 
