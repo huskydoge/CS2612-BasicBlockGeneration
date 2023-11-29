@@ -471,8 +471,5 @@ Definition if_sem
     inf := (test_true D0 ∘ D1.(inf)) ∪
     (test_false D0 ∘ D2.(inf))
   |}.
-
-
-
 End Denotation.
 

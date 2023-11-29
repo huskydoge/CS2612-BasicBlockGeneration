@@ -20,4 +20,3 @@ Record denote: Type := {
   err: state -> Prop;
 }.
 
-
