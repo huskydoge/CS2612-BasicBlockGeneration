@@ -118,7 +118,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
   | CAsgn x e => 
     (* update BB_now *)
     let BB_now' := {|
-      block_num := BB_num;
+      block_num := BB_now.(block_num);
       commands := BB_now.(commands) ++ [CAsgn x e];
       jump_info := BB_now.(jump_info)
     |} in
@@ -134,7 +134,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
     let BB_next_num := S(BB_else_num) in
     let BB_num1 := S(BB_next_num) in
     let BB_now' := {|
-      block_num := BB_num;
+      block_num := BB_now.(block_num);
       commands := BB_now.(commands);
       jump_info := {|
         jump_kind := CJump;
@@ -145,7 +145,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |} in
 
     let BB_then := {|
-      block_num := BB_num1;
+      block_num := BB_then_num;
       commands := [];
       jump_info := {|
         jump_kind := UJump;
@@ -191,7 +191,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
     let BB_num1 := S(BB_next_num) in
 
     let BB_now' := {|
-      block_num := BB_num; 
+      block_num := BB_now.(block_num); 
       commands := [];
       jump_info := {|
         jump_kind := UJump;
