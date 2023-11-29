@@ -14,6 +14,10 @@ Require Import Main.cmd_denotations.
 
 
 
+Import Denotation.
+
+
+
 Definition state: Type := var_name -> int64.
 
 Record BB_state: Type := {
@@ -106,5 +110,28 @@ Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
     err := ∅; (* 条件跳转出错还没考虑*)
     inf := ∅;
   |}.
+
+Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
+  match D with 
+  | None => ujmp_sem jmp_dist1 (*没有传入E*)
+  | Some D => match jmp_dist2 with
+              | None => ujmp_sem jmp_dist1
+              | Some jmp_dist2 => cjmp_sem jmp_dist1 jmp_dist2 D
+              end
+  end.
+
+Check seq_sem.
+
+
+Definition single_step_sem (cmds: CDenote)(jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
+  {|
+    nrm := fun bs1 bs2 => exists bs3: BB_state,  
+        cmds.(nrm) bs1.(st) bs3.(st) /\ (jmp_sem (jmp_dist1) (jmp_dist2) (D)).(nrm) bs3 bs2; 
+        (**对于从bs1到bs2的单步执行，语义为存在一个bs3，它先执行了bs1中的basicblock语句，然后跳转到了bs2*)
+    err := ∅;
+    inf := ∅;
+  |}
+.
+
 
 

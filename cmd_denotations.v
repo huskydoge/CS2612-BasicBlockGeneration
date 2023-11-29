@@ -9,8 +9,6 @@ Require Import Coq.Lists.List.
 Require Import Coq.Logic.Classical_Prop.
 Require Import SetsClass.SetsClass. Import SetsNotation.
 Require Import compcert.lib.Integers.
-
-
 Require Import Main.grammer.
 
 Local Open Scope bool.
