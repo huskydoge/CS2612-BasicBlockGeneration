@@ -54,11 +54,11 @@ Notation "s '.(jump_info)'" := (jump_info s) (at level 1).
 Record basic_block_gen_results : Type := {
   BasicBlocks: list BasicBlock; (* already finished blocks*)
   BBn: BasicBlock; (* current_block_num should be the block num of BB_now, I think *)
-  current_block_num: nat
+  next_block_num: nat (* I think next block should start with the number*)
 }.
 
 Notation "s '.(BasicBlocks)'" := (BasicBlocks s) (at level 1).
-Notation "s '.(current_block_num)'" := (current_block_num s) (at level 1).
+Notation "s '.(next_block_num)'" := (next_block_num s) (at level 1).
 Notation "s '.(BBn)'"  := (BBn s)(at level 1).
 
 (* 空基本块，用于寻找BB list中最后一个元素时候的默认值处理*)
@@ -73,52 +73,50 @@ Definition EmptyBlock : BasicBlock := {|
   |}
 |}.
 
+(*名字瞎起的，可以改一下*)
+(*When finishing all block generations,
+the record still remains a BBs and aBBn, which is indeed completed.
+This function merge the result to a whole list of basicblock*)
+Definition to_result (r: basic_block_gen_results) :
+list BasicBlock := r.(BasicBlocks) ++ [r.(BBn)].
+
+
 (*考虑将已经生成的所有basicblock作为输入*)
 Section basic_block_gen.
 
 Variable cmd_BB_gen : cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
 
-
+(*Parameters:
+  cmds: list of commands that need to be managed
+  BBs: list of Basic Blocks which have been already generated
+  BB_now: the Basic Block we are currently at
+  BB_num: we should start assigning new basic blocks with BB_num *)
 Fixpoint list_cmd_BB_gen (cmds: list cmd) (BBs: list BasicBlock)(BB_now: BasicBlock)(BB_num: nat): basic_block_gen_results :=
   match cmds with
-  | [] => {| BasicBlocks := BBs; BBn := BB_now; current_block_num := BB_num;  |}
+  | [] => {| BasicBlocks := BBs; BBn := BB_now; next_block_num := BB_num;  |}
   | cmd :: tl => 
     let cmd_BB_result := cmd_BB_gen (cmd) (BBs) (BB_now) (BB_num) in  (* 先对列表第一个cmd进行处理，返回results *)
-    let tl_BB_result := list_cmd_BB_gen (tl) (cmd_BB_result.(BasicBlocks))(cmd_BB_result.(BBn)) (cmd_BB_result.(current_block_num)) in  (* 对剩下的cmd进行处理，返回results *)
+    let tl_BB_result := list_cmd_BB_gen (tl) (cmd_BB_result.(BasicBlocks))(cmd_BB_result.(BBn)) (cmd_BB_result.(next_block_num)) in  (* 对剩下的cmd进行处理，返回results *)
     {| 
       BasicBlocks := tl_BB_result.(BasicBlocks);
       BBn := tl_BB_result.(BBn);
-      current_block_num := tl_BB_result.(current_block_num) |}
+      next_block_num := tl_BB_result.(next_block_num) |}
   end.
+
+
   
 End basic_block_gen.
 
 
-
-(* Section cmd_list_BB_num.
-
-Variable cmd_BB_num : cmd -> nat -> nat.
-
-(* Fixpoint cmd_list_BB_num (cl : list cmd) : nat :=
-  match cl with
-  | [] => 0
-  | cmd :: tl => cmd_BB_num cmd + cmd_list_BB_num tl
-  end.
-
-End cmd_list_BB_num.
-
-Fixpoint cmd_BB_num (c : cmd) : nat :=
-  match c with
-  | CAsgn _ _ => 0
-  | CIf _ c1 c2 => 2 + cmd_list_BB_num cmd_BB_num c1 + cmd_list_BB_num cmd_BB_num c2
-  | CWhile pre _ body => 2 + cmd_list_BB_num cmd_BB_num pre + cmd_list_BB_num cmd_BB_num body
-  end. *) *)
-
-
+(*Parameters:
+  c: the cmd we are currently facing
+  BBs: list of Basic Blocks which have been already generated
+  BB_now: the Basic Block we are currently at
+  BB_num: we should start assigning new basic blocks with BB_num *)
 Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num: nat) : basic_block_gen_results :=
   match c with
   | CAsgn x e => 
-    (* update BB_now*)
+    (* update BB_now *)
     let BB_now' := {|
       block_num := BB_num;
       commands := BB_now.(commands) ++ [CAsgn x e];
@@ -127,24 +125,14 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
     {| 
       BasicBlocks := BBs;
       BBn := BB_now';
-      current_block_num := BB_now'.(block_num)
+      next_block_num := BB_num
     |}
 
   | CIf e c1 c2 =>
-    (* Then Branch*)
-    let BB_then_num := (S BB_num) in 
-    let BB_then_last_num := (list_cmd_BB_gen cmd_BB_gen c1 [] EmptyBlock BB_then_num).(current_block_num) in
-    (* Else Branch*)
-    let BB_else_num := (S BB_then_last_num) in 
-    let BB_else_last_num := (list_cmd_BB_gen cmd_BB_gen c2 [] EmptyBlock BB_else_num).(current_block_num) in
-    let BB_next_num := S(BB_else_last_num) in
-
-    let BB_next := {|
-      block_num := BB_next_num;
-      commands := []; (* 创建一个空的命令列表 *)
-      jump_info := BB_now.(jump_info)
-      |} in
-
+    let BB_then_num := BB_num in
+    let BB_else_num := S(BB_then_num) in
+    let BB_next_num := S(BB_else_num) in
+    let BB_num1 := S(BB_next_num) in
     let BB_now' := {|
       block_num := BB_num;
       commands := BB_now.(commands);
@@ -156,9 +144,9 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
         |}
       |} in
 
-    let BB_then' := {|
-      block_num := BB_then_num;
-      commands := c1;
+    let BB_then := {|
+      block_num := BB_num1;
+      commands := [];
       jump_info := {|
         jump_kind := UJump;
         jump_dist_1 := BB_next_num; 
@@ -167,11 +155,13 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |}
     |} in
 
-    let BB_then_generated_results' := list_cmd_BB_gen cmd_BB_gen c1 [] BB_then' BB_then_num in
+    let BB_then_generated_results := list_cmd_BB_gen cmd_BB_gen c1 [] BB_then BB_num1 in
 
-    let BB_else' := {|
+    let BB_num2 := BB_then_generated_results.(next_block_num) in
+
+    let BB_else := {|
       block_num := BB_else_num;
-      commands := c2;
+      commands := [];
       jump_info := {|
         jump_kind := UJump;
         jump_dist_1 := BB_next_num; 
@@ -180,21 +170,29 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |}
     |} in
 
-    let BB_else_generated_results' := list_cmd_BB_gen cmd_BB_gen c2 [] BB_else' BB_else_num in
-    {| BasicBlocks := BBs++[BB_now'] ++ BB_then_generated_results'.(BasicBlocks) ++ [BB_then_generated_results'.(BBn)] ++ BB_else_generated_results'.(BasicBlocks) ++ [BB_else_generated_results'.(BBn)]; BBn := BB_next;
-       current_block_num := BB_next.(block_num) |}
+    let BB_else_generated_results := list_cmd_BB_gen cmd_BB_gen c2 [] BB_else BB_num2 in
+  
+    let BB_num3 := BB_else_generated_results.(next_block_num) in
+
+    let BB_next := {|
+      block_num := BB_next_num;
+      commands := []; (* 创建一个空的命令列表 *)
+      jump_info := BB_now.(jump_info)
+      |} in
+
+    {| BasicBlocks := BBs++[BB_now'] ++ to_result(BB_then_generated_results) ++ to_result(BB_else_generated_results); BBn := BB_next;
+       next_block_num := BB_num3 |}
     
   | CWhile pre e body => 
 
-    let BB_pre_num := (S BB_num) in 
-    let BB_pre_last_num := (list_cmd_BB_gen cmd_BB_gen pre [] EmptyBlock BB_pre_num).(current_block_num) in
-    let BB_body_num := (S BB_pre_last_num) in 
-    let BB_body_last_num := (list_cmd_BB_gen cmd_BB_gen body [] EmptyBlock BB_body_num).(current_block_num) in
-    let BB_next_num := (S BB_body_last_num) in
+    let BB_pre_num := BB_num in 
+    let BB_body_num := S(BB_pre_num) in 
+    let BB_next_num := S (BB_body_num) in
+    let BB_num1 := S(BB_next_num) in
 
     let BB_now' := {|
       block_num := BB_num; 
-      commands := BB_now.(commands);
+      commands := [];
       jump_info := {|
         jump_kind := UJump;
         jump_dist_1 := BB_pre_num; (* update jump info*)
@@ -214,7 +212,9 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |}
     |} in
     
-    let BB_pre_generated_results := list_cmd_BB_gen cmd_BB_gen pre [] BB_pre BB_pre_num in
+    let BB_pre_generated_results := list_cmd_BB_gen cmd_BB_gen pre [] BB_pre BB_num1 in
+
+    let BB_num2 := BB_pre_generated_results.(next_block_num) in
 
     let BB_body := {|
       block_num := BB_body_num;
@@ -227,7 +227,9 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       |}
     |} in
 
-    let BB_body_generated_results := list_cmd_BB_gen cmd_BB_gen body [] BB_body BB_body_num in
+    let BB_body_generated_results := list_cmd_BB_gen cmd_BB_gen body [] BB_body BB_num2 in
+    
+    let BB_num3 := BB_body_generated_results.(next_block_num) in
 
     let BB_next := {|
       block_num := BB_next_num;
@@ -235,20 +237,13 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       jump_info := BB_now.(jump_info)
     |} in
       
-    {| BasicBlocks := BBs ++ [BB_now'] ++ BB_pre_generated_results.(BasicBlocks) ++ [BB_pre_generated_results.(BBn)] ++ BB_body_generated_results.(BasicBlocks) ++ [BB_body_generated_results.(BBn)];
-        BBn := BB_next;
-        current_block_num := BB_next.(block_num) |}
+    {| BasicBlocks := BBs ++ [BB_now'] ++ to_result(BB_pre_generated_results) ++ to_result(BB_body_generated_results); BBn := BB_next;
+       next_block_num := BB_num3 |}
   end.
 
 
 Check cmd_BB_gen.
 
-(*名字瞎起的，可以改一下*)
-(*When finishing all block generations,
-the record still remains a BBs and aBBn, which is indeed completed.
-This function merge the result to a whole list of basicblock*)
-Definition to_result (r: basic_block_gen_results) :
-list BasicBlock := r.(BasicBlocks) ++ [r.(BBn)].
 
 (* main function, which generates BBs for the whole cmds. Take zero as start for now*)
 Definition BB_gen (cmds: list cmd):
