@@ -97,10 +97,7 @@ Fixpoint list_cmd_BB_gen (cmds: list cmd) (BBs: list BasicBlock)(BB_now: BasicBl
   | cmd :: tl => 
     let cmd_BB_result := cmd_BB_gen (cmd) (BBs) (BB_now) (BB_num) in  (* 先对列表第一个cmd进行处理，返回results *)
     let tl_BB_result := list_cmd_BB_gen (tl) (cmd_BB_result.(BasicBlocks))(cmd_BB_result.(BBn)) (cmd_BB_result.(next_block_num)) in  (* 对剩下的cmd进行处理，返回results *)
-    {| 
-      BasicBlocks := tl_BB_result.(BasicBlocks);
-      BBn := tl_BB_result.(BBn);
-      next_block_num := tl_BB_result.(next_block_num) |}
+    tl_BB_result
   end.
 
 
