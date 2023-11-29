@@ -908,7 +908,8 @@ Definition test_false (D: EDenote):
   state -> state -> Prop :=
   Rels.test (fun s => D.(nrm) s (Int64.repr 0)).
 
-Definition if_sem
+
+  Definition if_sem
              (D0: EDenote)
              (D1 D2: CDenote): CDenote :=
   {|
@@ -920,6 +921,8 @@ Definition if_sem
     inf := (test_true D0 ∘ D1.(inf)) ∪
            (test_false D0 ∘ D2.(inf))
   |}.
+
+
 
 
 (** While循环语句不终止的情况分为两种：每次执行循环体程序都正常运行终止但是
@@ -1006,6 +1009,14 @@ Class LubProperty (A: Type) {RA: Order A} {LubA: Lub A}: Prop :=
 Class GlbProperty (A: Type) {RA: Order A} {GlbA: Glb A}: Prop :=
   glb_is_glb: forall X: A -> Prop, is_glb X (glb X).
 
+Lemma lub_sound: forall {A: Type} `{LubPA: LubProperty A},
+  forall X: A -> Prop, is_ub X (lub X).
+Proof. intros. destruct (lub_is_lub X). tauto. Qed.
+
+Lemma lub_tight: forall {A: Type} `{LubPA: LubProperty A},
+  forall X: A -> Prop, is_lb (is_ub X) (lub X).
+Proof. intros. destruct (lub_is_lub X). tauto. Qed.
+
 Lemma glb_sound: forall {A: Type} `{GlbPA: GlbProperty A},
   forall X: A -> Prop, is_lb X (glb X).
 Proof. intros. destruct (glb_is_glb X). tauto. Qed.
@@ -1082,6 +1093,1670 @@ Proof.
   apply H0.
 Qed.
 
+(** 在完备格中大与小这两个方向是对称的，所以我们也可以定义Knaster-Tarski最大
+    不动点，并证明相关性质。*)
+
+(************)
+(** 习题：  *)
+(************)
+
+
+Definition KT_GFix
+             {A: Type}
+             `{CLA: CompleteLattice_Setoid A}
+             (f: A -> A): A :=
+  lub (fun a => a <= f a).
+
+Lemma KT_GFix_is_post_fix:
+  forall
+    {A: Type}
+    `{CLA: CompleteLattice_Setoid A}
+    {EquivA: Equivalence equiv}
+    (f: A -> A),
+    mono f ->
+    KT_GFix f <= f (KT_GFix f).
+(* 请在此处填入你的证明，以_[Qed]_结束。 *)
+Proof.
+  intros.
+  unfold KT_GFix.
+  apply lub_tight; unfold is_ub; intros.
+  transitivity (f a'); [apply H0 |].
+  apply H.
+  apply lub_sound.
+  apply H0.
+Qed.
+
+Lemma KT_GFix_is_fix:
+  forall
+    {A: Type}
+    `{CLA: CompleteLattice_Setoid A}
+    {EquivA: Equivalence equiv}
+    (f: A -> A),
+    mono f ->
+    f (KT_GFix f) == KT_GFix f.
+(* 请在此处填入你的证明，以_[Qed]_结束。 *)
+Proof.
+  intros.
+  pose proof KT_GFix_is_post_fix f H.
+  apply antisymmetricity_setoid.
+  + apply lub_sound.
+    apply H, H0.
+  + apply H0.
+Qed.
+
+Lemma KT_GFix_is_greatest_fix:
+  forall
+    {A: Type}
+    `{CLA: CompleteLattice_Setoid A}
+    {EquivA: Equivalence equiv}
+    (f: A -> A)
+    (a: A),
+    mono f ->
+    f a == a ->
+    a <= KT_GFix f.
+(* 请在此处填入你的证明，以_[Qed]_结束。 *)
+Proof.
+  intros.
+  apply lub_sound.
+  apply reflexivity_setoid.
+  symmetry.
+  apply H0.
+Qed.
+
 Local Close Scope order_scope.
 
 End KTFix.
+
+(** 事实上，我们可以在Coq中证明所有的幂集上的包含关系都是完备格。以下证明代码可以跳过。*)
+
+Module Sets_CL.
+Import BWFix KTFix Sets_CPO.
+
+
+Local Open Scope sets_scope.
+Local Open Scope order_scope.
+
+Instance Lub_sets
+           {T: Type}
+           {_SETS: Sets.SETS T}: Lub T :=
+  Sets.general_union.
+
+Instance Glb_sets
+           {T: Type}
+           {_SETS: Sets.SETS T}: Glb T :=
+  Sets.general_intersect.
+
+Instance LubP_sets
+           {T: Type}
+           {_SETS: Sets.SETS T}
+           {_SETS_Properties: SETS_Properties T}: LubProperty T.
+Proof.
+  split.
+  + unfold lub, Lub_sets, is_ub.
+    intros.
+    apply Sets_included_general_union.
+    tauto.
+  + unfold lub, Lub_sets, is_lb, is_ub.
+    intros.
+    apply Sets_general_union_included.
+    intros.
+    apply H.
+    tauto.
+Qed.
+
+Instance GlbP_sets
+           {T: Type}
+           {_SETS: Sets.SETS T}
+           {_SETS_Properties: SETS_Properties T}: GlbProperty T.
+Proof.
+  split.
+  + unfold glb, Glb_sets, is_lb.
+    intros.
+    apply Sets_general_intersect_included.
+    tauto.
+  + unfold glb, Glb_sets, is_lb, is_ub.
+    intros.
+    apply Sets_included_general_intersect.
+    intros.
+    apply H.
+    tauto.
+Qed.
+
+Instance CL_sets
+           {T: Type}
+           {_SETS: Sets.SETS T}
+           {_SETS_Properties: SETS_Properties T}: CompleteLattice_Setoid T.
+Proof.
+  split.
+  + apply PO_sets.
+  + apply LubP_sets.
+  + apply GlbP_sets.
+Qed.
+
+Local Close Scope sets_scope.
+Local Close Scope order_scope.
+
+End Sets_CL.
+
+
+(** * 用Knaster-Tarski不动点改写While语言的语义 *)
+
+Module DntSem_While2.
+Import Lang_While
+       DntSem_While1 EDenote CDenote
+       BWFix KTFix Sets_CPO Sets_CL.
+
+
+Definition while_sem
+             (D0: EDenote)
+             (D1: CDenote): CDenote :=
+  {|
+    nrm := BW_LFix
+             (fun X =>
+                test_true D0 ∘ D1.(nrm) ∘ X ∪
+                test_false D0);
+    err := BW_LFix
+             (fun X =>
+                test_true D0 ∘ D1.(nrm) ∘ X ∪
+                test_true D0 ∘ D1.(err) ∪ D0.(err));
+    inf := KT_GFix
+             (fun X =>
+                test_true D0 ∘ D1.(nrm) ∘ X ∪
+                test_true D0 ∘ D1.(inf));
+  |}.
+
+(** 程序语句的语义可以最后表示成下面递归函数。*)
+
+Fixpoint eval_com (c: com): CDenote :=
+  match c with
+  | CSkip =>
+      skip_sem
+  | CAsgn X e =>
+      asgn_sem X (eval_expr e)
+  | CSeq c1 c2 =>
+      seq_sem (eval_com c1) (eval_com c2)
+  | CIf e c1 c2 =>
+      if_sem (eval_expr e) (eval_com c1) (eval_com c2)
+  | CWhile e c1 =>
+      while_sem (eval_expr e) (eval_com c1)
+  end.
+
+
+End DntSem_While2.
+
+(** * WhileDeref语言的语义 *)
+
+Module DntSem_WhileDeref.
+Import Lang_While.
+Import Lang_WhileDeref.
+
+(** 程序状态：*)
+
+Record state: Type := {
+  vars: var_name -> val;
+  mem: int64 -> option val;
+}.
+
+Notation "s '.(vars)'" := (vars s) (at level 1).
+Notation "s '.(mem)'" := (mem s) (at level 1).
+
+(** 这里，_[s.(vars)]_表示程序状态_[s]_上变量的值，_[s.(mem)]_表示程序状态_[s]_
+    上的内存信息，地址用64位有符号整数表示，一个地址上的值是_[Some]_表示有读写权
+    限，_[None]_表示没有读写权限。  
+
+    下面定义表达式的指称语义。表达式指称的定义、二元运算、一元运算与常量的语义都
+    与原先相同。*)
+
+Module EDenote.
+
+Record EDenote: Type := {
+  nrm: state -> int64 -> Prop;
+  err: state -> Prop;
+}.
+
+End EDenote.
+
+Import EDenote.
+
+Notation "x '.(nrm)'" := (EDenote.nrm x)
+  (at level 1, only printing).
+
+Notation "x '.(err)'" := (EDenote.err x)
+  (at level 1, only printing).
+
+Ltac any_nrm x := exact (EDenote.nrm x).
+
+Ltac any_err x := exact (EDenote.err x).
+
+Notation "x '.(nrm)'" := (ltac:(any_nrm x))
+  (at level 1, only parsing).
+
+Notation "x '.(err)'" := (ltac:(any_err x))
+  (at level 1, only parsing).
+
+Definition arith_sem1_nrm
+             (Zfun: Z -> Z -> Z)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute1_nrm Zfun i1 i2 i.
+
+Definition arith_sem1_err
+             (Zfun: Z -> Z -> Z)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute1_err Zfun i1 i2.
+
+Definition arith_sem1 Zfun (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := arith_sem1_nrm Zfun D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err) ∪
+           arith_sem1_err Zfun D1.(nrm) D2.(nrm);
+  |}.
+
+Definition arith_sem2_nrm
+             (int64fun: int64 -> int64 -> int64)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute2_nrm int64fun i1 i2 i.
+
+Definition arith_sem2_err
+             (D1 D2: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute2_err i1 i2.
+
+Definition arith_sem2 int64fun (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := arith_sem2_nrm int64fun D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err) ∪
+           arith_sem2_err D1.(nrm) D2.(nrm);
+  |}.
+
+Definition cmp_sem_nrm
+             (c: comparison)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\ cmp_compute_nrm c i1 i2 i.
+
+Definition cmp_sem c (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := cmp_sem_nrm c D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err);
+  |}.
+
+Definition neg_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ neg_compute_nrm i1 i.
+
+Definition neg_sem_err
+             (D1: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1, D1 s i1 /\ neg_compute_err i1.
+
+Definition neg_sem (D1: EDenote): EDenote :=
+  {|
+    nrm := neg_sem_nrm D1.(nrm);
+    err := D1.(err) ∪ neg_sem_err D1.(nrm);
+  |}.
+
+Definition not_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ not_compute_nrm i1 i.
+
+Definition not_sem (D1: EDenote): EDenote :=
+  {|
+    nrm := not_sem_nrm D1.(nrm);
+    err := D1.(err);
+  |}.
+
+Definition and_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (SC_and_compute_nrm i1 i \/
+     NonSC_and i1 /\
+     exists i2,
+       D2 s i2 /\ NonSC_compute_nrm i2 i).
+
+Definition and_sem_err
+             (D1: state -> int64 -> Prop)
+             (D2: state -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\ NonSC_and i1 /\ D2 s.
+
+Definition and_sem (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := and_sem_nrm D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ and_sem_err D1.(nrm) D2.(err);
+  |}.
+
+Definition or_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (SC_or_compute_nrm i1 i \/
+     NonSC_or i1 /\
+     exists i2,
+       D2 s i2 /\ NonSC_compute_nrm i2 i).
+
+Definition or_sem_err
+             (D1: state -> int64 -> Prop)
+             (D2: state -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\ NonSC_or i1 /\ D2 s.
+
+Definition or_sem (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := or_sem_nrm D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ or_sem_err D1.(nrm) D2.(err);
+  |}.
+
+Definition unop_sem (op: unop) (D: EDenote): EDenote :=
+  match op with
+  | ONeg => neg_sem D
+  | ONot => not_sem D
+  end.
+
+Definition binop_sem (op: binop) (D1 D2: EDenote): EDenote :=
+  match op with
+  | OOr => or_sem D1 D2
+  | OAnd => and_sem D1 D2
+  | OLt => cmp_sem Clt D1 D2
+  | OLe => cmp_sem Cle D1 D2
+  | OGt => cmp_sem Cgt D1 D2
+  | OGe => cmp_sem Cge D1 D2
+  | OEq => cmp_sem Ceq D1 D2
+  | ONe => cmp_sem Cne D1 D2
+  | OPlus => arith_sem1 Z.add D1 D2
+  | OMinus => arith_sem1 Z.sub D1 D2
+  | OMul => arith_sem1 Z.mul D1 D2
+  | ODiv => arith_sem2 Int64.divs D1 D2
+  | OMod => arith_sem2 Int64.mods D1 D2
+  end.
+
+Definition const_sem (n: Z): EDenote :=
+  {|
+    nrm := fun s i =>
+             i = Int64.repr n /\
+             Int64.min_signed <= n <= Int64.max_signed;
+    err := fun s =>
+             n < Int64.min_signed \/
+             n > Int64.max_signed;
+  |}.
+
+(** 程序表达式为单个变量时的语义需要做少许修改，其语义定义应当使用程序状态中变量
+    的部分：_[s.(vars)]_。*)
+
+Definition var_sem (X: var_name): EDenote :=
+  {|
+    nrm := fun s i => s.(vars) X = Vint i;
+    err := fun s => s.(vars) X = Vuninit;
+  |}.
+
+(** 最后，需要新定义『解引用』的语义，其语义定义应当使用程序状态中内存的部分：
+    _[s.(mem)]_。*)
+
+Definition deref_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ s.(mem) i1 = Some (Vint i).
+
+Definition deref_sem_err
+             (D1: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (s.(mem) i1 = None \/ s.(mem) i1 = Some Vuninit).
+
+Definition deref_sem (D1: EDenote): EDenote :=
+  {|
+    nrm := deref_sem_nrm D1.(nrm);
+    err := D1.(err) ∪ deref_sem_err D1.(nrm);
+  |}.
+
+(** 在递归定义的表达式语义中，也需要加上『解引用』的情形。*)
+
+Fixpoint eval_expr (e: expr): EDenote :=
+  match e with
+  | EConst n =>
+      const_sem n
+  | EVar X =>
+      var_sem X
+  | EBinop op e1 e2 =>
+      binop_sem op (eval_expr e1) (eval_expr e2)
+  | EUnop op e1 =>
+      unop_sem op (eval_expr e1)
+  | EDeref e1 =>
+      deref_sem (eval_expr e1)
+  end.
+
+(** 在表达式语义定义的基础上，_[test_true]_与_[test_false]_的定义不变。*)
+
+Definition test_true (D: EDenote):
+  state -> state -> Prop :=
+  Rels.test
+    (fun s =>
+       exists i, D.(nrm) s i /\ Int64.signed i <> 0).
+
+Definition test_false (D: EDenote):
+  state -> state -> Prop :=
+  Rels.test (fun s => D.(nrm) s (Int64.repr 0)).
+
+(** 程序语句的指称定义不变，依然包括三种情况：正常运行终止、运行出错以及运行不终
+    止。空语句、顺序执行、条件分支语句与while循环语句的语义定义也不变。*)
+
+Module CDenote.
+
+Record CDenote: Type := {
+  nrm: state -> state -> Prop;
+  err: state -> Prop;
+  inf: state -> Prop
+}.
+
+End CDenote.
+
+Import CDenote.
+
+Notation "x '.(nrm)'" := (CDenote.nrm x)
+  (at level 1, only printing).
+
+Notation "x '.(err)'" := (CDenote.err x)
+  (at level 1, only printing).
+
+Ltac any_nrm x ::=
+  match type of x with
+  | EDenote => exact (EDenote.nrm x)
+  | CDenote => exact (CDenote.nrm x)
+  end.
+
+Ltac any_err x ::=
+  match type of x with
+  | EDenote => exact (EDenote.err x)
+  | CDenote => exact (CDenote.err x)
+  end.
+
+Definition skip_sem: CDenote :=
+  {|
+    nrm := Rels.id;
+    err := ∅;
+    inf := ∅;
+  |}.
+
+Definition seq_sem (D1 D2: CDenote): CDenote :=
+  {|
+    nrm := D1.(nrm) ∘ D2.(nrm);
+    err := D1.(err) ∪ (D1.(nrm) ∘ D2.(err));
+    inf := D1.(inf) ∪ (D1.(nrm) ∘ D2.(inf));
+  |}.
+
+Definition if_sem
+             (D0: EDenote)
+             (D1 D2: CDenote): CDenote :=
+  {|
+    nrm := (test_true D0 ∘ D1.(nrm)) ∪
+           (test_false D0 ∘ D2.(nrm));
+    err := D0.(err) ∪
+           (test_true D0 ∘ D1.(err)) ∪
+           (test_false D0 ∘ D2.(err));
+    inf := (test_true D0 ∘ D1.(inf)) ∪
+           (test_false D0 ∘ D2.(inf))
+  |}.
+
+Fixpoint iter_nrm_lt_n
+           (D0: EDenote)
+           (D1: CDenote)
+           (n: nat):
+  state -> state -> Prop :=
+  match n with
+  | O => ∅
+  | S n0 =>
+      (test_true D0 ∘ D1.(nrm) ∘ iter_nrm_lt_n D0 D1 n0) ∪
+      (test_false D0)
+  end.
+
+Fixpoint iter_err_lt_n
+           (D0: EDenote)
+           (D1: CDenote)
+           (n: nat): state -> Prop :=
+  match n with
+  | O => ∅
+  | S n0 =>
+     (test_true D0 ∘
+        ((D1.(nrm) ∘ iter_err_lt_n D0 D1 n0) ∪
+         D1.(err))) ∪
+      D0.(err)
+  end.
+
+Definition is_inf
+             (D0: EDenote)
+             (D1: CDenote)
+             (X: state -> Prop): Prop :=
+  X ⊆ test_true D0 ∘ ((D1.(nrm) ∘ X) ∪ D1.(inf)).
+
+Definition while_sem
+             (D0: EDenote)
+             (D1: CDenote): CDenote :=
+  {|
+    nrm := ⋃ (iter_nrm_lt_n D0 D1);
+    err := ⋃ (iter_err_lt_n D0 D1);
+    inf := Sets.general_union (is_inf D0 D1);
+  |}.
+
+(** 需要新定义的是两种赋值语句的语义。变量赋值语句的语义与原赋值语句的语义基本相
+    同，但需要额外说明对变量赋值不修改内存上的值。*)
+
+Definition asgn_var_sem
+             (X: var_name)
+             (D: EDenote): CDenote :=
+  {|
+    nrm := fun s1 s2 =>
+      exists i,
+        D.(nrm) s1 i /\ s2.(vars) X = Vint i /\
+        (forall Y, X <> Y -> s2.(vars) Y = s1.(vars) Y) /\
+        (forall p, s1.(mem) p = s2.(mem) p);
+    err := D.(err);
+    inf := ∅;
+  |}.
+
+(** 向某地址赋值的语义是根据表达式修改内存上的值而不改变任意一个程序变量的值。*)
+
+Definition asgn_deref_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s1 s2: state): Prop :=
+  exists i1 i2,
+    D1 s1 i1 /\
+    D2 s1 i2 /\
+    s1.(mem) i1 <> None /\
+    s2.(mem) i1 = Some (Vint i2) /\
+    (forall X, s1.(vars) X = s2.(vars) X) /\
+    (forall p, i1 <> p -> s1.(mem) p = s2.(mem) p).
+
+Definition asgn_deref_sem_err
+             (D1: state -> int64 -> Prop)
+             (s1: state): Prop :=
+  exists i1,
+    D1 s1 i1 /\
+    s1.(mem) i1 = None.
+
+Definition asgn_deref_sem
+             (D1 D2: EDenote): CDenote :=
+  {|
+    nrm := asgn_deref_sem_nrm D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err) ∪
+           asgn_deref_sem_err D2.(nrm);
+    inf := ∅;
+  |}.
+
+(** 在递归定义的程序语句语义中，要加上这两种赋值语句的语义。*)
+
+Fixpoint eval_com (c: com): CDenote :=
+  match c with
+  | CSkip =>
+      skip_sem
+  | CAsgnVar X e =>
+      asgn_var_sem X (eval_expr e)
+  | CAsgnDeref e1 e2 =>
+      asgn_deref_sem (eval_expr e1) (eval_expr e2)
+  | CSeq c1 c2 =>
+      seq_sem (eval_com c1) (eval_com c2)
+  | CIf e c1 c2 =>
+      if_sem (eval_expr e) (eval_com c1) (eval_com c2)
+  | CWhile e c1 =>
+      while_sem (eval_expr e) (eval_com c1)
+  end.
+
+
+End DntSem_WhileDeref.
+
+(** * WhileD语言的语义 *)
+
+Module DntSem_WhileD.
+Import Lang_While.
+Import Lang_WhileD.
+
+(** 程序状态：*)
+
+Record state: Type := {
+  env: var_name -> int64;
+  mem: int64 -> option val;
+}.
+
+Notation "s '.(env)'" := (env s) (at level 1).
+Notation "s '.(mem)'" := (mem s) (at level 1).
+
+(** 由于表达式中存在取地址操作，我们无法继续沿用原先定义的表达式指称。*)
+
+Module EDenote.
+
+Record EDenote: Type := {
+  nrm: state -> int64 -> Prop;
+  err: state -> Prop;
+}.
+
+End EDenote.
+
+Import EDenote.
+
+Notation "x '.(nrm)'" := (EDenote.nrm x)
+  (at level 1, only printing).
+
+Notation "x '.(err)'" := (EDenote.err x)
+  (at level 1, only printing).
+
+Ltac any_nrm x := exact (EDenote.nrm x).
+
+Ltac any_err x := exact (EDenote.err x).
+
+Notation "x '.(nrm)'" := (ltac:(any_nrm x))
+  (at level 1, only parsing).
+
+Notation "x '.(err)'" := (ltac:(any_err x))
+  (at level 1, only parsing).
+
+Definition arith_sem1_nrm
+             (Zfun: Z -> Z -> Z)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute1_nrm Zfun i1 i2 i.
+
+Definition arith_sem1_err
+             (Zfun: Z -> Z -> Z)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute1_err Zfun i1 i2.
+
+Definition arith_sem1 Zfun (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := arith_sem1_nrm Zfun D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err) ∪
+           arith_sem1_err Zfun D1.(nrm) D2.(nrm);
+  |}.
+
+Definition arith_sem2_nrm
+             (int64fun: int64 -> int64 -> int64)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute2_nrm int64fun i1 i2 i.
+
+Definition arith_sem2_err
+             (D1 D2: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute2_err i1 i2.
+
+Definition arith_sem2 int64fun (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := arith_sem2_nrm int64fun D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err) ∪
+           arith_sem2_err D1.(nrm) D2.(nrm);
+  |}.
+
+Definition cmp_sem_nrm
+             (c: comparison)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\ cmp_compute_nrm c i1 i2 i.
+
+Definition cmp_sem c (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := cmp_sem_nrm c D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err);
+  |}.
+
+Definition neg_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ neg_compute_nrm i1 i.
+
+Definition neg_sem_err
+             (D1: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1, D1 s i1 /\ neg_compute_err i1.
+
+Definition neg_sem (D1: EDenote): EDenote :=
+  {|
+    nrm := neg_sem_nrm D1.(nrm);
+    err := D1.(err) ∪ neg_sem_err D1.(nrm);
+  |}.
+
+Definition not_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ not_compute_nrm i1 i.
+
+Definition not_sem (D1: EDenote): EDenote :=
+  {|
+    nrm := not_sem_nrm D1.(nrm);
+    err := D1.(err);
+  |}.
+
+Definition and_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (SC_and_compute_nrm i1 i \/
+     NonSC_and i1 /\
+     exists i2,
+       D2 s i2 /\ NonSC_compute_nrm i2 i).
+
+Definition and_sem_err
+             (D1: state -> int64 -> Prop)
+             (D2: state -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\ NonSC_and i1 /\ D2 s.
+
+Definition and_sem (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := and_sem_nrm D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ and_sem_err D1.(nrm) D2.(err);
+  |}.
+
+Definition or_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (SC_or_compute_nrm i1 i \/
+     NonSC_or i1 /\
+     exists i2,
+       D2 s i2 /\ NonSC_compute_nrm i2 i).
+
+Definition or_sem_err
+             (D1: state -> int64 -> Prop)
+             (D2: state -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\ NonSC_or i1 /\ D2 s.
+
+Definition or_sem (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := or_sem_nrm D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ or_sem_err D1.(nrm) D2.(err);
+  |}.
+
+Definition unop_sem (op: unop) (D: EDenote): EDenote :=
+  match op with
+  | ONeg => neg_sem D
+  | ONot => not_sem D
+  end.
+
+Definition binop_sem (op: binop) (D1 D2: EDenote): EDenote :=
+  match op with
+  | OOr => or_sem D1 D2
+  | OAnd => and_sem D1 D2
+  | OLt => cmp_sem Clt D1 D2
+  | OLe => cmp_sem Cle D1 D2
+  | OGt => cmp_sem Cgt D1 D2
+  | OGe => cmp_sem Cge D1 D2
+  | OEq => cmp_sem Ceq D1 D2
+  | ONe => cmp_sem Cne D1 D2
+  | OPlus => arith_sem1 Z.add D1 D2
+  | OMinus => arith_sem1 Z.sub D1 D2
+  | OMul => arith_sem1 Z.mul D1 D2
+  | ODiv => arith_sem2 Int64.divs D1 D2
+  | OMod => arith_sem2 Int64.mods D1 D2
+  end.
+
+Definition const_sem (n: Z): EDenote :=
+  {|
+    nrm := fun s i =>
+             i = Int64.repr n /\
+             Int64.min_signed <= n <= Int64.max_signed;
+    err := fun s =>
+             n < Int64.min_signed \/
+             n > Int64.max_signed;
+  |}.
+
+(** 『解引用』表达式既可以用作右值也可以用作左值。其作为右值是的语义就是原先我们
+    定义的『解引用』语义。*)
+
+Definition deref_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ s.(mem) i1 = Some (Vint i).
+
+Definition deref_sem_err
+             (D1: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (s.(mem) i1 = None \/ s.(mem) i1 = Some Vuninit).
+
+Definition deref_sem_r (D1: EDenote): EDenote :=
+  {|
+    nrm := deref_sem_nrm D1.(nrm);
+    err := D1.(err) ∪ deref_sem_err D1.(nrm);
+  |}.
+
+(** 当程序表达式为单个变量时，它也可以同时用作左值或右值。下面先定义其作为左值时
+    的存储地址。*)
+
+Definition var_sem_l (X: var_name): EDenote :=
+  {|
+    nrm := fun s i => s.(env) X = i;
+    err := ∅;
+  |}.
+
+(** 基于此，可以又定义它作为右值时的值。*)
+
+Definition var_sem_r (X: var_name): EDenote :=
+  deref_sem_r (var_sem_l X).
+
+(** 最后，我们可以用互递归函数（mutually recursive function）在Coq中定义表达式的
+    语义。需注意，解引用表达式_[* e]_作为左值时的存储地址就是_[e]_作为右值时的
+    值，而取地址表达式_[& e]_作为右值时的值就是_[e]_作为左值时的存储地址。这都不
+    需要在额外定义。同时，常量、一元运算、二元运算、取地址表达式这些都不能用作左
+    值表达式。*)
+
+Fixpoint eval_r (e: expr): EDenote :=
+  match e with
+  | EConst n =>
+      const_sem n
+  | EVar X =>
+      var_sem_r X
+  | EBinop op e1 e2 =>
+      binop_sem op (eval_r e1) (eval_r e2)
+  | EUnop op e1 =>
+      unop_sem op (eval_r e1)
+  | EDeref e1 =>
+      deref_sem_r (eval_r e1)
+  | EAddrOf e1 =>
+      eval_l e1
+  end
+with eval_l (e: expr): EDenote :=
+  match e with
+  | EVar X =>
+      var_sem_l X
+  | EDeref e1 =>
+      eval_r e1
+  | _ =>
+      {| nrm := ∅; err := Sets.full; |}
+  end.
+
+(** 这里_[test_true]_与_[test_false]_的定义不变，不过之后只会将其作用在表达式的
+    右值上。*)
+
+Definition test_true (D: EDenote):
+  state -> state -> Prop :=
+  Rels.test
+    (fun s =>
+       exists i, D.(nrm) s i /\ Int64.signed i <> 0).
+
+Definition test_false (D: EDenote):
+  state -> state -> Prop :=
+  Rels.test (fun s => D.(nrm) s (Int64.repr 0)).
+
+(** 程序语句的指称定义不变，依然包括三种情况：正常运行终止、运行出错以及运行不终
+    止。空语句、顺序执行、条件分支语句与while循环语句的语义定义也不变。*)
+
+Module CDenote.
+
+Record CDenote: Type := {
+  nrm: state -> state -> Prop;
+  err: state -> Prop;
+  inf: state -> Prop
+}.
+
+End CDenote.
+
+Import CDenote.
+
+Notation "x '.(nrm)'" := (CDenote.nrm x)
+  (at level 1, only printing).
+
+Notation "x '.(err)'" := (CDenote.err x)
+  (at level 1, only printing).
+
+Ltac any_nrm x ::=
+  match type of x with
+  | EDenote => exact (EDenote.nrm x)
+  | CDenote => exact (CDenote.nrm x)
+  end.
+
+Ltac any_err x ::=
+  match type of x with
+  | EDenote => exact (EDenote.err x)
+  | CDenote => exact (CDenote.err x)
+  end.
+
+Definition skip_sem: CDenote :=
+  {|
+    nrm := Rels.id;
+    err := ∅;
+    inf := ∅;
+  |}.
+
+Definition seq_sem (D1 D2: CDenote): CDenote :=
+  {|
+    nrm := D1.(nrm) ∘ D2.(nrm);
+    err := D1.(err) ∪ (D1.(nrm) ∘ D2.(err));
+    inf := D1.(inf) ∪ (D1.(nrm) ∘ D2.(inf));
+  |}.
+
+Definition if_sem
+             (D0: EDenote)
+             (D1 D2: CDenote): CDenote :=
+  {|
+    nrm := (test_true D0 ∘ D1.(nrm)) ∪
+           (test_false D0 ∘ D2.(nrm));
+    err := D0.(err) ∪
+           (test_true D0 ∘ D1.(err)) ∪
+           (test_false D0 ∘ D2.(err));
+    inf := (test_true D0 ∘ D1.(inf)) ∪
+           (test_false D0 ∘ D2.(inf))
+  |}.
+
+Fixpoint iter_nrm_lt_n
+           (D0: EDenote)
+           (D1: CDenote)
+           (n: nat):
+  state -> state -> Prop :=
+  match n with
+  | O => ∅
+  | S n0 =>
+      (test_true D0 ∘ D1.(nrm) ∘ iter_nrm_lt_n D0 D1 n0) ∪
+      (test_false D0)
+  end.
+
+Fixpoint iter_err_lt_n
+           (D0: EDenote)
+           (D1: CDenote)
+           (n: nat): state -> Prop :=
+  match n with
+  | O => ∅
+  | S n0 =>
+     (test_true D0 ∘
+        ((D1.(nrm) ∘ iter_err_lt_n D0 D1 n0) ∪
+         D1.(err))) ∪
+      D0.(err)
+  end.
+
+Definition is_inf
+             (D0: EDenote)
+             (D1: CDenote)
+             (X: state -> Prop): Prop :=
+  X ⊆ test_true D0 ∘ ((D1.(nrm) ∘ X) ∪ D1.(inf)).
+
+Definition while_sem
+             (D0: EDenote)
+             (D1: CDenote): CDenote :=
+  {|
+    nrm := ⋃ (iter_nrm_lt_n D0 D1);
+    err := ⋃ (iter_err_lt_n D0 D1);
+    inf := Sets.general_union (is_inf D0 D1);
+  |}.
+
+(** 向地址赋值的语义与原先定义基本相同，只是现在需要规定所有变量的地址不被改变，
+    而非所有变量的值不被改变。*)
+
+Definition asgn_deref_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s1 s2: state): Prop :=
+  exists i1 i2,
+    D1 s1 i1 /\
+    D2 s1 i2 /\
+    s1.(mem) i1 <> None /\
+    s2.(mem) i1 = Some (Vint i2) /\
+    (forall X, s1.(env) X = s2.(env) X) /\
+    (forall p, i1 <> p -> s1.(mem) p = s2.(mem) p).
+
+Definition asgn_deref_sem_err
+             (D1: state -> int64 -> Prop)
+             (s1: state): Prop :=
+  exists i1,
+    D1 s1 i1 /\
+    s1.(mem) i1 = None.
+
+Definition asgn_deref_sem
+             (D1 D2: EDenote): CDenote :=
+  {|
+    nrm := asgn_deref_sem_nrm D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err) ∪
+           asgn_deref_sem_err D2.(nrm);
+    inf := ∅;
+  |}.
+
+(** 变量赋值的行为可以基于此定义。*)
+
+Definition asgn_var_sem
+             (X: var_name)
+             (D1: EDenote): CDenote :=
+  asgn_deref_sem (var_sem_l X) D1.
+
+(** 在递归定义的程序语句语义中，只会直接使用表达式用作右值时的值。*)
+
+Fixpoint eval_com (c: com): CDenote :=
+  match c with
+  | CSkip =>
+      skip_sem
+  | CAsgnVar X e =>
+      asgn_var_sem X (eval_r e)
+  | CAsgnDeref e1 e2 =>
+      asgn_deref_sem (eval_r e1) (eval_r e2)
+  | CSeq c1 c2 =>
+      seq_sem (eval_com c1) (eval_com c2)
+  | CIf e c1 c2 =>
+      if_sem (eval_r e) (eval_com c1) (eval_com c2)
+  | CWhile e c1 =>
+      while_sem (eval_r e) (eval_com c1)
+  end.
+
+
+End DntSem_WhileD.
+
+(** * WhileDC语言的语义 *)
+
+Module DntSem_WhileDC.
+Import Lang_While.
+Import Lang_WhileDC.
+
+(** 程序状态与表达式语义的定义不变。*)
+
+Record state: Type := {
+  env: var_name -> int64;
+  mem: int64 -> option val;
+}.
+
+Notation "s '.(env)'" := (env s) (at level 1).
+Notation "s '.(mem)'" := (mem s) (at level 1).
+
+Module EDenote.
+
+Record EDenote: Type := {
+  nrm: state -> int64 -> Prop;
+  err: state -> Prop;
+}.
+
+End EDenote.
+
+Import EDenote.
+
+Notation "x '.(nrm)'" := (EDenote.nrm x)
+  (at level 1, only printing).
+
+Notation "x '.(err)'" := (EDenote.err x)
+  (at level 1, only printing).
+
+Ltac any_nrm x := exact (EDenote.nrm x).
+
+Ltac any_err x := exact (EDenote.err x).
+
+Notation "x '.(nrm)'" := (ltac:(any_nrm x))
+  (at level 1, only parsing).
+
+Notation "x '.(err)'" := (ltac:(any_err x))
+  (at level 1, only parsing).
+
+Definition arith_sem1_nrm
+             (Zfun: Z -> Z -> Z)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute1_nrm Zfun i1 i2 i.
+
+Definition arith_sem1_err
+             (Zfun: Z -> Z -> Z)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute1_err Zfun i1 i2.
+
+Definition arith_sem1 Zfun (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := arith_sem1_nrm Zfun D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err) ∪
+           arith_sem1_err Zfun D1.(nrm) D2.(nrm);
+  |}.
+
+Definition arith_sem2_nrm
+             (int64fun: int64 -> int64 -> int64)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute2_nrm int64fun i1 i2 i.
+
+Definition arith_sem2_err
+             (D1 D2: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\
+    arith_compute2_err i1 i2.
+
+Definition arith_sem2 int64fun (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := arith_sem2_nrm int64fun D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err) ∪
+           arith_sem2_err D1.(nrm) D2.(nrm);
+  |}.
+
+Definition cmp_sem_nrm
+             (c: comparison)
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1 i2,
+    D1 s i1 /\ D2 s i2 /\ cmp_compute_nrm c i1 i2 i.
+
+Definition cmp_sem c (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := cmp_sem_nrm c D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ D2.(err);
+  |}.
+
+Definition neg_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ neg_compute_nrm i1 i.
+
+Definition neg_sem_err
+             (D1: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1, D1 s i1 /\ neg_compute_err i1.
+
+Definition neg_sem (D1: EDenote): EDenote :=
+  {|
+    nrm := neg_sem_nrm D1.(nrm);
+    err := D1.(err) ∪ neg_sem_err D1.(nrm);
+  |}.
+
+Definition not_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ not_compute_nrm i1 i.
+
+Definition not_sem (D1: EDenote): EDenote :=
+  {|
+    nrm := not_sem_nrm D1.(nrm);
+    err := D1.(err);
+  |}.
+
+Definition and_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (SC_and_compute_nrm i1 i \/
+     NonSC_and i1 /\
+     exists i2,
+       D2 s i2 /\ NonSC_compute_nrm i2 i).
+
+Definition and_sem_err
+             (D1: state -> int64 -> Prop)
+             (D2: state -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\ NonSC_and i1 /\ D2 s.
+
+Definition and_sem (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := and_sem_nrm D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ and_sem_err D1.(nrm) D2.(err);
+  |}.
+
+Definition or_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (SC_or_compute_nrm i1 i \/
+     NonSC_or i1 /\
+     exists i2,
+       D2 s i2 /\ NonSC_compute_nrm i2 i).
+
+Definition or_sem_err
+             (D1: state -> int64 -> Prop)
+             (D2: state -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\ NonSC_or i1 /\ D2 s.
+
+Definition or_sem (D1 D2: EDenote): EDenote :=
+  {|
+    nrm := or_sem_nrm D1.(nrm) D2.(nrm);
+    err := D1.(err) ∪ or_sem_err D1.(nrm) D2.(err);
+  |}.
+
+Definition unop_sem (op: unop) (D: EDenote): EDenote :=
+  match op with
+  | ONeg => neg_sem D
+  | ONot => not_sem D
+  end.
+
+Definition binop_sem (op: binop) (D1 D2: EDenote): EDenote :=
+  match op with
+  | OOr => or_sem D1 D2
+  | OAnd => and_sem D1 D2
+  | OLt => cmp_sem Clt D1 D2
+  | OLe => cmp_sem Cle D1 D2
+  | OGt => cmp_sem Cgt D1 D2
+  | OGe => cmp_sem Cge D1 D2
+  | OEq => cmp_sem Ceq D1 D2
+  | ONe => cmp_sem Cne D1 D2
+  | OPlus => arith_sem1 Z.add D1 D2
+  | OMinus => arith_sem1 Z.sub D1 D2
+  | OMul => arith_sem1 Z.mul D1 D2
+  | ODiv => arith_sem2 Int64.divs D1 D2
+  | OMod => arith_sem2 Int64.mods D1 D2
+  end.
+
+Definition const_sem (n: Z): EDenote :=
+  {|
+    nrm := fun s i =>
+             i = Int64.repr n /\
+             Int64.min_signed <= n <= Int64.max_signed;
+    err := fun s =>
+             n < Int64.min_signed \/
+             n > Int64.max_signed;
+  |}.
+
+Definition deref_sem_nrm
+             (D1: state -> int64 -> Prop)
+             (s: state)
+             (i: int64): Prop :=
+  exists i1, D1 s i1 /\ s.(mem) i1 = Some (Vint i).
+
+Definition deref_sem_err
+             (D1: state -> int64 -> Prop)
+             (s: state): Prop :=
+  exists i1,
+    D1 s i1 /\
+    (s.(mem) i1 = None \/ s.(mem) i1 = Some Vuninit).
+
+Definition deref_sem_r (D1: EDenote): EDenote :=
+  {|
+    nrm := deref_sem_nrm D1.(nrm);
+    err := D1.(err) ∪ deref_sem_err D1.(nrm);
+  |}.
+
+Definition var_sem_l (X: var_name): EDenote :=
+  {|
+    nrm := fun s i => s.(env) X = i;
+    err := ∅;
+  |}.
+
+Definition var_sem_r (X: var_name): EDenote :=
+  deref_sem_r (var_sem_l X).
+
+Fixpoint eval_r (e: expr): EDenote :=
+  match e with
+  | EConst n =>
+      const_sem n
+  | EVar X =>
+      var_sem_r X
+  | EBinop op e1 e2 =>
+      binop_sem op (eval_r e1) (eval_r e2)
+  | EUnop op e1 =>
+      unop_sem op (eval_r e1)
+  | EDeref e1 =>
+      deref_sem_r (eval_r e1)
+  | EAddrOf e1 =>
+      eval_l e1
+  end
+with eval_l (e: expr): EDenote :=
+  match e with
+  | EVar X =>
+      var_sem_l X
+  | EDeref e1 =>
+      eval_r e1
+  | _ =>
+      {| nrm := ∅; err := Sets.full; |}
+  end.
+
+Definition test_true (D: EDenote):
+  state -> state -> Prop :=
+  Rels.test
+    (fun s =>
+       exists i, D.(nrm) s i /\ Int64.signed i <> 0).
+
+Definition test_false (D: EDenote):
+  state -> state -> Prop :=
+  Rels.test (fun s => D.(nrm) s (Int64.repr 0)).
+
+(** 由于在程序语句中加入了控制流，程序语句的指称定义需要做相应改变。*)
+
+Module CDenote.
+
+Record CDenote: Type := {
+  nrm: state -> state -> Prop;
+  brk: state -> state -> Prop;
+  cnt: state -> state -> Prop;
+  err: state -> Prop;
+  inf: state -> Prop
+}.
+
+End CDenote.
+
+Import CDenote.
+
+Notation "x '.(nrm)'" := (CDenote.nrm x)
+  (at level 1, only printing).
+
+Notation "x '.(err)'" := (CDenote.err x)
+  (at level 1, only printing).
+
+Notation "x '.(brk)'" := (CDenote.brk x)
+  (at level 1).
+
+Notation "x '.(cnt)'" := (CDenote.cnt x)
+  (at level 1).
+
+Notation "x '.(inf)'" := (CDenote.inf x)
+  (at level 1).
+
+Ltac any_nrm x ::=
+  match type of x with
+  | EDenote => exact (EDenote.nrm x)
+  | CDenote => exact (CDenote.nrm x)
+  end.
+
+Ltac any_err x ::=
+  match type of x with
+  | EDenote => exact (EDenote.err x)
+  | CDenote => exact (CDenote.err x)
+  end.
+
+
+(** 空语句的语义 *)
+
+Definition skip_sem: CDenote :=
+  {|
+    nrm := Rels.id;
+    brk := ∅;
+    cnt := ∅;
+    err := ∅;
+    inf := ∅;
+  |}.
+
+(** Break语句的语义 *)
+
+Definition brk_sem: CDenote :=
+  {|
+    nrm := ∅;
+    brk := Rels.id;
+    cnt := ∅;
+    err := ∅;
+    inf := ∅;
+  |}.
+
+(** Continue语句的语义 *)
+
+Definition cnt_sem: CDenote :=
+  {|
+    nrm := ∅;
+    brk := ∅;
+    cnt := Rels.id;
+    err := ∅;
+    inf := ∅;
+  |}.
+
+(** 顺序执行语句的语义 *)
+
+Definition seq_sem (D1 D2: CDenote): CDenote :=
+  {|
+    nrm := D1.(nrm) ∘ D2.(nrm);
+    brk := D1.(brk) ∪ (D1.(nrm) ∘ D2.(brk));
+    cnt := D1.(cnt) ∪ (D1.(nrm) ∘ D2.(cnt));
+    err := D1.(err) ∪ (D1.(nrm) ∘ D2.(err));
+    inf := D1.(inf) ∪ (D1.(nrm) ∘ D2.(inf));
+  |}.
+
+(** If语句的语义 *)
+
+Definition if_sem
+             (D0: EDenote)
+             (D1 D2: CDenote): CDenote :=
+  {|
+    nrm := (test_true D0 ∘ D1.(nrm)) ∪
+           (test_false D0 ∘ D2.(nrm));
+    brk := (test_true D0 ∘ D1.(brk)) ∪
+           (test_false D0 ∘ D2.(brk));
+    cnt := (test_true D0 ∘ D1.(cnt)) ∪
+           (test_false D0 ∘ D2.(cnt));
+    err := D0.(err) ∪
+           (test_true D0 ∘ D1.(err)) ∪
+           (test_false D0 ∘ D2.(err));
+    inf := (test_true D0 ∘ D1.(inf)) ∪
+           (test_false D0 ∘ D2.(inf))
+  |}.
+
+Definition asgn_deref_sem_nrm
+             (D1 D2: state -> int64 -> Prop)
+             (s1 s2: state): Prop :=
+  exists i1 i2,
+    D1 s1 i1 /\
+    D2 s1 i2 /\
+    s1.(mem) i1 <> None /\
+    s2.(mem) i1 = Some (Vint i2) /\
+    (forall X, s1.(env) X = s2.(env) X) /\
+    (forall p, i1 <> p -> s1.(mem) p = s2.(mem) p).
+
+Definition asgn_deref_sem_err
+             (D1: state -> int64 -> Prop)
+             (s1: state): Prop :=
+  exists i1,
+    D1 s1 i1 /\
+    s1.(mem) i1 = None.
+
+Definition asgn_deref_sem
+             (D1 D2: EDenote): CDenote :=
+  {|
+    nrm := asgn_deref_sem_nrm D1.(nrm) D2.(nrm);
+    brk := ∅;
+    cnt := ∅;
+    err := D1.(err) ∪ D2.(err) ∪
+           asgn_deref_sem_err D2.(nrm);
+    inf := ∅;
+  |}.
+
+Definition asgn_var_sem
+             (X: var_name)
+             (D1: EDenote): CDenote :=
+  asgn_deref_sem (var_sem_l X) D1.
+
+Module WhileSem.
+
+Fixpoint iter_nrm_lt_n
+           (D0: EDenote)
+           (D1: CDenote)
+           (n: nat):
+  state -> state -> Prop :=
+  match n with
+  | O => ∅
+  | S n0 =>
+      (test_true D0 ∘
+         ((D1.(nrm) ∘ iter_nrm_lt_n D0 D1 n0) ∪
+          (D1.(cnt) ∘ iter_nrm_lt_n D0 D1 n0) ∪
+          D1.(brk))) ∪
+      (test_false D0)
+  end.
+
+Fixpoint iter_err_lt_n
+           (D0: EDenote)
+           (D1: CDenote)
+           (n: nat): state -> Prop :=
+  match n with
+  | O => ∅
+  | S n0 =>
+     (test_true D0 ∘
+        ((D1.(nrm) ∘ iter_err_lt_n D0 D1 n0) ∪
+         (D1.(cnt) ∘ iter_err_lt_n D0 D1 n0) ∪
+         D1.(err))) ∪
+      D0.(err)
+  end.
+
+Definition is_inf
+             (D0: EDenote)
+             (D1: CDenote)
+             (X: state -> Prop): Prop :=
+  X ⊆ test_true D0 ∘
+        ((D1.(nrm) ∘ X) ∪
+         (D1.(cnt) ∘ X) ∪
+         D1.(inf)).
+
+End WhileSem.
+
+Definition while_sem
+             (D0: EDenote)
+             (D1: CDenote): CDenote :=
+  {|
+    nrm := ⋃ (WhileSem.iter_nrm_lt_n D0 D1);
+    brk := ∅;
+    cnt := ∅;
+    err := ⋃ (WhileSem.iter_err_lt_n D0 D1);
+    inf := Sets.general_union (WhileSem.is_inf D0 D1);
+  |}.
+
+Definition do_while_sem
+             (D0: CDenote)
+             (D1: EDenote): CDenote :=
+  {|
+    nrm := (D0.(nrm) ∪ D0.(cnt)) ∘
+           ⋃ (WhileSem.iter_nrm_lt_n D1 D0);
+    brk := ∅;
+    cnt := ∅;
+    err := D0.(err) ∪
+           ((D0.(nrm) ∪ D0.(cnt)) ∘
+            ⋃ (WhileSem.iter_err_lt_n D1 D0));
+    inf := D0.(inf) ∪
+           ((D0.(nrm) ∪ D0.(cnt)) ∘
+            Sets.general_union (WhileSem.is_inf D1 D0));
+  |}.
+
+Module ForSem.
+
+Fixpoint iter_nrm_lt_n
+           (D0: EDenote)
+           (D1: CDenote)
+           (D2: CDenote)
+           (n: nat):
+  state -> state -> Prop :=
+  match n with
+  | O => ∅
+  | S n0 =>
+      (test_true D0 ∘
+         ((D2.(nrm) ∘ D1.(nrm) ∘ iter_nrm_lt_n D0 D1 D2 n0) ∪
+          (D2.(cnt) ∘ D1.(nrm) ∘ iter_nrm_lt_n D0 D1 D2 n0) ∪
+          D2.(brk))) ∪
+      (test_false D0)
+  end.
+
+Fixpoint iter_err_lt_n
+           (D0: EDenote)
+           (D1: CDenote)
+           (D2: CDenote)
+           (n: nat): state -> Prop :=
+  match n with
+  | O => ∅
+  | S n0 =>
+     (test_true D0 ∘
+        ((D2.(nrm) ∘ D1.(nrm) ∘ iter_err_lt_n D0 D1 D2 n0) ∪
+         (D2.(cnt) ∘ D1.(nrm) ∘ iter_err_lt_n D0 D1 D2 n0) ∪
+         D2.(err))) ∪
+      D0.(err)
+  end.
+
+Definition is_inf
+             (D0: EDenote)
+             (D1: CDenote)
+             (D2: CDenote)
+             (X: state -> Prop): Prop :=
+  X ⊆ test_true D0 ∘
+        ((D2.(nrm) ∘ D1.(nrm) ∘ X) ∪
+         (D2.(cnt) ∘ D1.(nrm) ∘ X) ∪
+         (D2.(nrm) ∘ D1.(inf)) ∪
+         (D2.(nrm) ∘ D1.(inf)) ∪
+         D2.(inf)).
+
+End ForSem.
+
+Definition for_sem
+             (D: CDenote)
+             (D0: EDenote)
+             (D1: CDenote)
+             (D2: CDenote): CDenote :=
+  {|
+    nrm := D.(nrm) ∘ ⋃ (ForSem.iter_nrm_lt_n D0 D1 D2);
+    brk := ∅;
+    cnt := ∅;
+    err := D.(err) ∪ (D.(nrm) ∘ ⋃ (ForSem.iter_err_lt_n D0 D1 D2));
+    inf := D.(inf) ∪ (D.(nrm) ∘ Sets.general_union (ForSem.is_inf D0 D1 D2));
+  |}.
+
+Fixpoint eval_com (c: com): CDenote :=
+  match c with
+  | CSkip =>
+      skip_sem
+  | CAsgnVar X e =>
+      asgn_var_sem X (eval_r e)
+  | CAsgnDeref e1 e2 =>
+      asgn_deref_sem (eval_r e1) (eval_r e2)
+  | CSeq c1 c2 =>
+      seq_sem (eval_com c1) (eval_com c2)
+  | CIf e c1 c2 =>
+      if_sem (eval_r e) (eval_com c1) (eval_com c2)
+  | CWhile e c1 =>
+      while_sem (eval_r e) (eval_com c1)
+  | CDoWhile c1 e =>
+      do_while_sem (eval_com c1) (eval_r e)
+  | CFor c0 e c1 c2 =>
+      for_sem
+        (eval_com c0) (eval_r e) (eval_com c1) (eval_com c2)
+  | CContinue =>
+      cnt_sem
+  | CBreak =>
+      brk_sem
+  end.
+
+
+
+End DntSem_WhileDC.
+

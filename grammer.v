@@ -14,6 +14,7 @@ Require Import Coq.Strings.String.
 (* Local Open Scope sets. *)
 
 
+
 (* Each assignment statement is evaluated only once*)
 
 Definition var_name: Type := string.
@@ -30,13 +31,15 @@ Inductive binop : Type :=
 Inductive unop : Type :=
   | ONot | ONeg.
 
-Inductive Const_or_Var: Type :=
-  | EConst (n : Z): Const_or_Var
-  | EVar (x: var_name): Const_or_Var.
+
+Inductive element: Type :=
+  | EConst (n : Z): element
+  | EVar (x: var_name): element.
+
 
 Inductive expr : Type :=
-  | EBinop (op: binop) (e1 e2: Const_or_Var) : expr
-  | EUnop (op: unop) (e1: Const_or_Var) : expr.
+  | EBinop (op: binop) (e1 e2: element) : expr
+  | EUnop (op: unop) (e1: element) : expr.
 
 
 (* Minimal Compute Unit *)
@@ -44,7 +47,6 @@ Inductive cmd: Type :=
 | CAsgn (x: var_name) (e: expr)
 | CIf (e: expr) (c1 c2: list cmd)
 | CWhile (pre: list cmd) (e: expr) (body: list cmd).
-
 
 Section cmd_len.
 
