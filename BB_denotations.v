@@ -2,7 +2,8 @@ Require Import Coq.micromega.Psatz.
 Require Import Coq.ZArith.ZArith.
 Require Import Coq.Strings.String.
 Require Import Coq.Classes.Morphisms.
-Require Import SetsClass.SetsClass. Import SetsNotation.
+Require Import SetsClass.SetsClass. 
+Import SetsNotation.
 Require Import compcert.lib.Integers.
 Local Open Scope bool.
 Local Open Scope string.
@@ -10,6 +11,7 @@ Local Open Scope Z.
 Local Open Scope sets.
 Require Import Main.grammer.
 Require Import Main.cmd_denotations.
+Require Import Main.BB_generation.
 
 Import Denotation.
 Import EDenote.
@@ -73,7 +75,7 @@ Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
   {|
     nrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\ 
             ((bs2.(BB_num) = jmp_dist1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dist2) /\ (test_false_jmp D bs1.(st)))));
-    err := ∅; (* 条件跳转出错还没考虑*)
+    err := ∅; (* Ignore err cases now *)
     inf := ∅;
   |}.
 
@@ -86,7 +88,7 @@ Definition empty_sem : BDenote := {|
 
 Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
   match D with 
-  | None => ujmp_sem jmp_dist1 (*没有传入E*)
+  | None => ujmp_sem jmp_dist1 (* No expr *)
   | Some D => match jmp_dist2 with
               | None => ujmp_sem jmp_dist1
               | Some jmp_dist2 => cjmp_sem jmp_dist1 jmp_dist2 D
@@ -101,8 +103,6 @@ Definition BAsgn_sem (BB_asgn_sem: CDenote) : BDenote := {|
   inf := ∅;
 |}.
 
-Compute jmp_sem 1 None None.
-
 
 Definition BJump_sem (BB_end: BDenote) (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote) : BDenote := {|
   nrm := fun bs1 bs2 => 
@@ -112,15 +112,47 @@ Definition BJump_sem (BB_end: BDenote) (jmp_dist1: nat) (jmp_dist2: option nat) 
   inf := ∅;
 |}.
 
-Definition single_step_sem (cmds: CDenote) (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote): BDenote :=
+
+(* Should move the Theorem elsewhere, but it just came to me that we need it *)
+Fixpoint is_seq_cmds (cmds : list cmd) : bool :=
+  match cmds with
+
+  | CAsgn x e :: tl => is_seq_cmds tl
+
+  | CIf e c1 c2 :: tl => false
+
+  | CWhile pre e body :: tl => false
+
+  | _ => true
+
+  end.
+
+(* TODO: the cmds in the BBs generated are all BAsgn. *)
+
+(*  *)
+(* Fixpoint BAsgn_list_sem (BAsgn_sem_list: list BB_state) : BB_state :=
+  match BAsgn_sem_list with 
+  | cmd :: tl => BAsgn_sem ∘ BAsgn_list_sem tl
+  | _ => Rels.id × Rels.id
+  end. *)
+
+
+(* Combine list of BAsgn and the final BJump *)
+(* 
+Definition BB_sem (BB: BasicBlock) BDenote := {|
+  
+|} *)
+
+
+
+(* Definition single_step_sem (cmds: CDenote) (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote): BDenote :=
   {|
     nrm := fun bs1 bs2 => exists bs3,  
         cmds.(nrm) bs1.(st) bs3.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(nrm) bs3 bs2; 
-        (**对于从bs1到bs2的单步执行，语义为存在一个bs3，它先执行了bs1中的basicblock语句，然后跳转到了bs2*)
     err := ∅;
     inf := ∅;
   |}
-.
+. *)
 
 
 
