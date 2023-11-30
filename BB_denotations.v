@@ -4,7 +4,6 @@ Require Import Coq.Strings.String.
 Require Import Coq.Classes.Morphisms.
 Require Import SetsClass.SetsClass. Import SetsNotation.
 Require Import compcert.lib.Integers.
-Require Import PL.SyntaxInCoq.
 Local Open Scope bool.
 Local Open Scope string.
 Local Open Scope Z.
@@ -32,8 +31,6 @@ End BDenote.
 
 Import BDenote.
 
-Ltac any_nrm x := exact (EDenote.nrm x).
-Ltac any_err x := exact (EDenote.err x).
 Ltac any_nrm x ::=
   match type of x with
   | EDenote => exact (EDenote.nrm x)
@@ -80,6 +77,13 @@ Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
     inf := ∅;
   |}.
 
+
+Definition empty_sem : BDenote := {|
+  nrm := ∅;
+  err := ∅;
+  inf := ∅
+|}.
+
 Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
   match D with 
   | None => ujmp_sem jmp_dist1 (*没有传入E*)
@@ -89,7 +93,26 @@ Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :
               end
   end.
 
-Definition single_step_sem (cmds: CDenote)(jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
+
+Definition BAsgn_sem (BB_asgn_sem: CDenote) : BDenote := {|
+  nrm := fun bs1 bs2 => 
+    BB_asgn_sem.(nrm) bs1.(st) bs2.(st);
+  err := ∅;
+  inf := ∅;
+|}.
+
+Compute jmp_sem 1 None None.
+
+
+Definition BJump_sem (BB_end: BDenote) (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote) : BDenote := {|
+  nrm := fun bs1 bs2 => 
+    exists i,
+      bs1.(st) = i.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(nrm) i bs2;
+  err := ∅;
+  inf := ∅;
+|}.
+
+Definition single_step_sem (cmds: CDenote) (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote): BDenote :=
   {|
     nrm := fun bs1 bs2 => exists bs3,  
         cmds.(nrm) bs1.(st) bs3.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(nrm) bs3 bs2; 
