@@ -91,13 +91,15 @@ Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :
 
 Definition single_step_sem (cmds: CDenote)(jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
   {|
-    nrm := fun bs1 bs2 => exists bs3: BB_state,  
-        cmds.(nrm) bs1.(st) bs3.(st) /\ (jmp_sem (jmp_dist1) (jmp_dist2) (D)).(nrm) bs3 bs2; 
+    nrm := fun bs1 bs2 => exists bs3,  
+        cmds.(nrm) bs1.(st) bs3.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(nrm) bs3 bs2; 
         (**对于从bs1到bs2的单步执行，语义为存在一个bs3，它先执行了bs1中的basicblock语句，然后跳转到了bs2*)
     err := ∅;
     inf := ∅;
   |}
 .
+
+
 
 
 
