@@ -104,7 +104,7 @@ Definition BAsgn_sem (BB_asgn_sem: CDenote) : BDenote := {|
 |}.
 
 
-Definition BJump_sem (BB_end: BDenote) (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote) : BDenote := {|
+Definition BJump_sem (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote) : BDenote := {|
   nrm := fun bs1 bs2 => 
     exists i,
       bs1.(st) = i.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(nrm) i bs2;
@@ -115,25 +115,43 @@ Definition BJump_sem (BB_end: BDenote) (jmp_dist1: nat) (jmp_dist2: option nat) 
 
 
 (** Now we are certain that BB only contains BAsgn and BJump cmds *)
+(* The sementics for a list of BAsgn *)
 
-(* ! Flawed *)
-Fixpoint BAsgn_list_sem (BAsgn_sem_list: list BDenote) : BDenote := {|
-  nrm := match BAsgn_sem_list with 
-  | cmd :: tl => BAsgn_sem.(nrm) ∘ (BAsgn_list_sem tl).(nrm)
-  | _ => Rels.id × Rels.id
+(* TODO: consider how to transfer BB_cmd -> BDenote *)
+Definition BAsgn_denote (BAsgn_cmd: BB_cmd) : BDenote := {|
+  nrm := ∅;
+  err := ∅;
+  inf := ∅;
+|}.
+
+
+(* Definition cond_sem (cond: expr) : EDenote := {|
+  nrm := ∅;
+  err := ∅;
+|}. *)
+
+
+Fixpoint BAsgn_list_sem (BAsgn_list: list BB_cmd) : BDenote := {|
+  nrm := match BAsgn_list with 
+    | BAsgn_cmd :: tl => (BAsgn_denote BAsgn_cmd).(nrm) ∘ (BAsgn_list_sem tl).(nrm)
+    | _ => Rels.id
   end;
   err := ∅;
   inf := ∅;
 |}.
   
-    
-
+Print BasicBlock.
 
 (* Combine list of BAsgn and the final BJump *)
-(* 
-Definition BB_sem (BB: BasicBlock) BDenote := {|
-  
-|} *)
+Definition BB_sem (BB: BasicBlock) BDenote := {| 
+  nrm := 
+    let jmp_dist1 := BB.(jump_info).(jump_dist_1) in
+    let jmp_dist2 := BB.(jump_info).(jump_dist_2) in
+    let jmp_cond := BB.(jump_info).(jump_condition) in
+    (BAsgn_list_sem BB.(cmd)).(nrm) ∘ (BJump_sem jmp_dist1 jmp_dist2 None).(nrm); (* TODO None here should be changed into cond_sem *)
+  err := ∅;
+  inf := ∅;
+|}.
 
 
 
