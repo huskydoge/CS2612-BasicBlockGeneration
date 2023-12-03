@@ -113,37 +113,10 @@ Definition BJump_sem (BB_end: BDenote) (jmp_dist1: nat) (jmp_dist2: option nat) 
 |}.
 
 
-(* Should move the Theorem elsewhere, but it just came to me that we need it *)
-Fixpoint is_seq_cmds (cmds : list cmd) : bool :=
-  match cmds with
-  | CAsgn x e :: tl => is_seq_cmds tl
-  | CIf e c1 c2 :: tl => false
-  | CWhile pre e body :: tl => false
-  | _ => true
 
-  end.
+(** Now we are certain that BB only contains BAsgn and BJump cmds *)
 
-
-Fixpoint BB_list_only_asgn (BBs: list BasicBlock): bool :=
-  match BBs with
-  | BB :: tl => 
-    if (is_seq_cmds BB.(cmd)) then 
-      BB_list_only_asgn tl
-    else
-      false
-  | _ => true
-  end.
-
-
-(* TODO: the cmds in the BBs generated are all BAsgn. *)
-Theorem BB_cmds_only_asgn:
-  forall cmds,
-    BB_list_only_asgn (BB_gen cmds) = true.
-Proof.
-  Admitted.
-
-
-  (* ! Flawed *)
+(* ! Flawed *)
 Fixpoint BAsgn_list_sem (BAsgn_sem_list: list BDenote) : BDenote := {|
   nrm := match BAsgn_sem_list with 
   | cmd :: tl => BAsgn_sem.(nrm) ∘ (BAsgn_list_sem tl).(nrm)

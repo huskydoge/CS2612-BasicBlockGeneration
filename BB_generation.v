@@ -35,7 +35,7 @@ Record BlockInfo : Type := {
 (* Definition of BasicBlock *)
 Record BasicBlock : Type := {
   block_num : nat; (* Represents the block's identifier *)
-  commands : list cmd; (* Represents a command *)
+  commands : list BB_cmd; (* Represents a command *)
   jump_info : BlockInfo (* Defines the jump information *)
 }.
 
@@ -116,7 +116,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
     (* update BB_now *)
     let BB_now' := {|
       block_num := BB_now.(block_num);
-      commands := BB_now.(commands) ++ [CAsgn x e];
+      commands := BB_now.(commands) ++ [BAsgn x e];
       jump_info := BB_now.(jump_info)
     |} in
     {| 
