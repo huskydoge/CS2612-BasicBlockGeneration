@@ -124,11 +124,10 @@ match BAsgn_list with
   |}
 end.
   
-Print BasicBlock.
 
 
 (* Combine list of BAsgn and the final BJump *)
-Definition BB_sem (BB: BasicBlock) BDenote := {| 
+Definition BB_sem (BB: BasicBlock): BDenote := {| 
   Bnrm := 
     let jmp_dist1 := BB.(jump_info).(jump_dist_1) in
     let jmp_dist2 := BB.(jump_info).(jump_dist_2) in
