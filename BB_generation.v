@@ -114,9 +114,14 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
   match c with
   | CAsgn x e => 
     (* update BB_now *)
+    let BB_cmd := {|
+      X := x;
+      E := e
+    |} in
+
     let BB_now' := {|
       block_num := BB_now.(block_num);
-      commands := BB_now.(commands) ++ [BAsgn x e];
+      commands := BB_now.(commands) ++ [BB_cmd];
       jump_info := BB_now.(jump_info)
     |} in
     {| 
