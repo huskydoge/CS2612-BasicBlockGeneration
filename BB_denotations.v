@@ -22,68 +22,47 @@ Record BB_state: Type := {
   st: state
 }.
 
-
 Module BDenote.
 Record BDenote: Type := {
-  nrm: BB_state -> BB_state -> Prop;
-  err: BB_state -> Prop;
-  inf: BB_state -> Prop
+  Bnrm: BB_state -> BB_state -> Prop;
+  Berr: BB_state -> Prop;
+  Binf: BB_state -> Prop
 }.
 End BDenote.
 
 Import BDenote.
 
-Ltac any_nrm x ::=
-  match type of x with
-  | EDenote => exact (EDenote.nrm x)
-  | CDenote => exact (CDenote.nrm x)
-  | BDenote => exact (BDenote.nrm x)
-  end.
-Ltac any_err x ::=
-  match type of x with
-  | EDenote => exact (EDenote.err x)
-  | CDenote => exact (CDenote.err x)
-  | BDenote => exact (BDenote.err x)
-  end.
-
-Notation "x '.(nrm)'" := (ltac:(any_nrm x))
-  (at level 1, only parsing).
-Notation "x '.(err)'" := (ltac:(any_err x))
-  (at level 1, only parsing).
-
-
-
 Definition ujmp_sem (jum_dist: nat): BDenote :=
   {|
-    nrm := fun bs1 bs2 =>
+    Bnrm := fun (bs1: BB_state) (bs2 :BB_state) =>
       bs1.(st) = bs2.(st) /\ bs2.(BB_num) = jum_dist;
-    err := ∅;
-    inf := ∅;
+    Berr := ∅;
+    Binf := ∅;
   |}.
 
 
 Definition test_true_jmp (D: EDenote):
   state -> Prop :=
-    (fun s => exists i, D.(nrm) s i /\ Int64.signed i <> 0).
+    (fun s => exists i, D.(Enrm) s i /\ Int64.signed i <> 0).
 
 Definition test_false_jmp (D: EDenote):
   state -> Prop :=
-    (fun s => D.(nrm) s (Int64.repr 0)).
+    (fun s => D.(Enrm) s (Int64.repr 0)).
 
 
 Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
   {|
-    nrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\ 
+    Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\ 
             ((bs2.(BB_num) = jmp_dist1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dist2) /\ (test_false_jmp D bs1.(st)))));
-    err := ∅; (* Ignore err cases now *)
-    inf := ∅;
+    Berr := ∅; (* Ignore err cases now *)
+    Binf := ∅;
   |}.
 
 
 Definition empty_sem : BDenote := {|
-  nrm := ∅;
-  err := ∅;
-  inf := ∅
+  Bnrm := ∅;
+  Berr := ∅;
+  Binf := ∅
 |}.
 
 Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
@@ -95,33 +74,33 @@ Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :
               end
   end.
 
-
-Definition BAsgn_sem (BB_asgn_sem: CDenote) : BDenote := {|
-  nrm := fun bs1 bs2 => 
-    BB_asgn_sem.(nrm) bs1.(st) bs2.(st);
-  err := ∅;
-  inf := ∅;
+Definition BAsgn_sem (x: var_name)(e:EDenote) : BDenote := {|
+  Bnrm := fun (bs1:BB_state) (bs2:BB_state) => 
+     exists i,((e.(Enrm) bs1.(st) i)/\  (bs2.(st) x = Vint i) /\ (forall y,x<>y -> bs1.(st) y=bs2.(st) y));
+  Berr := fun(bs1:BB_state) => bs1.(st) ∈ e.(Eerr);
+  Binf := ∅;
 |}.
 
 
 Definition BJump_sem (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote) : BDenote := {|
-  nrm := fun bs1 bs2 => 
+  Bnrm := fun bs1 bs2 => 
     exists i,
-      bs1.(st) = i.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(nrm) i bs2;
-  err := ∅;
-  inf := ∅;
+      bs1.(st) = i.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(Bnrm) i bs2;
+  Berr := ∅;
+  Binf := ∅;
 |}.
-
-
 
 (** Now we are certain that BB only contains BAsgn and BJump cmds *)
 (* The sementics for a list of BAsgn *)
-
+Print BB_cmd.
 (* TODO: consider how to transfer BB_cmd -> BDenote *)
-Definition BAsgn_denote (BAsgn_cmd: BB_cmd) : BDenote := {|
-  nrm := ∅;
-  err := ∅;
-  inf := ∅;
+Definition BAsgn_denote (BAsgn_cmd: BB_cmd) : BDenote :=   
+  let x := X(BAsgn_cmd) in 
+  let e := BAsgn_cmd.(E) in
+ {|
+  Bnrm :=  fun (bs1: BB_state) (bs2: BB_state) =>  (BAsgn_sem x (eval_expr e)).(Bnrm) bs1 bs2/\(bs1.(BB_num)=bs2.(BB_num)); 
+  Berr :=   (BAsgn_sem x (eval_expr e)).(Berr);
+  Binf := ∅;
 |}.
 
 
@@ -131,14 +110,21 @@ Definition BAsgn_denote (BAsgn_cmd: BB_cmd) : BDenote := {|
 |}. *)
 
 
-Fixpoint BAsgn_list_sem (BAsgn_list: list BB_cmd) : BDenote := {|
-  nrm := match BAsgn_list with 
-    | BAsgn_cmd :: tl => (BAsgn_denote BAsgn_cmd).(nrm) ∘ (BAsgn_list_sem tl).(nrm)
-    | _ => Rels.id
-  end;
-  err := ∅;
-  inf := ∅;
-|}.
+Fixpoint BAsgn_list_sem (BAsgn_list: list BB_cmd) : BDenote := 
+match BAsgn_list with 
+ | BAsgn_cmd :: tl =>
+   {|   
+      Bnrm := (BAsgn_denote BAsgn_cmd).(Bnrm) ∘ (BAsgn_list_sem tl).(Bnrm);
+      Berr := (BAsgn_denote BAsgn_cmd).(Berr) ∪ (BAsgn_denote BAsgn_cmd).(Bnrm) ∘ (BAsgn_list_sem tl).(Berr);
+      Binf := ∅;
+  |}
+| _ =>
+  {|
+      Bnrm := Rels.id;
+      Berr := ∅;
+      Binf := ∅;
+  |}
+end.
   
 Print BasicBlock.
 

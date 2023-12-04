@@ -48,8 +48,11 @@ Inductive cmd: Type :=
 | CIf (e: expr) (c1 c2: list cmd)
 | CWhile (pre: list cmd) (e: expr) (body: list cmd).
 
-Inductive BB_cmd: Type :=
-| BAsgn (x: var_name) (e: expr).
+(*BAsgn x e*)
+Record BB_cmd: Type := {
+  X: var_name;
+  E: expr
+}.
 
 Section cmd_len.
 
