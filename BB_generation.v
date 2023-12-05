@@ -11,13 +11,6 @@ Require Export Bool.
 Require Export Lia.
 
 
-(* Block Number 0 ~ 10 are reserved*)
-
-Definition BB0 : nat := 0.
-
-(* Create a global variable recording the current block number *)
-Definition global_block_num : nat := 10.
-  
 Inductive JumpKind : Type :=
 | UJump  (* Represents an unconditional jump *)
 | CJump.   (* Represents a conditional jump *)
