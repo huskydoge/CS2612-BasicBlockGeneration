@@ -67,7 +67,7 @@ Definition empty_sem : BDenote := {|
   Binf := ∅
 |}.
 
-Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
+Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) : BDenote :=
   match D with 
   | None => ujmp_sem jmp_dist1 (* No expr *)
   | Some D => match jmp_dist2 with
@@ -150,10 +150,60 @@ Definition BB_sem (BB: BasicBlock): BDenote := {|
 |}.
 
 
+(* Combine the single_step_stem to form the denotation for BB_list_sem.
+   Not certain about its correctness  *)
+Fixpoint BB_list_sem (BBs: list BasicBlock): BDenote := {|
+  Bnrm := 
+    match BBs with 
+    | BB :: tl => (BB_sem BB).(Bnrm) ∘ (BB_list_sem tl).(Bnrm)
+    | _ => Rels.id
+    end;
+  Berr := ∅;
+  Binf := ∅;
+|}.
+
+
+(* Construct the denotation for the original cmds, should be in cmd_denotations.v 
+* For debugging convenience, I have put it here
+*)
+Section cmd_list_sem.
+
+Variable cmd_sem : cmd -> CDenote.
+
+Fixpoint cmd_list_sem (cmd_list: list cmd): CDenote := {|
+  nrm := 
+    match cmd_list with
+    | cmd :: tl => (cmd_sem cmd).(nrm) ∘ (cmd_list_sem tl).(nrm)
+    | _ => Rels.id
+    end;
+  err := ∅;
+  inf := ∅;
+|}.
+
+End cmd_list_sem.
+
+Definition empty_CD: CDenote := {|
+  nrm := ∅;
+  err := ∅;
+  inf := ∅;
+|}.
+
+
+Fixpoint cmd_sem (cmd: cmd): CDenote := {|
+  nrm := 
+    match cmd with 
+    | CAsgn x e => (asgn_sem x (eval_expr e)).(nrm)
+    | CIf e c1 c2 => (if_sem (eval_expr e) (cmd_list_sem cmd_sem c1)).(nrm)
+    | CWhile pre e body => (while_sem (eval_expr e) (cmd_list_sem cmd_sem body) (cmd_list_sem cmd_sem pre)).(nrm)
+    end;
+  err := ∅;
+  inf := ∅;
+|}.
 
 
 
-
-
-
-
+(* TODO The ultimate goal of the task *)
+(* Theorem BB_gen_sound (cmds: list cmd):
+  let BBs := BB_gen cmds in 
+  let BBs_list := BB_list_sem BBs in
+  let  *)

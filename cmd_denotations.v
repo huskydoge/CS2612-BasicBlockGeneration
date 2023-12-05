@@ -459,11 +459,11 @@ Definition while_sem
   (D0: EDenote)
   (D1: CDenote)
   (PRE: CDenote): CDenote :=
-{|
-nrm := ⋃ (WhileSem.iter_nrm_lt_n D0 D1 PRE);
-err := ⋃ (WhileSem.iter_err_lt_n D0 D1 PRE);
-inf := Sets.general_union (WhileSem.is_inf D0 D1 PRE);
-|}.
+  {|
+    nrm := ⋃ (WhileSem.iter_nrm_lt_n D0 D1 PRE);
+    err := ⋃ (WhileSem.iter_err_lt_n D0 D1 PRE);
+    inf := Sets.general_union (WhileSem.is_inf D0 D1 PRE);
+  |}.
   
 Definition if_sem
   (D0: EDenote)
