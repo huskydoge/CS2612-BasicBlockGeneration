@@ -39,6 +39,10 @@ Definition empty_sem : BDenote := {|
   Binf := ∅
 |}.
 
+Definition get_state (bs: BB_state): state := bs.(st).
+
+
+
 Definition test_true_jmp (D: EDenote):
   state -> Prop :=
     (fun s => exists i, D.(nrm) s i /\ Int64.signed i <> 0).
@@ -144,23 +148,6 @@ Definition BB_sem (BB: BasicBlock): BDenote := {|
 |}.
 
 
-Lemma Asgn_cmd_list_has_same_state_after_BB_gen:
-  (** LHS: forall cmd list containing only CAsgn, given a start state, we use and_sem to get final state of left specified *)
-  (** RHS: use BBgen cmds to get a list of BasicBlock *)
-  forall (asgn_list: list cmd) (s1 s2: state),
-
-
-  
-
-
-
-
-  
-
-
-
-
-
 (* Combine the single_step_stem to form the denotation for BB_list_sem.
    Not certain about its correctness  *)
 Fixpoint BB_list_sem (BBs: list BasicBlock): BDenote := {|
@@ -207,13 +194,26 @@ Fixpoint cmd_sem (cmd: cmd): CDenote := {|
   inf := ∅;
 |}.
 
+Definition state_to_BBstate (s: state): BB_state :=
+  {| BB_num := 0; st := s |}.
+
+Definition nrm_state_equiv (f: BB_state -> BB_state -> Prop) (g: state -> state -> Prop): Prop :=
+  forall (s1 s2: state), f (state_to_BBstate s1) (state_to_BBstate s2) <-> g s1 s2.
+
+Definition err_state_equiv (f: BB_state -> Prop) (g: state -> Prop) :Prop :=
+  forall (s: state), f (state_to_BBstate s) <-> g(s).
+
+Definition inf_state_equiv (f: BB_state -> Prop) (g: state -> Prop) :Prop :=
+  forall (s: state), f (state_to_BBstate s) <-> g(s).
+  
 
 (* The following are preparations for the final theorem *)
-(* Record BBequiv (c1: BDenote) (c2: CDenote): Prop := {
-  nrm_cequiv: c1.(nrm) == c2.(nrm);
-  err_cequiv: c1.(err) == c2.(err);
-  inf_cequiv: c1.(inf) == c2.(inf);
-}. *)
+
+Record BCequiv (b: BDenote.BDenote) (c: CDenote): Prop := {
+  nrm_cequiv: nrm_state_equiv b.(Bnrm) c.(nrm);
+  err_cequiv: err_state_equiv b.(Berr) c.(err); 
+  inf_cequiv: inf_state_equiv b.(Binf) c.(inf);
+}.
 (* 
 Notation "c1 '~=~' c2" := (cequiv c1 c2)
   (at level 69, only printing, no associativity). *)
@@ -221,6 +221,11 @@ Notation "c1 '~=~' c2" := (cequiv c1 c2)
 
 
 (* TODO The ultimate goal of the task, incomplete *)
+(* Given a list of cmds, we could derive many cmd sem, multiply them together to get (s1, s2) *)
+(* Given a list of cmds, by using BB_gen cmds, we could generate a list of BBs, BB1, BB2, .. BBn, we have to prove: *)
+(* (s1, s2) \in (BB1.st, BB2.st) *)
+
+
 (* Theorem BB_gen_sound (cmds: list cmd):
   forall s1 s2, 
     let BBs_sem := BB_list_sem (BB_gen cmds) in
@@ -229,3 +234,12 @@ Notation "c1 '~=~' c2" := (cequiv c1 c2)
 
     (BB_st ∘ BBs_sem.(Bnrm)).(st) = s2 ∘ (cmd_list_sem cmd_sem cmds).(nrm). *)
 
+Theorem BB_gen_sound (cmds: list cmd): 
+  forall cmds,
+    let BBs_sem := BB_list_sem (BB_gen cmds) in
+    let cmds_sem := (cmd_list_sem cmd_sem cmds) in
+    BCequiv BBs_sem cmds_sem.
+Proof.
+  intros.
+  
+Qed.
