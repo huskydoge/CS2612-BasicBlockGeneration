@@ -197,22 +197,15 @@ Fixpoint cmd_sem (cmd: cmd): CDenote := {|
 Definition state_to_BBstate (s: state): BB_state :=
   {| BB_num := 0; st := s |}.
 
-Definition nrm_state_equiv (f: BB_state -> BB_state -> Prop) (g: state -> state -> Prop): Prop :=
-  forall (s1 s2: state), f (state_to_BBstate s1) (state_to_BBstate s2) <-> g s1 s2.
+(* The following are the equivalence between BB_state and state *)
 
-Definition err_state_equiv (f: BB_state -> Prop) (g: state -> Prop) :Prop :=
-  forall (s: state), f (state_to_BBstate s) <-> g(s).
-
-Definition inf_state_equiv (f: BB_state -> Prop) (g: state -> Prop) :Prop :=
-  forall (s: state), f (state_to_BBstate s) <-> g(s).
-  
 
 (* The following are preparations for the final theorem *)
 
-Record BCequiv (b: BDenote.BDenote) (c: CDenote): Prop := {
-  nrm_cequiv: nrm_state_equiv b.(Bnrm) c.(nrm);
-  err_cequiv: err_state_equiv b.(Berr) c.(err); 
-  inf_cequiv: inf_state_equiv b.(Binf) c.(inf);
+Record BCequiv (B: BDenote) (C: CDenote): Prop := {
+  nrm_cequiv: (fun s1 s2 => exists bs1 bs2, B.(Bnrm) bs1 bs2 /\ bs1.(st) = s1 /\ bs2.(st) = s2) == C.(nrm);
+  err_cequiv: (fun s => exists bs, B.(Berr) bs /\ bs.(st) = s) == C.(err); 
+  inf_cequiv: (fun s => exists bs, B.(Binf) bs /\ bs.(st) = s) == C.(inf);
 }.
 (* 
 Notation "c1 '~=~' c2" := (cequiv c1 c2)
@@ -241,5 +234,13 @@ Theorem BB_gen_sound (cmds: list cmd):
     BCequiv BBs_sem cmds_sem.
 Proof.
   intros.
+  split.
+  - admit.
+  - unfold err_state_equiv; simpl.
+    intros.
+    unfold state_to_BBstate.
+    unfold cmds_sem.
+    unfold err.
+      
   
 Qed.
