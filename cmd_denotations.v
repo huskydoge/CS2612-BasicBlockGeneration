@@ -333,6 +333,14 @@ Definition eval_expr (e: expr): EDenote :=
       unop_sem op (element_sem e1)
   end.
 
+Module EmptyEDenote.
+Definition EmptyEDenote: EDenote :=
+  {|
+    nrm := ∅;
+    err := ∅;
+  |}.
+
+End EmptyEDenote.
 
 Module CDenote.
 

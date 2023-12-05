@@ -16,6 +16,7 @@ Require Import Main.BB_generation.
 Import Denotation.
 Import EDenote.
 Import CDenote.
+Import EmptyEDenote.
 
 Record BB_state: Type := {
   BB_num: nat;
@@ -96,7 +97,7 @@ Definition BJump_sem (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote
 (* The sementics for a list of BAsgn *)
 Print BB_cmd.
 
-(* TODO: consider how to transfer BB_cmd -> BDenote *)
+
 Definition BAsgn_denote (BAsgn_cmd: BB_cmd) : BDenote :=   
   let x := BAsgn_cmd.(X) in 
   let e := BAsgn_cmd.(E) in
@@ -123,7 +124,18 @@ match BAsgn_list with
       Binf := ∅;
   |}
 end.
-  
+
+
+Check EDenote.
+
+Definition eval_cond_expr (e: option expr): option EDenote :=
+  match e with
+  | Some (EBinop op e1 e2) =>
+      Some (binop_sem op (element_sem (e1)) (element_sem (e2)))
+  | Some (EUnop op e1) =>
+      Some (unop_sem op (element_sem (e1)))
+  | None => None
+  end.
 
 
 (* Combine list of BAsgn and the final BJump *)
@@ -132,10 +144,12 @@ Definition BB_sem (BB: BasicBlock): BDenote := {|
     let jmp_dist1 := BB.(jump_info).(jump_dist_1) in
     let jmp_dist2 := BB.(jump_info).(jump_dist_2) in
     let jmp_cond := BB.(jump_info).(jump_condition) in
-    (BAsgn_list_sem BB.(cmd)).(Bnrm) ∘ (BJump_sem jmp_dist1 jmp_dist2 None).(Bnrm); (* TODO None here should be changed into cond_sem *)
+    (BAsgn_list_sem BB.(cmd)).(Bnrm) ∘ (BJump_sem jmp_dist1 jmp_dist2 (eval_cond_expr jmp_cond)).(Bnrm); 
   Berr := ∅;
   Binf := ∅;
 |}.
+
+
 
 
 
