@@ -166,6 +166,8 @@ Fixpoint BB_list_sem (BBs: list BasicBlock): BDenote := {|
 (* Construct the denotation for the original cmds, should be in cmd_denotations.v 
 * For debugging convenience, I have put it here
 *)
+
+(* The definition follows similar approach as BB_gen for mutually recursive cases *)
 Section cmd_list_sem.
 
 Variable cmd_sem : cmd -> CDenote.
@@ -182,18 +184,12 @@ Fixpoint cmd_list_sem (cmd_list: list cmd): CDenote := {|
 
 End cmd_list_sem.
 
-Definition empty_CD: CDenote := {|
-  nrm := ∅;
-  err := ∅;
-  inf := ∅;
-|}.
-
-
+(* I have used while_sem from cmd_denotations.v, don't know if it is correct *)
 Fixpoint cmd_sem (cmd: cmd): CDenote := {|
   nrm := 
     match cmd with 
     | CAsgn x e => (asgn_sem x (eval_expr e)).(nrm)
-    | CIf e c1 c2 => (if_sem (eval_expr e) (cmd_list_sem cmd_sem c1)).(nrm)
+    | CIf e c1 c2 => (if_sem (eval_expr e) (cmd_list_sem cmd_sem c1) (cmd_list_sem cmd_sem c2)).(nrm)
     | CWhile pre e body => (while_sem (eval_expr e) (cmd_list_sem cmd_sem body) (cmd_list_sem cmd_sem pre)).(nrm)
     end;
   err := ∅;
@@ -201,9 +197,24 @@ Fixpoint cmd_sem (cmd: cmd): CDenote := {|
 |}.
 
 
+(* The following are preparations for the final theorem *)
+(* Record BBequiv (c1: BDenote) (c2: CDenote): Prop := {
+  nrm_cequiv: c1.(nrm) == c2.(nrm);
+  err_cequiv: c1.(err) == c2.(err);
+  inf_cequiv: c1.(inf) == c2.(inf);
+}. *)
+(* 
+Notation "c1 '~=~' c2" := (cequiv c1 c2)
+  (at level 69, only printing, no associativity). *)
 
-(* TODO The ultimate goal of the task *)
+
+
+(* TODO The ultimate goal of the task, incomplete *)
 (* Theorem BB_gen_sound (cmds: list cmd):
-  let BBs := BB_gen cmds in 
-  let BBs_list := BB_list_sem BBs in
-  let  *)
+  forall s1 s2, 
+    let BBs_sem := BB_list_sem (BB_gen cmds) in
+
+    let BB_st := {| BB_num := 0; st := s1 |} in
+
+    (BB_st ∘ BBs_sem.(Bnrm)).(st) = s2 ∘ (cmd_list_sem cmd_sem cmds).(nrm). *)
+
