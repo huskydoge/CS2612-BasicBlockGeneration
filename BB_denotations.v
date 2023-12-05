@@ -33,6 +33,20 @@ End BDenote.
 
 Import BDenote.
 
+Definition empty_sem : BDenote := {|
+  Bnrm := ∅;
+  Berr := ∅;
+  Binf := ∅
+|}.
+
+Definition test_true_jmp (D: EDenote):
+  state -> Prop :=
+    (fun s => exists i, D.(nrm) s i /\ Int64.signed i <> 0).
+
+Definition test_false_jmp (D: EDenote):
+  state -> Prop :=
+    (fun s => D.(nrm) s (Int64.repr 0)).
+
 Definition ujmp_sem (jum_dist: nat): BDenote :=
   {|
     Bnrm := fun (bs1: BB_state) (bs2 :BB_state) =>
@@ -40,17 +54,6 @@ Definition ujmp_sem (jum_dist: nat): BDenote :=
     Berr := ∅;
     Binf := ∅;
   |}.
-
-
-Definition test_true_jmp (D: EDenote):
-  state -> Prop :=
-    (fun s => exists i, D.(nrm) s i /\ Int64.signed i <> 0).
-
-
-Definition test_false_jmp (D: EDenote):
-  state -> Prop :=
-    (fun s => D.(nrm) s (Int64.repr 0)).
-
 
 Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
   {|
@@ -60,12 +63,6 @@ Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
     Binf := ∅;
   |}.
 
-
-Definition empty_sem : BDenote := {|
-  Bnrm := ∅;
-  Berr := ∅;
-  Binf := ∅
-|}.
 
 Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
   match D with 
@@ -125,9 +122,6 @@ match BAsgn_list with
   |}
 end.
 
-
-Check EDenote.
-
 Definition eval_cond_expr (e: option expr): option EDenote :=
   match e with
   | Some (EBinop op e1 e2) =>
@@ -148,6 +142,18 @@ Definition BB_sem (BB: BasicBlock): BDenote := {|
   Berr := ∅;
   Binf := ∅;
 |}.
+
+
+Lemma Asgn_cmd_list_has_same_state_after_BB_gen:
+  (** LHS: forall cmd list containing only CAsgn, given a start state, we use and_sem to get final state of left specified *)
+  (** RHS: use BBgen cmds to get a list of BasicBlock *)
+  forall (asgn_list: list cmd) (s1 s2: state),
+
+
+  
+
+
+
 
 
 
