@@ -12,7 +12,7 @@ Local Open Scope sets.
 Require Import Main.grammer.
 Require Import Main.cmd_denotations.
 Require Import Main.BB_generation.
-
+Require Import Coq.Lists.List.
 Import Denotation.
 Import EDenote.
 Import CDenote.
@@ -249,19 +249,75 @@ Theorem BB_gen_sound :
 Proof.
   intros.
   induction cmds;split;sets_unfold; intros; split; intros.
-  * destruct H as [bs1 [bs2 [nrm [? [? []]]]]].
+  * destruct H as [bs1 [bs2 [Hnrm [? [? []]]]]].
     - unfold cmds_sem; unfold cmd_list_sem; simpl.
       unfold BB_gen in H2;simpl in H2.
-      unfold BBs_sem in nrm; unfold BB_gen in nrm.
-      simpl in nrm. simpl in nrm. remember ((Rels.id
-      ∘ (fun bs1 bs2 : BB_state =>
-         exists i : BB_state,
-           st bs1 = st i /\ st i = st bs2 /\ BB_num bs2 = 10%nat)) ∘ Rels.id) as f.
-           remember (fun bs1 bs2 : BB_state =>
-           exists i : BB_state,
-             st bs1 = st i /\ st i = st bs2 /\ BB_num bs2 = 10%nat) as g.
-             intros Heqf.
-         
+      unfold BBs_sem in Hnrm; unfold BB_gen in Hnrm.
+      simpl in Hnrm.
+      Sets_unfold in Hnrm.
+      destruct Hnrm as (? & (? & ? & ?) & ? ).
+      destruct H4 as [? [? []]].
+      assert (bs1 = bs2). {
+        destruct bs1,bs2.
+        simpl in H, H0, H1, H2.
+        rewrite H1, H2; simpl.
+        rewrite H6 in H4.
+        rewrite <- H3 in H4. rewrite H5 in H4. simpl in H4.
+        rewrite H4.
+        reflexivity.
+      }
+      subst.
+      sets_unfold.
+      reflexivity.
+  * admit.
+  * admit.
+  * admit.
+Admitted.  
+(* Print cmd. *)
+
+
+
+
+Definition is_single_CAsgn (c: cmd) : Prop :=
+  match c with
+  | CAsgn _ _ => True
+  | _ => False
+  end.
+
+Theorem BB_gen_CAsgn_sound:
+  forall (c: cmd),
+    is_single_CAsgn c ->
+    let cmds := c::nil in
+    let BBs_sem := BB_list_sem (BB_gen cmds) in
+    let cmds_sem := (cmd_list_sem cmd_sem cmds) in
+    BCequiv BBs_sem cmds_sem 10 (9 + length(BB_gen cmds)).
+Proof.
+  intros.
+  unfold is_single_CAsgn in H.
+  destruct c; simpl in H; try contradiction.
+  - unfold BB_gen;simpl.
+    unfold BBs_sem.
+    unfold BB_gen.
+    simpl.
+    unfold cmds_sem.
+    unfold cmd_sem.
+    simpl.
+    split.
+    + simpl.
+      Sets_unfold; simpl.
+      intros.
+      admit.
+    + simpl.
+      Sets_unfold; simpl.
+      intros.
+
+
+      
+    
+
+
+  
+Qed.
 
 
 
