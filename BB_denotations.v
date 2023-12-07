@@ -23,6 +23,10 @@ Record BB_state: Type := {
   st: state
 }.
 
+Definition mkBB_state (n : nat) (s : state) : BB_state :=
+  Build_BB_state n s.
+
+
 Module BDenote.
 Record BDenote: Type := {
   Bnrm: BB_state -> BB_state -> Prop;
@@ -202,15 +206,20 @@ Definition state_to_BBstate (s: state): BB_state :=
 
 (* The following are preparations for the final theorem *)
 
-Record BCequiv (B: BDenote) (C: CDenote): Prop := {
-  nrm_cequiv: (fun s1 s2 => exists bs1 bs2, B.(Bnrm) bs1 bs2 /\ bs1.(st) = s1 /\ bs2.(st) = s2) == C.(nrm);
+
+Record BCequiv (B: BDenote) (C: CDenote) (startBB endBB: nat): Prop := {
+  nrm_cequiv: (fun s1 s2 => exists bs1 bs2, B.(Bnrm) bs1 bs2 /\ bs1.(st) = s1 /\ bs2.(st) = s2 /\ bs1.(BB_num) = startBB /\ bs2.(BB_num) = endBB) == C.(nrm);
   err_cequiv: (fun s => exists bs, B.(Berr) bs /\ bs.(st) = s) == C.(err); 
   inf_cequiv: (fun s => exists bs, B.(Binf) bs /\ bs.(st) = s) == C.(inf);
 }.
+
 (* 
 Notation "c1 '~=~' c2" := (cequiv c1 c2)
   (at level 69, only printing, no associativity). *)
 
+
+Definition construct_BB_state (s: state) (BB_num: nat): BB_state := 
+  {| BB_num := BB_num; st := s |}.
 
 
 (* TODO The ultimate goal of the task, incomplete *)
@@ -227,20 +236,35 @@ Notation "c1 '~=~' c2" := (cequiv c1 c2)
 
     (BB_st ∘ BBs_sem.(Bnrm)).(st) = s2 ∘ (cmd_list_sem cmd_sem cmds).(nrm). *)
 
-Theorem BB_gen_sound (cmds: list cmd): 
-  forall cmds,
+Check Rels_concat_id_l.
+
+Check Rels_concat_id_r.
+
+
+Theorem BB_gen_sound : 
+  forall (cmds: list cmd),
     let BBs_sem := BB_list_sem (BB_gen cmds) in
     let cmds_sem := (cmd_list_sem cmd_sem cmds) in
-    BCequiv BBs_sem cmds_sem.
+    BCequiv BBs_sem cmds_sem 10 (9 + length(BB_gen cmds)).
 Proof.
   intros.
-  split.
-  - admit.
-  - unfold err_state_equiv; simpl.
-    intros.
-    unfold state_to_BBstate.
-    unfold cmds_sem.
-    unfold err.
+  induction cmds;split;sets_unfold; intros; split; intros.
+  * destruct H as [bs1 [bs2 [nrm [? [? []]]]]].
+    - unfold cmds_sem; unfold cmd_list_sem; simpl.
+      unfold BB_gen in H2;simpl in H2.
+      unfold BBs_sem in nrm; unfold BB_gen in nrm.
+      simpl in nrm. simpl in nrm. remember ((Rels.id
+      ∘ (fun bs1 bs2 : BB_state =>
+         exists i : BB_state,
+           st bs1 = st i /\ st i = st bs2 /\ BB_num bs2 = 10%nat)) ∘ Rels.id) as f.
+           remember (fun bs1 bs2 : BB_state =>
+           exists i : BB_state,
+             st bs1 = st i /\ st i = st bs2 /\ BB_num bs2 = 10%nat) as g.
+             intros Heqf.
+         
+
+
+
       
   
 Qed.
