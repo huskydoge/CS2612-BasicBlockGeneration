@@ -427,7 +427,7 @@ Lemma single_cmd_BB_sound:
   forall (cmds: list cmd) (c: cmd) (BBs: list BasicBlock) (BB_now: BasicBlock) (BB_num: nat),
 
   (* Suppose the cmds semantics and c semantics are equivalent *)
-  let BBs := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BasicBlocks) in
+  let BBs' := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BasicBlocks) in
 
   (* This is BB_now in our previous discussion *)
   let BB_now' := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BBn) in
