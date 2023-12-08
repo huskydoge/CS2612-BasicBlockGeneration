@@ -284,6 +284,65 @@ Ltac my_destruct H :=
   end.
 
 
+
+Definition start_with_Asgn (cmds: list cmd) : Prop :=
+  match cmds with
+  | CAsgn _ _ :: _ => True
+  | _ => False
+  end.
+
+Lemma BAsgn_sound:
+  forall (x: var_name) (e: expr) (BBs: list BasicBlock) (BB_now: BasicBlock) (BB_num: nat),
+  let BB_last := (cmd_BB_gen (CAsgn x e) BBs BB_now BB_num).(BBn) in
+  let BAsgn_cmd := {| X := x; E:= e |} in
+  let BB_Asgn := {|
+    block_num := BB_last.(block_num);
+    commands := BAsgn_cmd :: nil;
+    jump_info := BB_last.(jump_info);
+  |} in
+
+  BCequiv (BB_list_sem (BB_Asgn :: nil)) (cmd_sem (CAsgn x e)) BB_num BB_last.(block_num).
+Proof.
+  Admitted.
+
+Lemma BIf_BWhile_sound:
+  forall (c: cmd) (BBs: list BasicBlock) (BB_now: BasicBlock) (BB_num: nat),
+  let BBs_new := (cmd_BB_gen c BBs BB_now BB_num).(BasicBlocks) in
+  let BB_last := (cmd_BB_gen c BBs BB_now BB_num).(BBn) in
+  let BB_result := BBs_new ++ (BB_last :: nil) in
+
+  BCequiv (BB_list_sem BB_result) (cmd_sem c) BB_num BB_last.(block_num).
+
+Proof.
+Admitted.
+
+
+Definition is_CAsgn (cmd: cmd) : bool :=
+  match cmd with
+  | CAsgn _ _ => true
+  | _ => false
+  end.
+
+(* Lemma BB_cmd_sound :
+  forall (c: cmd) (BBs: list BasicBlock) (BB_now: BasicBlock) (BB_num: nat),
+  is_CAsgn c = false -> BIf_BWhile_sound c BBs BB_now BB_num.
+Proof.
+  Admitted.  *)
+
+Lemma BB_list_cmd_sound:
+  forall (cmds: list cmd) (BBs: list BasicBlock) (BB_now: BasicBlock) (BB_num: nat),
+    let BBs_new := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BasicBlocks) in
+    let BB_last := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BBn) in
+    let BB_result := BBs_new ++ (BB_last :: nil) in
+    BCequiv (BB_list_sem BB_result) (cmd_list_sem cmd_sem cmds) BB_num BB_last.(block_num).
+Proof.
+  intros.
+  induction cmds.
+  - admit.
+  - admit.
+Admitted.
+
+
 (*Parameters:
   cmds: list cmd, 
   BBs: list of Basic Blocks which have been already generated
@@ -293,13 +352,6 @@ Ltac my_destruct H :=
   我感觉还是需要一个单步语义等价，类似那种cmd_gen和list_cmd_gen的关系, 不能直接用BCequiv, 否则我感觉对于以asgn指令起始cmds的情况，这个BCequiv是不成立的, 那就不能继续推下去才对。
   tricky的点在于，这种情况下我的BB还留在原地不动，cmd其实已经往前走了一个了，再用(BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) 就有些不对劲。鹏翔你起来的的时候再看看吧，我实在没想出来怎么写了，熬夜真没脑子。
   *)
-
-Definition start_with_Asgn (cmds: list cmd) : Prop :=
-  match cmds with
-  | CAsgn _ _ :: _ => True
-  | _ => False
-  end.
-
 Lemma inductive_equiv :
 forall (cmds: list cmd) (BBs BBs': list BasicBlock)(BBnow BBnew: BasicBlock) (BBnum BBNextnum: nat) ,
   start_with_Asgn (cmds) -> list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum = {| BasicBlocks := BBs ++ BBs'; BBn:= BBnew ; next_block_num := BBNextnum |} 
@@ -309,10 +361,11 @@ forall (cmds: list cmd) (BBs BBs': list BasicBlock)(BBnow BBnew: BasicBlock) (BB
   list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum = {| BasicBlocks := BBs ++ BBs'; BBn:= BBnew ; next_block_num := BBNextnum |} ->
   BCequiv (BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) BBnum BBNextnum.
 Proof.
-Admitted.
-
-Definition 
-
+  intros.
+  induction cmds.
+  - admit.
+  - destruct IHcmds as [? ?].
+  Admitted.
 
 
 
