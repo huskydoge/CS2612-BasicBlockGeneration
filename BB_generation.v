@@ -60,7 +60,7 @@ Definition EmptyBlock : BasicBlock := {|
   commands := [];
   jump_info := {|
     jump_kind := UJump;
-    jump_dist_1 := 10;
+    jump_dist_1 := 9; (* default endinfo *)
     jump_dist_2 := None;
     jump_condition := None
   |}
@@ -244,7 +244,7 @@ Check cmd_BB_gen.
 
 (* main function, which generates BBs for the whole cmds. Take zero as start for now*)
 Definition BB_gen (cmds: list cmd):
-list BasicBlock := to_result (list_cmd_BB_gen cmd_BB_gen cmds [] EmptyBlock 0).
+list BasicBlock := to_result (list_cmd_BB_gen cmd_BB_gen cmds [] EmptyBlock 11).
 
 
 
