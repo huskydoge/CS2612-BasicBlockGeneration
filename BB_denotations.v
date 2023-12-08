@@ -415,27 +415,65 @@ Admitted.
 
  *)
 
+ (* ! Return a list to avoid option *)
+Definition CAsgn_BAsgn (c: cmd): list BB_cmd := 
+  match c with 
+  | CAsgn x e =>  {| X := x ; E := e|} :: nil
+  | _ => nil
+  end.
 
 
-  (* 
-(** forall (cmds: list cmd) (BBs BBs': list BasicBlock)(BBcmds': list BB_cmd)(BBnow BBnew: BasicBlock) (BBnum BBNextnum: nat) ,
-对于输入的cmds,我要找到那个第一个不是Asgn的地方,把前面的cmds叫做a
-- 对于a, 它是一列的Asgn,那它们都在一个BB里面,我们只要去处理这个BB的语义和a的语义就好了,看他们是否相等。此刻我们处在BB_now里
-- 对于剩下的b部分,我们根据其是while还是if进行处理。这种情况总是会有新的BB产生,这个按照之前的想法处理即可。)从BB_now先跳转到BB_then/BB_pre, 。。。。 最后跳到一个BB_next里,BB_next里没有指令）
-- 然后递归处理剩下的cmds, (如果是一串Asgn,没有问题,因为现在我们在一个commands为空的BB_next里)
-以上就是我们的结果了 *)
-*)
+Lemma single_cmd_BB_sound:
+  forall (cmds: list cmd) (c: cmd) (BBs: list BasicBlock) (BB_now: BasicBlock) (BB_num: nat),
 
+  (* Suppose the cmds semantics and c semantics are equivalent *)
+  let BBs := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BasicBlocks) in
+
+  (* This is BB_now in our previous discussion *)
+  let BB_now' := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BBn) in
+
+  let BB_mid_num := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(next_block_num) in
+
+  (* Used for CAsgn case *)
+  let BB_now'' := {|
+      block_num := BB_now'.(block_num); 
+      commands := BB_now'.(commands) ++ (CAsgn_BAsgn c); 
+      jump_info := BB_now'.(jump_info);
+    |} in
+
+  (* ! Used for while case, check the input *)
+  let BBs' := (cmd_BB_gen c BBs BB_now' BB_num).(BasicBlocks) in
+
+  let BB_final_num := (cmd_BB_gen c BBs BB_now' BB_num).(next_block_num) in 
+
+  (* Two conditions, CAsgn/CIf-CWhile *)
+  (* list sem same, single cmd sem same -> list::cmd sem same *)
+  (* BB_mid_num is the final block num *)
+  (is_CAsgn c) = true 
+  -> BCequiv (BB_list_sem (BBs ++ (BB_now' :: nil))) (cmd_list_sem cmd_sem cmds) BB_num BB_mid_num 
+  -> BCequiv (BB_sem BB_now'') (cmd_sem c) BB_mid_num BB_mid_num 
+  -> BCequiv (BB_list_sem (BBs ++ (BB_now'' :: nil))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_mid_num /\
+  
+  (is_CAsgn c) = false
+  -> BCequiv (BB_list_sem (BBs ++ (BB_now' :: nil))) (cmd_list_sem cmd_sem cmds) BB_num BB_mid_num
+  -> BCequiv (BB_sem BB_now'') (cmd_sem c) BB_mid_num BB_final_num 
+  (* Here we use BB_now rather than BB_now', the notations follow the blackboard, so BB_now is actually BB_now'  *)
+  -> BCequiv (BB_list_sem (BBs ++ (BB_now' :: BBs'))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_final_num.
+Proof.
+  Admitted.
 
 
 Theorem BB_sound:
-  forall (cmds: list cmd) (BBs BBs': list BasicBlock)(BBcmds': list BB_cmd)(BBnow: BasicBlock) (BBnum BBNextnum: nat) ,
-    let BBnow' := {|block_num := BBnow.(block_num); commands := BBnow.(commands) ++ BBcmds'; jump_info := BBnow.(jump_info); |} in
+  forall (cmds: list cmd) (BBs BBs': list BasicBlock) (BBcmds': list BB_cmd) (BBnow: BasicBlock) (BBnum BBNextnum: nat) ,
+    let BBnow' := {| block_num := BBnow.(block_num); commands := BBnow.(commands) ++ BBcmds'; jump_info := BBnow.(jump_info); |} in
+
     list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum = {| BasicBlocks := BBs ++ (BBnow' :: nil) ++ BBs'; BBn:= EmptyBlock ; next_block_num := BBNextnum |} 
-    -> BCequiv (BB_list_sem (BBs ++ BBnow' :: nil ++ BBs')) (cmd_list_sem cmd_sem cmds) BBnum BBNextnum.
+
+    -> BCequiv (BB_list_sem (BBs ++ (BBnow' :: nil) ++ BBs')) (cmd_list_sem cmd_sem cmds) BBnum BBNextnum.
 Proof.
   intros.
   induction cmds.
   - admit.
-  - destruct a.
-    +  
+  - split.
+    + admit.
+Admitted.  
