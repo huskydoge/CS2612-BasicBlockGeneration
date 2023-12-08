@@ -423,6 +423,7 @@ Definition CAsgn_BAsgn (c: cmd): list BB_cmd :=
   end.
 
 
+(* Consider: we already use cmds to generate BBs, then we add a new cmd*)
 Lemma single_cmd_BB_sound:
   forall (cmds: list cmd) (c: cmd) (BBs: list BasicBlock) (BB_now: BasicBlock) (BB_num: nat),
 
@@ -442,25 +443,28 @@ Lemma single_cmd_BB_sound:
     |} in
 
   (* ! Used for while case, check the input *)
-  let BBs' := (cmd_BB_gen c BBs BB_now' BB_num).(BasicBlocks) in
+  let BBs'' := (cmd_BB_gen c BBs' BB_now' BB_num).(BasicBlocks) in
 
-  let BB_final_num := (cmd_BB_gen c BBs BB_now' BB_num).(next_block_num) in 
+  let BB_final_num := (cmd_BB_gen c BBs' BB_now' BB_num).(next_block_num) in 
 
   (* Two conditions, CAsgn/CIf-CWhile *)
   (* list sem same, single cmd sem same -> list::cmd sem same *)
   (* BB_mid_num is the final block num *)
-  (is_CAsgn c) = true 
-  -> BCequiv (BB_list_sem (BBs ++ (BB_now' :: nil))) (cmd_list_sem cmd_sem cmds) BB_num BB_mid_num 
+  ((is_CAsgn c) = true 
+  -> BCequiv (BB_list_sem (BBs' ++ (BB_now' :: nil))) (cmd_list_sem cmd_sem cmds) BB_num BB_mid_num 
   -> BCequiv (BB_sem BB_now'') (cmd_sem c) BB_mid_num BB_mid_num 
-  -> BCequiv (BB_list_sem (BBs ++ (BB_now'' :: nil))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_mid_num /\
+  -> BCequiv (BB_list_sem (BBs' ++ (BB_now'' :: nil))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_mid_num) /\
   
-  (is_CAsgn c) = false
-  -> BCequiv (BB_list_sem (BBs ++ (BB_now' :: nil))) (cmd_list_sem cmd_sem cmds) BB_num BB_mid_num
-  -> BCequiv (BB_sem BB_now'') (cmd_sem c) BB_mid_num BB_final_num 
+  ((is_CAsgn c) = false
+  -> BCequiv (BB_list_sem (BBs' ++ (BB_now' :: nil))) (cmd_list_sem cmd_sem cmds) BB_num BB_mid_num
+  -> BCequiv (BB_list_sem BBs'') (cmd_sem c) BB_mid_num BB_final_num 
   (* Here we use BB_now rather than BB_now', the notations follow the blackboard, so BB_now is actually BB_now'  *)
-  -> BCequiv (BB_list_sem (BBs ++ (BB_now' :: BBs'))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_final_num.
+  -> BCequiv (BB_list_sem (BBs ++ (BB_now' :: BBs'))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_final_num).
 Proof.
-  Admitted.
+  intros.
+  split.
+  + intros.
+   
 
 
 Theorem BB_sound:
