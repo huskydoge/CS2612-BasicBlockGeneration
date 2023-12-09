@@ -452,7 +452,7 @@ Lemma single_cmd_BB_sound:
   (* BB_mid_num is the final block num *)
   ((is_CAsgn c) = true 
   -> BCequiv (BB_list_sem (BBs' ++ (BB_now' :: nil))) (cmd_list_sem cmd_sem cmds) BB_num BB_mid_num 
-  -> BCequiv (BB_sem BB_now'') (cmd_sem c) BB_mid_num BB_mid_num 
+  -> BCequiv (BAsgn_list_sem (CAsgn_BAsgn c)) (cmd_sem c) BB_mid_num BB_mid_num 
   -> BCequiv (BB_list_sem (BBs' ++ (BB_now'' :: nil))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_mid_num) /\
   
   ((is_CAsgn c) = false
