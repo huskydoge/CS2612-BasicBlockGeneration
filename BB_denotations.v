@@ -334,16 +334,17 @@ Proof.
         ++ simpl. tauto.
     - admit.
     - admit. 
-    
-
-
-
+Admitted.
 
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
   P c1 -> P c2 -> Q (CIf e c1 c2).
 Proof.
-Admitted.
+  intros.
+  unfold Q. intros. right.
+ 
+Admitted. 
+
 
 Lemma Q_while:
   forall (pre: list cmd) (e: expr) (body: list cmd),
@@ -357,11 +358,13 @@ Proof.
 Admitted.
 
 
+
 Lemma P_cons:
   forall (c: cmd) (cmds: list cmd),
   Q c -> P cmds -> P (c :: cmds).
 Proof.
 Admitted.
+
 
 Theorem BB_sound:
   forall (cmds: list cmd),
