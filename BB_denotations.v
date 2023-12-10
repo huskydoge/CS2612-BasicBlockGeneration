@@ -496,26 +496,62 @@ Proof.
     + admit.
 Admitted.   *)
 
+(* c: the cmd we are currently facing
+  BBs: list of Basic Blocks which have been already generated
+  BB_now: the Basic Block we are currently at
+  BB_num: we should start assigning new basic blocks with BB_num 
+  
+  Record basic_block_gen_results : Type := {
+  BasicBlocks: list BasicBlock; (* already finished blocks*)
+  BBn: BasicBlock; (* current_block_num should be the block num of BB_now, I think *)
+  next_block_num: nat (* I think next block should start with the number*)
+}.
+  
+  *)
+
 
 
 Definition Q(c: cmd): Prop :=
   (* Q(Asgn)里面不能出现cmds, 或者说Q(c)里面你就要讲BBs等等变化前后有什么区别, 别去搞cmds，你们搞得那个反而把问题搞复杂了
     嗯，当然你要证明的是语义的变化，所以你要说多出来的commands的语义，和那个c的语义一样 -- by cqx *)
-  match c with
-  | CAsgn x e => forall (BBs: list BasicBlock) (BB_num: nat), BCequiv (BAsgn_list_sem (CAsgn_BAsgn c)) (cmd_sem c) BB_num BB_num
-  | _ => (forall (cmds: list cmd) (BBs: list BasicBlock) (BB_now:  BasicBlock) (BB_num: nat), exists BBs',
-      let BB_now' := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BBn) in
-      let BB_mid_num := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(next_block_num) in
-      let BB_final_num := (cmd_BB_gen c BBs' BB_now' BB_num).(next_block_num) in 
-      BCequiv (BB_list_sem (BBs ++ (BB_now' :: BBs'))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_final_num)
-  end.
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
+    let res := cmd_BB_gen c BBs BBnow BBnum in
+    (*CAsgn*)
+    (exists BBnow' BBcmd,
+      res.(BBn) = BBnow' /\
+      BBnow'.(commands) = BBnow.(commands) ++ (BBcmd :: nil) /\
+      BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num)) (*还在当下的BBnow里，BBnum则是下一个BB的编号，不能用*)
+    \/
+    (*CIf / CWhile*)
+    (exists BBs' BBnum', 
+      res.(BasicBlocks) =  BBs ++ (BBnow :: nil) ++ BBs' /\
+      res.(BBn).(block_num) = BBnum' /\
+      BCequiv (BB_list_sem BBs') (cmd_sem c) BBnum BBnum').
 
-Definition P(cmds: list cmd) :=
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BB_num: nat), exists BBs',
-    let BB_last := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BB_num).(BBn) in
-    let BB_final_num := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BB_num).(next_block_num) in
-    (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BB_num).(BasicBlocks) = BBs ++ BBs' ->
-    BCequiv (BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) BB_num BB_final_num.
+
+(* c: the cmd we are currently facing
+  BBs: list of Basic Blocks which have been already generated
+  BB_now: the Basic Block we are currently at
+  BB_num: we should start assigning new basic blocks with BB_num 
+  
+  Record basic_block_gen_results : Type := {
+  BasicBlocks: list BasicBlock; (* already finished blocks*)
+  BBn: BasicBlock; (* current_block_num should be the block num of BB_now, I think *)
+  next_block_num: nat (* I think next block should start with the number*)
+}.*)
+
+Definition P(cmds: list cmd): Prop :=
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' BBcmd c tl,
+    let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
+    let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in
+
+    (* Start with CAsgn*)
+    cmds = c :: tl /\ res.(BBn) = BBnow' /\ BBnow'.(commands) = BBnow.(commands) ++ (BBcmd :: nil) /\ 
+    BBres = BBs ++ (BBnow'::nil) ++ BBs' /\ BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num) /\ 
+    BCequiv (BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) BBnum res.(BBn).(block_num)
+    \/
+    (* Start with CIf or CWhile *)
+    BBres = BBs ++ (BBnow :: nil) ++ BBs' /\ BCequiv (BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) BBnum res.(BBn).(block_num).
 
 Lemma Q_asgn:
   forall (x: var_name) (e: expr),
@@ -525,17 +561,13 @@ Admitted.
 
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
-  Q (CIf e c1 c2).
+  P c1 -> P c2 -> Q (CIf e c1 c2).
 Proof.
-  intros.
-  unfold Q.
-  intros.
-  destruct H as [BBs' H].
 Admitted.
 
 Lemma Q_while:
   forall (pre: list cmd) (e: expr) (body: list cmd),
-  Q (CWhile pre e body).
+  P pre -> P body -> Q (CWhile pre e body).
 Proof.
 Admitted.
 
@@ -561,88 +593,5 @@ Proof.
   - apply P_cons.
     + destruct a.
       * apply Q_asgn.
-      * apply Q_if.
-      * apply Q_while.
-    + apply IHcmds.
+      * destruct cmds.
 Qed.
-
-
-
-(*FixPoint version*)
-
-Section p.
-
-Variable Q : cmd -> Prop.
-
-Fixpoint P(cmds: list cmd) :=
-  match cmds with
-  | nil => True
-  | c :: cmds => Q c /\ P cmds
-  end.
-
-End p.
-
-Fixpoint Q(c: cmd): Prop :=
-  (match c with
-  | CAsgn x e => forall (BBs: list BasicBlock) (BBnum: nat), BCequiv (BAsgn_list_sem (CAsgn_BAsgn c)) (cmd_sem c) BBnum BBnum
-  | CIf e c1 c2 => P Q (c1) /\ P Q (c2) /\ (forall (cmds: list cmd) (BBs: list BasicBlock) (BB_now:  BasicBlock) (BB_num: nat), exists BBs',
-  let BB_now' := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BBn) in
-  let BB_mid_num := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(next_block_num) in
-  let BB_final_num := (cmd_BB_gen c BBs' BB_now' BB_num).(next_block_num) in 
-  BCequiv (BB_list_sem (BBs ++ (BB_now' :: BBs'))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_final_num)
-  | CWhile pre e body => P Q (body) /\ P Q (pre) /\ (forall (cmds: list cmd) (BBs: list BasicBlock) (BB_now:  BasicBlock) (BB_num: nat), exists BBs',
-  let BB_now' := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(BBn) in
-  let BB_mid_num := (list_cmd_BB_gen cmd_BB_gen cmds BBs BB_now BB_num).(next_block_num) in
-  let BB_final_num := (cmd_BB_gen c BBs' BB_now' BB_num).(next_block_num) in 
-  BCequiv (BB_list_sem (BBs ++ (BB_now' :: BBs'))) (cmd_list_sem cmd_sem (cmds ++ (c :: nil))) BB_num BB_final_num)
-  end).
-
-Lemma Q_asgn:
-  forall (x: var_name) (e: expr),
-  Q (CAsgn x e).
-Proof.
-Admitted.
-
-Lemma Q_if:
-  forall (e: expr) (c1 c2: list cmd),
-  Q (CIf e c1 c2).
-Proof.
-  intros.
-  unfold Q.
-  intros.
-  destruct H as [BBs' H].
-Admitted.
-
-Lemma Q_while:
-  forall (pre: list cmd) (e: expr) (body: list cmd),
-  Q (CWhile pre e body).
-Proof.
-Admitted.
-
-Lemma P_nil:
-  P nil.
-Proof.
-Admitted.
-
-
-Lemma P_cons:
-  forall (c: cmd) (cmds: list cmd),
-  Q c -> P cmds -> P (c :: cmds).
-Proof.
-Admitted.
-
-Theorem BB_sound:
-  forall (cmds: list cmd),
-  P cmds.
-Proof.
-  intros.
-  induction cmds.
-  - apply P_nil.
-  - apply P_cons.
-    + destruct a.
-      * apply Q_asgn.
-      * apply Q_if.
-      * apply Q_while.
-    + apply IHcmds.
-Qed.
-
