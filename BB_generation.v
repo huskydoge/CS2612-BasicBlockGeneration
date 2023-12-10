@@ -11,13 +11,6 @@ Require Export Bool.
 Require Export Lia.
 
 
-(* Block Number 0 ~ 10 are reserved*)
-
-Definition BB0 : nat := 0.
-
-(* Create a global variable recording the current block number *)
-Definition global_block_num : nat := 10.
-  
 Inductive JumpKind : Type :=
 | UJump  (* Represents an unconditional jump *)
 | CJump.   (* Represents a conditional jump *)
@@ -35,7 +28,7 @@ Record BlockInfo : Type := {
 (* Definition of BasicBlock *)
 Record BasicBlock : Type := {
   block_num : nat; (* Represents the block's identifier *)
-  commands : list cmd; (* Represents a command *)
+  commands : list BB_cmd; (* Represents a command *)
   jump_info : BlockInfo (* Defines the jump information *)
 }.
 
@@ -67,7 +60,7 @@ Definition EmptyBlock : BasicBlock := {|
   commands := [];
   jump_info := {|
     jump_kind := UJump;
-    jump_dist_1 := 10;
+    jump_dist_1 := 9; (* default endinfo *)
     jump_dist_2 := None;
     jump_condition := None
   |}
@@ -114,9 +107,14 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
   match c with
   | CAsgn x e => 
     (* update BB_now *)
+    let BB_cmd := {|
+      X := x;
+      E := e
+    |} in
+
     let BB_now' := {|
       block_num := BB_now.(block_num);
-      commands := BB_now.(commands) ++ [CAsgn x e];
+      commands := BB_now.(commands) ++ [BB_cmd];
       jump_info := BB_now.(jump_info)
     |} in
     {| 
@@ -190,7 +188,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
 
     let BB_now' := {|
       block_num := BB_now.(block_num); 
-      commands := [];
+      commands := BB_now.(commands);
       jump_info := {|
         jump_kind := UJump;
         jump_dist_1 := BB_pre_num; (* update jump info*)
@@ -246,7 +244,7 @@ Check cmd_BB_gen.
 
 (* main function, which generates BBs for the whole cmds. Take zero as start for now*)
 Definition BB_gen (cmds: list cmd):
-list BasicBlock := to_result (list_cmd_BB_gen cmd_BB_gen cmds [] EmptyBlock 0).
+list BasicBlock := to_result (list_cmd_BB_gen cmd_BB_gen cmds [] EmptyBlock 11).
 
 
 
