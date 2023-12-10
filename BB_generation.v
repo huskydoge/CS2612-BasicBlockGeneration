@@ -188,7 +188,7 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
 
     let BB_now' := {|
       block_num := BB_now.(block_num); 
-      commands := [];
+      commands := BB_now.(commands);
       jump_info := {|
         jump_kind := UJump;
         jump_dist_1 := BB_pre_num; (* update jump info*)
