@@ -248,8 +248,10 @@ Definition P(cmds: list cmd): Prop :=
 
     (* Start with CAsgn*)
     cmds = c :: tl /\ res.(BBn) = BBnow' /\ BBnow'.(commands) = BBnow.(commands) ++ (BBcmd :: nil) /\ 
-    BBres = BBs ++ (BBnow'::nil) ++ BBs' /\ BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num) /\ 
+
+    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num) /\ 
     BCequiv (BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) BBnum res.(BBn).(block_num)
+
     \/
     (* Start with CIf or CWhile *)
     BBres = BBs ++ (BBnow :: nil) ++ BBs' /\ BCequiv (BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) BBnum res.(BBn).(block_num).
@@ -311,6 +313,8 @@ Lemma Q_if:
 Proof.
   intros.
   unfold Q. intros. right.
+  (* first get the result of the block from c1 for preparing c2 *)
+  admit.
  
 Admitted. 
 
@@ -324,6 +328,10 @@ Admitted.
 Lemma P_nil:
   P nil.
 Proof.
+  unfold P. simpl. intros.
+  exists nil.
+  exists BBnow.
+  admit.
 Admitted.
 
 
@@ -332,7 +340,12 @@ Lemma P_cons:
   forall (c: cmd) (cmds: list cmd),
   Q c -> P cmds -> P (c :: cmds).
 Proof.
+  intros.
+  destruct c.
+  + unfold P. intros.
+    admit.
 Admitted.
+
 
 
 Theorem BB_sound:
