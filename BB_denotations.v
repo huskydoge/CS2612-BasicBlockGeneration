@@ -241,13 +241,38 @@ Definition Q(c: cmd): Prop :=
   next_block_num: nat (* I think next block should start with the number*)
 }.*)
 
-Fixpoint P (cmds: list cmd) : Prop :=
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat),
+Definition P(cmds: list cmd): Prop :=
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd),
     let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
-    match cmds with
-    | nil => res.(BasicBlocks) = BBs /\ res.(BBn) = BBnow /\ res.(next_block_num) = BBnum
-    | c :: tl => Q c /\ P tl
-    end.
+    let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
+
+    (* 连接当前基本块中因为Asgn添加的语义和新生成的基本块的语义*)
+    let ConcateBDenote := 
+    {| Bnrm := (BAsgn_list_sem BBcmds).(Bnrm) ∘ (BB_list_sem BBs').(Bnrm);
+       Berr:= (BAsgn_list_sem BBcmds).(Berr) ∪ (BAsgn_list_sem BBcmds).(Bnrm) ∘ (BB_list_sem BBs').(Berr);
+       Binf:= ∅;
+      |}
+    in
+
+    (* 根据BBs' 的情况分配JumpInfo*)
+    match BBs' with
+    | nil => BBnow'.(jump_info) = BBnow.(jump_info)
+    | next_BB :: _  => let BlockInfo' := {|
+                      jump_kind := UJump;
+                      jump_dist_1 := next_BB.(block_num);
+                      jump_dist_2 := None;
+                      jump_condition := None
+                    |} in
+                    BBnow'.(jump_info) = BlockInfo'
+    end /\
+
+    BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\
+
+    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) res.(BBn).(block_num) (*总是从当前所在的BB开始*)
+
+    /\ res.(BBn).(jump_info) = BBnow.(jump_info).
+
+
 
 Lemma Q_asgn:
   forall (x: var_name) (e: expr),
