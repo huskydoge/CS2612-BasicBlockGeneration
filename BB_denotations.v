@@ -246,6 +246,9 @@ Definition P(cmds: list cmd): Prop :=
     let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in
 
+    (* nil *)
+    (cmds = nil /\ res.(BasicBlocks) = BBs /\ res.(BBn) = BBnow /\ res.(next_block_num) = BBnum) \/
+
     (* Start with CAsgn*)
     cmds = c :: tl /\ res.(BBn) = BBnow' /\ BBnow'.(commands) = BBnow.(commands) ++ (BBcmd :: nil) /\ 
 
