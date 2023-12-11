@@ -241,25 +241,13 @@ Definition Q(c: cmd): Prop :=
   next_block_num: nat (* I think next block should start with the number*)
 }.*)
 
-Definition P(cmds: list cmd): Prop :=
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' BBcmd c tl,
+Fixpoint P (cmds: list cmd) : Prop :=
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat),
     let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
-    let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in
-
-    (* nil *)
-    (cmds = nil /\ res.(BasicBlocks) = BBs /\ res.(BBn) = BBnow /\ res.(next_block_num) = BBnum) \/
-
-    (* Start with CAsgn*)
-    cmds = c :: tl /\ res.(BBn) = BBnow' /\ BBnow'.(commands) = BBnow.(commands) ++ (BBcmd :: nil) /\ 
-
-    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num) /\ 
-    BCequiv (BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) BBnum res.(BBn).(block_num)
-
-    \/
-    (* Start with CIf or CWhile *)
-    BBres = BBs ++ (BBnow :: nil) ++ BBs' /\ BCequiv (BB_list_sem BBs') (cmd_list_sem cmd_sem cmds) BBnum res.(BBn).(block_num).
-
-
+    match cmds with
+    | nil => res.(BasicBlocks) = BBs /\ res.(BBn) = BBnow /\ res.(next_block_num) = BBnum
+    | c :: tl => Q c /\ P tl
+    end.
 
 Lemma Q_asgn:
   forall (x: var_name) (e: expr),
