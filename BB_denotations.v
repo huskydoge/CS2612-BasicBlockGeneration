@@ -194,11 +194,6 @@ Fixpoint cmd_sem (cmd: cmd): CDenote := {|
   inf := ∅;
 |}.
 
-Definition state_to_BBstate (s: state): BB_state :=
-  {| BB_num := 0; st := s |}.
-
-(* The following are the equivalence between BB_state and state *)
-
 
 (* The following are preparations for the final theorem *)
 
@@ -209,22 +204,6 @@ Record BCequiv (B: BDenote) (C: CDenote) (startBB endBB: nat): Prop := {
   inf_cequiv: (fun s => exists bs, B.(Binf) bs /\ bs.(st) = s) == C.(inf);
 }.
 
-(* 
-Notation "c1 '~=~' c2" := (cequiv c1 c2)
-  (at level 69, only printing, no associativity). *)
-
-
-Definition construct_BB_state (s: state) (BB_num: nat): BB_state := 
-  {| BB_num := BB_num; st := s |}.
-
-
-Check Rels_concat_id_l.
-
-Check Rels_concat_id_r.
-
-
-
-
 Ltac my_destruct H :=
   match type of H with 
   | exists _, _ => destruct H as [? H]; my_destruct H 
@@ -232,16 +211,6 @@ Ltac my_destruct H :=
               destruct H as [H H1];my_destruct H; my_destruct H1
   | _ => idtac 
   end.
-
-
-
-Definition start_with_Asgn (cmds: list cmd) : Prop :=
-  match cmds with
-  | CAsgn _ _ :: _ => True
-  | _ => False
-  end.
-
-
 
 Definition Q(c: cmd): Prop :=
   (* Q(Asgn)里面不能出现cmds, 或者说Q(c)里面你就要讲BBs等等变化前后有什么区别, 别去搞cmds，你们搞得那个反而把问题搞复杂了
