@@ -225,7 +225,7 @@ Definition Q(c: cmd): Prop :=
     \/
     (*CIf / CWhile*)
     (exists BBs' BBnum', 
-      res.(BasicBlocks) =  BBs ++ (BBnow :: nil) ++ BBs' /\
+      res.(BasicBlocks) ++ (res.(BBn)::nil) =  BBs ++ (BBnow :: nil) ++ BBs' /\
       res.(BBn).(block_num) = BBnum' /\
       BCequiv (BB_list_sem BBs') (cmd_sem c) BBnum BBnum').
 
