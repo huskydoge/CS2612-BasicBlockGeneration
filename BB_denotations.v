@@ -281,15 +281,6 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
     /\ res.(BBn).(jump_info) = BBnow.(jump_info).
 
-(* forall Q(C) => forall cmds, P cmds *)
-Lemma P_sound:
-  forall (c: cmd) (cmds: list cmd), 
-    Q(c) -> P (cmds) (cmd_BB_gen).
-Proof.
-Admitted.
-
-
-
 Lemma Q_asgn:
   forall (x: var_name) (e: expr),
   Q (CAsgn x e).
@@ -356,17 +347,79 @@ Lemma Q_while:
 Proof.
 Admitted.
 
+
+Lemma P_nil_aux1:
+  forall (BBnow : BasicBlock) (a0 : state),
+  Bnrm
+    (jmp_sem (jump_dist_1 BBnow.(jump_info))
+      (jump_dist_2 BBnow.(jump_info))
+      (eval_cond_expr (jump_condition BBnow.(jump_info))))
+    {| BB_num := BBnow.(block_num); st := a0 |}
+    {| BB_num := BBnow.(block_num); st := a0 |}.
+Proof.
+  intros.
+  unfold jmp_sem.
+  destruct jump_condition.
+  + admit.
+  + simpl. 
+    split. tauto.
+    admit.    
+Admitted.
+
 Lemma P_nil:
   P nil (cmd_BB_gen).
 Proof.
-  unfold P. simpl. intros.
-  exists nil.
-  exists BBnow.
-  admit.
+  unfold P. 
+  simpl.
+  intros.
+  exists nil. exists BBnow. exists nil.
+  split. tauto.
+  split. destruct BBnow. admit.  
+  split. tauto.
+  split. reflexivity.
+  split. split.
+  - split.
+    ++ intros. 
+      destruct H as [? [? [? [? [? [? ?]]]]]].
+      simpl in H.
+      simpl. sets_unfold.
+      sets_unfold in H.
+      destruct H as [? [[[? ?] ?] ?]].
+      destruct H as [? [? [? ?]]].
+      simpl in H5.
+      rewrite H in H0. simpl in H0.
+      rewrite H4 in H6. 
+      admit.
+    ++ intros.
+      exists {| st := a; BB_num := BBnow.(block_num) |}.
+      exists {| st := a0; BB_num := BBnow.(block_num) |}.
+      simpl in H. sets_unfold in H.
+      simpl. sets_unfold.
+      repeat split.
+      rewrite H.
+      exists {| st := a0; BB_num := BBnow.(block_num) |}.
+      split. exists {| st := a0; BB_num := BBnow.(block_num) |}.
+      split. tauto.
+      exists {| st := a0; BB_num := BBnow.(block_num) |}.
+      split. tauto.
+      pose proof P_nil_aux1 BBnow a0. apply H0.
+      tauto.
+  - admit.
+  - admit. 
 Admitted.
 
 
 
+(* forall Q(C) => forall cmds, P cmds *)
+Lemma P_sound:
+  forall (c: cmd), 
+    Q c -> forall (cmds : list cmd), P (cmds) (cmd_BB_gen).
+Proof.
+  intros.
+  induction cmds.
+  Admitted.
+
+    
 
 
 (* Theorem BB_sound:
