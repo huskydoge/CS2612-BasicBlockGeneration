@@ -255,7 +255,7 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
       in 
     (* 连接当前基本块中因为Asgn添加的语义和新生成的基本块的语义*)
     let ConcateBDenote := 
-    {| Bnrm := (BB_sem BBnow'').(Bnrm) ∘ (BB_list_sem BBs').(Bnrm);
+    {| Bnrm := (BB_list_sem (BBnow'' :: nil ++ BBs')).(Bnrm);
        Berr:= (BB_sem BBnow'').(Berr) ∪ (BB_list_sem BBs').(Berr);
        Binf:= ∅;
       |}
