@@ -241,18 +241,27 @@ Definition Q(c: cmd): Prop :=
   next_block_num: nat (* I think next block should start with the number*)
 }.*)
 
-Definition P(cmds: list cmd): Prop :=
+Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results): Prop :=
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd),
     let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
 
+      (*用BBnow''，一方面处理增加的BBcmds的语义，另一方面考虑了jumpinfo*)
+      let BBnow'' := {|
+        block_num := BBnow'.(block_num);
+        commands :=  BBcmds;
+        jump_info := BBnow'.(jump_info);
+      |}
+      in 
     (* 连接当前基本块中因为Asgn添加的语义和新生成的基本块的语义*)
     let ConcateBDenote := 
-    {| Bnrm := (BAsgn_list_sem BBcmds).(Bnrm) ∘ (BB_list_sem BBs').(Bnrm);
-       Berr:= (BAsgn_list_sem BBcmds).(Berr) ∪ (BAsgn_list_sem BBcmds).(Bnrm) ∘ (BB_list_sem BBs').(Berr);
+    {| Bnrm := (BB_sem BBnow'').(Bnrm) ∘ (BB_list_sem BBs').(Bnrm);
+       Berr:= (BB_sem BBnow'').(Berr) ∪ (BB_list_sem BBs').(Berr);
        Binf:= ∅;
       |}
     in
+
+
 
     (* 根据BBs' 的情况分配JumpInfo*)
     match BBs' with
@@ -271,6 +280,13 @@ Definition P(cmds: list cmd): Prop :=
     BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) res.(BBn).(block_num) (*总是从当前所在的BB开始*)
 
     /\ res.(BBn).(jump_info) = BBnow.(jump_info).
+
+(* forall Q(C) => forall cmds, P cmds *)
+Lemma P_sound:
+  forall (c: cmd) (cmds: list cmd), 
+    Q(c) -> P (cmds) (cmd_BB_gen).
+Proof.
+Admitted.
 
 
 
@@ -325,7 +341,7 @@ Admitted.
 
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
-  P c1 -> P c2 -> Q (CIf e c1 c2).
+  P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Q (CIf e c1 c2).
 Proof.
   intros.
   unfold Q. intros. right.
@@ -334,15 +350,14 @@ Proof.
  
 Admitted. 
 
-
 Lemma Q_while:
   forall (pre: list cmd) (e: expr) (body: list cmd),
-  P pre -> P body -> Q (CWhile pre e body).
+  P pre (cmd_BB_gen) -> P body (cmd_BB_gen) -> Q (CWhile pre e body).
 Proof.
 Admitted.
 
 Lemma P_nil:
-  P nil.
+  P nil (cmd_BB_gen).
 Proof.
   unfold P. simpl. intros.
   exists nil.
@@ -352,19 +367,9 @@ Admitted.
 
 
 
-Lemma P_cons:
-  forall (c: cmd) (cmds: list cmd),
-  Q c -> P cmds -> P (c :: cmds).
-Proof.
-  intros.
-  destruct c.
-  + unfold P. intros.
-    admit.
-Admitted.
 
 
-
-Theorem BB_sound:
+(* Theorem BB_sound:
   forall (cmds: list cmd),
   P cmds.
 Proof.
@@ -375,4 +380,4 @@ Proof.
     + destruct a.
       * apply Q_asgn.
       * destruct cmds.
-Qed.
+Admitted. *)
