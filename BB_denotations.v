@@ -418,7 +418,6 @@ Proof.
 Admitted.
 
 
-
 (* forall Q(C) => forall cmds, P cmds *)
 Lemma P_sound:
   forall (c: cmd), 
