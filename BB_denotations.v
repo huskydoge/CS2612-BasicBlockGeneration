@@ -418,6 +418,48 @@ Proof.
 Admitted.
 
 
+
+Lemma PAsgn_sound:
+  forall (x: var_name) (e: expr) (cmds: list cmd),
+  Q (CAsgn x e) -> P cmds cmd_BB_gen -> P ((CAsgn x e) :: cmds) (cmd_BB_gen).
+Proof.
+  intros.
+  unfold Q in H. 
+  unfold P. 
+  intros. 
+  specialize (H BBs BBnow BBnum). 
+  destruct H.
+  unfold cmd_BB_gen in H. 
+  simpl in H.
+  * destruct H as [BBnow' [BBcmd []]]. 
+    unfold P in H0.    
+    specialize (H0 BBs BBnow' BBnum).
+    destruct H0 as [BBs' [BBnow'' [BBcmds []]]]. 
+    my_destruct H2.
+    exists BBs'. (*这里我们考虑到，a为Asgn，P(a::cmds)，归纳假设中的BBS'正好是我们要的delta量*)
+    exists BBnow''. (*这里我们考虑到，a为Asgn，证明P(a::cmds)，里面的BBnow'应是把(a::cmds)开头所有的asgns都放进去的那个BB，所以应该用归纳假设中的BBnow', 也即BBnow''*) 
+    exists (BBcmd :: BBcmds). (*这里我们考虑到，a为Asgn，证明P(a::cmds)，里面的BBcmds应该是把(a::cmds)开头所有的asgns都放进去的那个BB的cmds，所以应该用归纳假设中的BBcmds并上由单条指令产生的BBcmd, 也即(BBcmd :: BBcmds)*)
+    repeat split; simpl.
+    ++ destruct BBs'.
+      +++  rewrite H0. 
+           rewrite <- H. 
+           simpl. 
+           reflexivity.
+      +++  rewrite H0. reflexivity.
+    ++ rewrite H2.
+       destruct H1. 
+       simpl in H1. 
+       rewrite H1. 
+       simpl. 
+       apply app_assoc_reverse.
+    ++ rewrite H3. rewrite <- H. reflexivity.
+    ++ rewrite H. rewrite H4. reflexivity.
+    ++ admit. 
+    ++ admit.
+    ++ admit. (*err*)
+    ++ admit. (*inf*)
+Admitted.
+
 (* forall Q(C) => forall cmds, P cmds *)
 Lemma P_sound:
   (forall (c: cmd), 
@@ -428,25 +470,13 @@ Proof.
   + apply P_nil.
   + destruct a.
     - specialize (H (CAsgn x e)).
-      unfold Q in H. unfold P. intros. specialize (H BBs BBnow BBnum). destruct H.
-      unfold cmd_BB_gen in H. simpl in H.
-      * destruct H as [BBnow' [BBcmd []]]. unfold P in IHcmds. specialize (IHcmds BBs BBnow' BBnum).
-        destruct IHcmds as [BBs' [BBnow'' [BBcmds []]]]. 
-        my_destruct H2.
-        exists BBs'. (*这里我们考虑到，a为Asgn，P(a::cmds)，归纳假设中的BBS'正好是我们要的delta量*)
-        exists BBnow''. (*这里我们考虑到，a为Asgn，证明P(a::cmds)，里面的BBnow'应是把(a::cmds)开头所有的asgns都放进去的那个BB，所以应该用归纳假设中的BBnow', 也即BBnow''*) 
-        exists (BBcmd :: BBcmds). (*这里我们考虑到，a为Asgn，证明P(a::cmds)，里面的BBcmds应该是把(a::cmds)开头所有的asgns都放进去的那个BB的cmds，所以应该用归纳假设中的BBcmds并上由单条指令产生的BBcmd, 也即(BBcmd :: BBcmds)*)
-        repeat split; simpl.
-        ++ destruct BBs'.
-           +++  rewrite H1. rewrite <- H. simpl. reflexivity.
-           +++  rewrite H1. reflexivity.
-        ++ rewrite H2. destruct H0. simpl in H0. rewrite H0. simpl. apply app_assoc_reverse.
-        ++ rewrite H3.  rewrite <- H. reflexivity.
-        ++ rewrite H. rewrite H4. reflexivity.
-        ++ 
-        ++ admit.
-        ++ admit. (*err*)
-        ++ admit. (*inf*)
+      pose proof PAsgn_sound x e cmds.
+      apply H0 in IHcmds.
+      apply IHcmds. apply H.
+    - specialize (H (CIf e c1 c2)).
+      admit.
+    - specialize (H (CWhile pre e body)).
+      admit.
 Admitted.
     
 Search ((_ ++ _) ++ _ ).
