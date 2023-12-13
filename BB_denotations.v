@@ -264,7 +264,7 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
     (* 连接当前基本块中因为Asgn添加的语义和新生成的基本块的语义*)
     let ConcateBDenote := 
     {| Bnrm := (BB_list_sem (BBnow'' :: nil ++ BBs')).(Bnrm);
-       Berr:= (BB_sem BBnow'').(Berr) ∪ (BB_list_sem BBs').(Berr);
+       Berr:= (BB_list_sem (BBnow'' :: nil ++ BBs')).(Berr);
        Binf:= ∅;
       |}
     in
@@ -405,48 +405,14 @@ Proof.
       destruct H as [? [? [? [? [? [? ?]]]]]].
       simpl in H.
       simpl. sets_unfold.
-      sets_unfold in H.
-      destruct H as [? [[[? ?] ?] ?]].
-      my_destruct H.
-      simpl in H5.
-      rewrite H in H0. simpl in H0.
-      rewrite H4 in H6.
-      unfold jmp_sem in H6. 
-      destruct (eval_cond_expr (jump_condition BBnow.(jump_info))).
-      +++ destruct (jump_dist_2 BBnow.(jump_info)).
-          * unfold cjmp_sem in H6. 
-            destruct H6. 
-            simpl in H6. 
-            rewrite H6 in H0. 
-            rewrite H0 in H1. 
-            apply H1.
-          * simpl in H6. 
-            destruct H6. 
-            rewrite H6 in H0. 
-            rewrite H0 in H1. 
-            apply H1.
-      +++ simpl in H6. 
-          destruct H6. 
-          rewrite H6 in H0. 
-          rewrite H0 in H1. 
-          apply H1.
+      sets_unfold in H. rewrite H in H0. rewrite H0 in H1. apply H1.
     ++ intros.
       exists {| st := a; BB_num := BBnow.(block_num) |}.
       exists {| st := a0; BB_num := BBnow.(block_num) |}.
       simpl in H. sets_unfold in H.
       simpl. sets_unfold.
       repeat split.
-      rewrite H.
-      exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      split. exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      split. tauto. simpl. 
-      --- split.
-          +++ simpl. tauto.
-          +++ simpl. unfold jmp_sem. destruct (eval_cond_expr (jump_condition BBnow.(jump_info))).
-              * destruct (jump_dist_2 BBnow.(jump_info)).
-                -- unfold cjmp_sem. simpl. split.
-                -- simpl. tauto.
-              * simpl. tauto.
+      rewrite H. reflexivity.
   - admit.
   - admit. 
 Admitted.
