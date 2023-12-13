@@ -413,8 +413,8 @@ Proof.
       simpl. sets_unfold.
       repeat split.
       rewrite H. reflexivity.
-  - admit.
-  - admit. 
+  - admit. (*err*)
+  - admit. (*inf*)
 Admitted.
 
 
@@ -457,28 +457,22 @@ Proof.
     ++ sets_unfold.
        intros.
        my_destruct H7. 
-       destruct BBs' in H7.
+       destruct BBs'.
        +++ my_destruct H7.
            exists (st x2).
            split.
            - exists x3. repeat split.
              -- rewrite H8 in H7.
-                destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H14 in H7. simpl in H7. apply H7.
-             -- rewrite <- H5. destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H14 in H7. simpl in H7. rewrite <- H14. simpl. reflexivity.
-             -- rewrite H8 in H12. destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H14 in H12. simpl in H12. intros. specialize (H12 Y). pose proof H12 H15. rewrite H16. reflexivity.
-           -
-
-              
-              
-             admit.
-             admit.
+                destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H17 in H7. simpl in H7. apply H7.
+             -- rewrite <- H14. destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H17. simpl. reflexivity.
+             -- destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H17 in H15. simpl in H12. intros. specialize (H15 Y). pose proof H15 H18. rewrite H8 in H19. rewrite H19. reflexivity.
            - admit.
        +++ admit.
     ++ admit.
-    ++ admit. (*err*)
-    ++ admit. (*inf*)
-    ++ admit.
-    ++ admit.
+    ++ admit. (*err / inf*)
+    ++ admit. (*err / inf*)
+    ++ admit. (*err / inf*)
+    ++ admit. (*err / inf*)
     ++ admit.
   * admit.
 Admitted.
