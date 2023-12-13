@@ -454,10 +454,26 @@ Proof.
        apply app_assoc_reverse.
     ++ rewrite H3. rewrite <- H. reflexivity.
     ++ rewrite H. rewrite H4. reflexivity.
-    ++ admit. 
+    ++ sets_unfold.
+       intros.
+       my_destruct H7. 
+       destruct BBs' in H7.
+       +++ my_destruct H7.
+           exists a.
+           split.
+           - exists x3. repeat split.
+             rewrite H8 in H7.
+             admit.
+             admit.
+           - admit.
+       +++ admit.
     ++ admit.
     ++ admit. (*err*)
     ++ admit. (*inf*)
+    ++ admit.
+    ++ admit.
+    ++ admit.
+  * admit.
 Admitted.
 
 (* forall Q(C) => forall cmds, P cmds *)
