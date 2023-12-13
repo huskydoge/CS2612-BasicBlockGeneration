@@ -463,10 +463,42 @@ Proof.
            split.
            - exists x3. repeat split.
              -- rewrite H8 in H7.
-                destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H17 in H7. simpl in H7. apply H7.
-             -- rewrite <- H14. destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H17. simpl. reflexivity.
-             -- destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H17 in H15. simpl in H12. intros. specialize (H15 Y). pose proof H15 H18. rewrite H8 in H19. rewrite H19. reflexivity.
-           - admit.
+                destruct H1. rewrite <- H in H1. 
+                simpl in H1. apply app_inj_tail in H1. 
+                destruct H1. rewrite <- H17 in H7. 
+                simpl in H7. apply H7.
+             -- rewrite <- H14. destruct H1. 
+                rewrite <- H in H1. simpl in H1. 
+                apply app_inj_tail in H1. destruct H1. 
+                rewrite <- H17. simpl. reflexivity.
+             -- destruct H1. rewrite <- H in H1. 
+                simpl in H1. apply app_inj_tail in H1. 
+                destruct H1. rewrite <- H17 in H15. 
+                simpl in H12. intros. 
+                specialize (H15 Y). pose proof H15 H18. 
+                rewrite H8 in H19. rewrite H19. reflexivity.
+           - destruct H5.
+             sets_unfold in nrm_cequiv0.
+             pose proof nrm_cequiv0 (st x2) a0.
+             destruct H5 as [? ?].
+             apply H5.
+             exists {| BB_num := BBnow''.(block_num); st := st x2 |}.
+             exists {| BB_num := ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow' BBnum).(BBn)).(block_num); st := a0 |}.
+             simpl.
+             repeat split.
+             assert (BBnow''.(block_num) = x2.(BB_num)).
+             {
+              rewrite <- H13. rewrite H10. tauto.
+             }
+             assert (((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow' BBnum).(BBn)).(block_num) = x1.(BB_num)).
+             {
+              rewrite H11. rewrite H. tauto.
+             }
+             rewrite H17. rewrite H18.
+             destruct x1, x2.
+             simpl.
+             simpl in H9. rewrite H9 in H12.
+             apply H12.
        +++ admit.
     ++ admit.
     ++ admit. (*err / inf*)
