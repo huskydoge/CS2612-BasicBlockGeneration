@@ -88,8 +88,7 @@ Definition BAsgn_sem (x: var_name) (e:EDenote) : BDenote := {|
 
 Definition BJump_sem (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote) : BDenote := {|
   Bnrm := fun bs1 bs2 => 
-    exists i,
-      bs1.(st) = i.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(Bnrm) i bs2;
+      bs1.(st) = bs2.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(Bnrm) bs1 bs2;
   Berr := ∅;
   Binf := ∅;
 |}.
@@ -387,7 +386,7 @@ Proof.
   exists nil. exists BBnow. exists nil.
   split. tauto.
   split. rewrite append_nil_r. reflexivity.
-  split. tauto.
+  split. reflexivity.
   split. reflexivity.
   split. split.
   - split.
@@ -397,11 +396,16 @@ Proof.
       simpl. sets_unfold.
       sets_unfold in H.
       destruct H as [? [[[? ?] ?] ?]].
-      destruct H as [? [? [? ?]]].
+      my_destruct H.
       simpl in H5.
       rewrite H in H0. simpl in H0.
-      rewrite H4 in H6. 
-      admit.
+      rewrite H4 in H6.
+      unfold jmp_sem in H6. 
+      destruct (eval_cond_expr (jump_condition BBnow.(jump_info))).
+      +++ destruct (jump_dist_2 BBnow.(jump_info)).
+          * unfold cjmp_sem in H6. destruct H6. simpl in H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
+          * simpl in H6. destruct H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
+      +++ simpl in H6. destruct H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
     ++ intros.
       exists {| st := a; BB_num := BBnow.(block_num) |}.
       exists {| st := a0; BB_num := BBnow.(block_num) |}.
