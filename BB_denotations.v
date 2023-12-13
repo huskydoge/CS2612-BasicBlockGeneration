@@ -348,6 +348,18 @@ Proof.
 Admitted.
 
 
+Lemma append_nil_r : forall A (l : list A),
+  l ++ nil = l.
+Proof.
+  intros A l.
+  induction l as [| x xs IH].
+  - (* l = nil *)
+    simpl. reflexivity.
+  - (* l = x :: xs *)
+    simpl. rewrite IH. reflexivity.
+Qed.
+
+
 Lemma P_nil_aux1:
   forall (BBnow : BasicBlock) (a0 : state),
   Bnrm
@@ -374,7 +386,7 @@ Proof.
   intros.
   exists nil. exists BBnow. exists nil.
   split. tauto.
-  split. destruct BBnow. admit.  
+  split. rewrite append_nil_r. reflexivity.
   split. tauto.
   split. reflexivity.
   split. split.
