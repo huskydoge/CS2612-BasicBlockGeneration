@@ -254,8 +254,8 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
     let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
 
-      (*用BBnow''，一方面处理增加的BBcmds的语义，另一方面考虑了jumpinfo*)
-      let BBnow'' := {|
+      (*用BBnow_delta，一方面处理增加的BBcmds的语义，另一方面考虑了jumpinfo*)
+      let BBnow_delta := {|
         block_num := BBnow'.(block_num);
         commands :=  BBcmds;
         jump_info := BBnow'.(jump_info);
@@ -263,8 +263,8 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
       in 
     (* 连接当前基本块中因为Asgn添加的语义和新生成的基本块的语义*)
     let ConcateBDenote := 
-    {| Bnrm := (BB_list_sem (BBnow'' :: nil ++ BBs')).(Bnrm);
-       Berr:= (BB_list_sem (BBnow'' :: nil ++ BBs')).(Berr);
+    {| Bnrm := (BB_list_sem (BBnow_delta :: nil ++ BBs')).(Bnrm);
+       Berr:= (BB_list_sem (BBnow_delta :: nil ++ BBs')).(Berr);
        Binf:= ∅;
       |}
     in
@@ -420,18 +420,36 @@ Admitted.
 
 (* forall Q(C) => forall cmds, P cmds *)
 Lemma P_sound:
-  forall (c: cmd), 
-    Q c -> forall (cmds : list cmd), P (cmds) (cmd_BB_gen).
+  (forall (c: cmd), 
+    Q c) -> forall (cmds : list cmd), P (cmds) (cmd_BB_gen).
 Proof.
   intros.
   induction cmds.
   + apply P_nil.
   + destruct a.
-    - admit.
-Admitted. 
-
+    - specialize (H (CAsgn x e)).
+      unfold Q in H. unfold P. intros. specialize (H BBs BBnow BBnum). destruct H.
+      unfold cmd_BB_gen in H. simpl in H.
+      * destruct H as [BBnow' [BBcmd []]]. unfold P in IHcmds. specialize (IHcmds BBs BBnow' BBnum).
+        destruct IHcmds as [BBs' [BBnow'' [BBcmds []]]]. 
+        my_destruct H2.
+        exists BBs'. (*这里我们考虑到，a为Asgn，P(a::cmds)，归纳假设中的BBS'正好是我们要的delta量*)
+        exists BBnow''. (*这里我们考虑到，a为Asgn，证明P(a::cmds)，里面的BBnow'应是把(a::cmds)开头所有的asgns都放进去的那个BB，所以应该用归纳假设中的BBnow', 也即BBnow''*) 
+        exists (BBcmd :: BBcmds). (*这里我们考虑到，a为Asgn，证明P(a::cmds)，里面的BBcmds应该是把(a::cmds)开头所有的asgns都放进去的那个BB的cmds，所以应该用归纳假设中的BBcmds并上由单条指令产生的BBcmd, 也即(BBcmd :: BBcmds)*)
+        repeat split; simpl.
+        ++ destruct BBs'.
+           +++  rewrite H1. rewrite <- H. simpl. reflexivity.
+           +++  rewrite H1. reflexivity.
+        ++ rewrite H2. destruct H0. simpl in H0. rewrite H0. simpl. apply app_assoc_reverse.
+        ++ rewrite H3.  rewrite <- H. reflexivity.
+        ++ rewrite H. rewrite H4. reflexivity.
+        ++ 
+        ++ admit.
+        ++ admit. (*err*)
+        ++ admit. (*inf*)
+Admitted.
     
-
+Search ((_ ++ _) ++ _ ).
 
 (* Theorem BB_sound:
   forall (cmds: list cmd),
