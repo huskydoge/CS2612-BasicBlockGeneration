@@ -459,12 +459,17 @@ Proof.
        my_destruct H7. 
        destruct BBs' in H7.
        +++ my_destruct H7.
-           exists a.
+           exists (st x2).
            split.
            - exists x3. repeat split.
-             rewrite H8 in H7.
-             destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H14 in H7. simpl in H7. apply H7.
-              rewrite H8 in H7. destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H15 in H7. simpl in H7. apply H7.
+             -- rewrite H8 in H7.
+                destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H14 in H7. simpl in H7. apply H7.
+             -- rewrite <- H5. destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H14 in H7. simpl in H7. rewrite <- H14. simpl. reflexivity.
+             -- rewrite H8 in H12. destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H14 in H12. simpl in H12. intros. specialize (H12 Y). pose proof H12 H15. rewrite H16. reflexivity.
+           -
+
+              
+              
              admit.
              admit.
            - admit.
