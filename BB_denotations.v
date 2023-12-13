@@ -463,6 +463,8 @@ Proof.
            split.
            - exists x3. repeat split.
              rewrite H8 in H7.
+             destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H14 in H7. simpl in H7. apply H7.
+              rewrite H8 in H7. destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. rewrite <- H15 in H7. simpl in H7. apply H7.
              admit.
              admit.
            - admit.
@@ -504,7 +506,7 @@ Proof.
   + apply Q_while. *)
 
     
-Search ((_ ++ _) ++ _ ).
+Search (_ ++ _::nil = _ ++ _ :: nil ).
 
 Theorem BB_sound:
   forall (cmds: list cmd),
