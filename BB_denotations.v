@@ -403,23 +403,35 @@ Proof.
       unfold jmp_sem in H6. 
       destruct (eval_cond_expr (jump_condition BBnow.(jump_info))).
       +++ destruct (jump_dist_2 BBnow.(jump_info)).
-          * unfold cjmp_sem in H6. destruct H6. simpl in H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
-          * simpl in H6. destruct H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
-      +++ simpl in H6. destruct H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
+          * unfold cjmp_sem in H6. 
+            destruct H6. 
+            simpl in H6. 
+            rewrite H6 in H0. 
+            rewrite H0 in H1. 
+            apply H1.
+          * simpl in H6. 
+            destruct H6. 
+            rewrite H6 in H0. 
+            rewrite H0 in H1. 
+            apply H1.
+      +++ simpl in H6. 
+          destruct H6. 
+          rewrite H6 in H0. 
+          rewrite H0 in H1. 
+          apply H1.
     ++ intros.
-      exists {| st := a; BB_num := BBnow.(block_num) |}.
-      exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      simpl in H. sets_unfold in H.
-      simpl. sets_unfold.
-      repeat split.
-      rewrite H.
-      exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      split. exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      split. tauto.
-      exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      split. tauto.
-      pose proof P_nil_aux1 BBnow a0. apply H0.
-      tauto.
+       exists {| st := a; BB_num := BBnow.(block_num) |}.
+       exists {| st := a0; BB_num := BBnow.(block_num) |}.
+       simpl in H. sets_unfold in H.
+       simpl. sets_unfold.
+       repeat split.
+       rewrite H.
+       exists {| st := a0; BB_num := BBnow.(block_num) |}.
+       split. exists {| st := a0; BB_num := BBnow.(block_num) |}.
+       split. tauto.
+       split. tauto.
+       admit.
+       tauto. 
   - admit.
   - admit. 
 Admitted.
