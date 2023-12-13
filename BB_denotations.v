@@ -478,18 +478,28 @@ Proof.
     - specialize (H (CWhile pre e body)).
       admit.
 Admitted.
+
+(* Lemma Q_sound:
+  forall (c: cmd), Q c.
+Proof.
+  destruct c.
+  + apply Q_asgn.
+  + apply Q_if.
+  + apply Q_while. *)
+
     
 Search ((_ ++ _) ++ _ ).
 
-(* Theorem BB_sound:
+Theorem BB_sound:
   forall (cmds: list cmd),
-  P cmds.
+  P cmds cmd_BB_gen.
 Proof.
   intros.
   induction cmds.
   - apply P_nil.
-  - apply P_cons.
-    + destruct a.
-      * apply Q_asgn.
-      * destruct cmds.
-Admitted. *)
+  - pose proof P_sound.
+    destruct a.
+    * pose proof Q_asgn x e.
+      admit.
+    * destruct cmds.
+Admitted.
