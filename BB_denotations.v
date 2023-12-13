@@ -136,23 +136,32 @@ Definition eval_cond_expr (e: option expr): option EDenote :=
 
 
 (* Combine list of BAsgn and the final BJump *)
-Definition BB_sem (BB: BasicBlock): BDenote := {| 
+Definition BB_jmp_sem (BB: BasicBlock): BDenote := {| 
   Bnrm := 
     let jmp_dist1 := BB.(jump_info).(jump_dist_1) in
     let jmp_dist2 := BB.(jump_info).(jump_dist_2) in
     let jmp_cond := BB.(jump_info).(jump_condition) in
-    (BAsgn_list_sem BB.(cmd)).(Bnrm) ∘ (BJump_sem jmp_dist1 jmp_dist2 (eval_cond_expr jmp_cond)).(Bnrm); 
+    (BJump_sem jmp_dist1 jmp_dist2 (eval_cond_expr jmp_cond)).(Bnrm); 
   Berr := ∅;
   Binf := ∅;
 |}.
 
+Definition BB_cmds_sem (BB: BasicBlock): BDenote := {| 
+  Bnrm := 
+    (BAsgn_list_sem BB.(cmd)).(Bnrm);
+  Berr := ∅;
+  Binf := ∅;
+|}.
 
 (* Combine the single_step_stem to form the denotation for BB_list_sem.
    Not certain about its correctness  *)
 Fixpoint BB_list_sem (BBs: list BasicBlock): BDenote := {|
   Bnrm := 
     match BBs with 
-    | BB :: tl => (BB_sem BB).(Bnrm) ∘ (BB_list_sem tl).(Bnrm)
+    | BB :: tl => match tl with
+                  | nil => (BB_cmds_sem BB).(Bnrm)
+                  | _ => (BB_cmds_sem BB).(Bnrm) ∘ (BB_jmp_sem BB).(Bnrm) ∘ (BB_list_sem tl).(Bnrm)
+                  end
     | _ => Rels.id
     end;
   Berr := ∅;
@@ -415,11 +424,14 @@ Proof.
       rewrite H.
       exists {| st := a0; BB_num := BBnow.(block_num) |}.
       split. exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      split. tauto.
-      exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      split. tauto.
-      pose proof P_nil_aux1 BBnow a0. apply H0.
-      tauto.
+      split. tauto. simpl. 
+      --- split.
+          +++ simpl. tauto.
+          +++ simpl. unfold jmp_sem. destruct (eval_cond_expr (jump_condition BBnow.(jump_info))).
+              * destruct (jump_dist_2 BBnow.(jump_info)).
+                -- unfold cjmp_sem. simpl. split.
+                -- simpl. tauto.
+              * simpl. tauto.
   - admit.
   - admit. 
 Admitted.
