@@ -338,6 +338,7 @@ Proof.
     - admit. 
 Admitted.
 
+
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Q (CIf e c1 c2).
@@ -386,6 +387,7 @@ Proof.
     admit.    
 Admitted.
 
+
 Lemma P_nil:
   P nil (cmd_BB_gen).
 Proof.
@@ -412,9 +414,22 @@ Proof.
       unfold jmp_sem in H6. 
       destruct (eval_cond_expr (jump_condition BBnow.(jump_info))).
       +++ destruct (jump_dist_2 BBnow.(jump_info)).
-          * unfold cjmp_sem in H6. destruct H6. simpl in H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
-          * simpl in H6. destruct H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
-      +++ simpl in H6. destruct H6. rewrite H6 in H0. rewrite H0 in H1. apply H1.
+          * unfold cjmp_sem in H6. 
+            destruct H6. 
+            simpl in H6. 
+            rewrite H6 in H0. 
+            rewrite H0 in H1. 
+            apply H1.
+          * simpl in H6. 
+            destruct H6. 
+            rewrite H6 in H0. 
+            rewrite H0 in H1. 
+            apply H1.
+      +++ simpl in H6. 
+          destruct H6. 
+          rewrite H6 in H0. 
+          rewrite H0 in H1. 
+          apply H1.
     ++ intros.
       exists {| st := a; BB_num := BBnow.(block_num) |}.
       exists {| st := a0; BB_num := BBnow.(block_num) |}.
@@ -445,7 +460,10 @@ Lemma P_sound:
 Proof.
   intros.
   induction cmds.
-  Admitted.
+  + apply P_nil.
+  + destruct a.
+    - admit.
+Admitted. 
 
     
 
