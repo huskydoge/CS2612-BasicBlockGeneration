@@ -329,6 +329,7 @@ Proof.
     - admit. 
 Admitted.
 
+
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Q (CIf e c1 c2).
@@ -376,6 +377,7 @@ Proof.
     split. tauto.
     admit.    
 Admitted.
+
 
 Lemma P_nil:
   P nil (cmd_BB_gen).
@@ -445,7 +447,10 @@ Lemma P_sound:
 Proof.
   intros.
   induction cmds.
-  Admitted.
+  + apply P_nil.
+  + destruct a.
+    - admit.
+Admitted. 
 
     
 
