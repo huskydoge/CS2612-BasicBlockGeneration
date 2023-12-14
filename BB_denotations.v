@@ -547,11 +547,68 @@ Proof.
                     rewrite <- H11.
                     destruct x1.
                     simpl. apply H17.
-                --- admit.
-
-
-
-    ++ admit.
+                --- rewrite H in H11.
+                    assert ({|
+                    BB_num := ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow' BBnum).(BBn)).(block_num); st := a0|} = x1). {
+                      destruct x1. simpl in H11. rewrite <- H11. simpl in H9. rewrite H9. reflexivity.
+                    }
+                    rewrite H22. unfold BB_list_sem in H17. simpl in H17. sets_unfold in H17. destruct H17. exists x6. destruct H17. split.
+                    ++++ apply H17.
+                    ++++ apply H23.
+    ++ sets_unfold. repeat intros.  
+       set(bs1_ := {|BB_num := BBnow''.(block_num); st := a|}). exists bs1_.
+       set(bs2_ := {|BB_num := ((list_cmd_BB_gen cmd_BB_gen cmds BBs
+       {|
+         block_num := BBnow.(block_num);
+         commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+         jump_info := BBnow.(jump_info)
+       |} BBnum).(BBn)).(block_num); st := a0|}). exists bs2_.
+       simpl.
+       destruct BBs'.
+       ---- repeat split.
+            *** my_destruct H7. set(i_ := {|BB_num := BBnow''.(block_num); st := x0|}). exists i_. split.
+              **** split.
+              assert (E BBcmd = e /\ X BBcmd = x). {
+              destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. 
+              split.
+              rewrite <- H12. simpl. reflexivity.
+              rewrite <- H12. simpl. reflexivity.
+              }
+                ++++++ exists x1. repeat split; simpl.
+                       destruct H11. rewrite H11. apply H7.
+                       destruct H11. rewrite H12. apply H9.
+                       destruct H11. rewrite H12. intros. specialize (H10 y). pose proof H10 H13. rewrite H14. tauto.
+                ++++++ simpl. tauto.
+              **** simpl. unfold BAsgn_list_sem.  destruct BBcmds. 
+                    (*Bcmds = nil*)
+                    ++++++ simpl. assert (cmds = nil). {
+                      (*此时BBnow'' = BBnow'，这是显然的*) destruct H1. simpl in H2.
+                      admit.
+                      (*如果证明了上面的引理，就可以根据H4推出BBn没变，BBs也没变，那就说明cmds必然为空，再结合H8，即可证明结论*)
+                      }
+                      rewrite H11 in H8. simpl in H8. sets_unfold in H8.
+                      sets_unfold.
+                      assert (((list_cmd_BB_gen cmd_BB_gen cmds BBs
+                      {|
+                        block_num := BBnow.(block_num);
+                        commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+                        jump_info := BBnow.(jump_info)
+                      |} BBnum).(BBn)) = BBnow'). {
+                        rewrite H. rewrite H11. simpl. reflexivity.
+                      }
+                      subst bs2_. rewrite H12. rewrite <- H3. subst i_. rewrite H8. reflexivity.
+                    (*Bcmds != nil*)
+                    ++++++ simpl. sets_unfold. exists bs1_.  repeat split.
+                            ***** exists x1. repeat split.
+                                   ****** subst . simpl.
+                                   ****** destruct H11. rewrite H12. apply H9.
+                                   ****** destruct H11. rewrite H12. intros. specialize (H10 y). pose proof H10 H13. rewrite H14. tauto.
+       ---- repeat split.
+            *** my_destruct H7. set(i_ := {|BB_num := BBnow''.(block_num); st := x0|}). exists i_. split.
+              ****  admit.
+              **** simpl. unfold BAsgn_list_sem.  destruct BBcmds. 
+                    ++++++ simpl. admit.
+                    ++++++ simpl. admit.
     ++ admit. (*err / inf*)
     ++ admit. (*err / inf*)
     ++ admit. (*err / inf*)
@@ -560,9 +617,9 @@ Proof.
   * my_destruct H. destruct H2. 
     sets_unfold in nrm_cequiv0. 
     unfold cmd_BB_gen in H. 
-    simpl in H. apply app_inv_head_iff in H. destruct BBnow in H. simpl in H. injection H as ??.
+    simpl in H. apply app_inv_head_iff in H. destruct BBnow in H. simpl in H. injection H as ??. (*这里H有矛盾，但是还不知道怎么证明。*)
 Admitted.
-Search "::".
+
 
 
 (* forall Q(C) => forall cmds, P cmds *)
@@ -594,6 +651,7 @@ Proof.
 
     
 Search (_ ++ _::nil = _ ++ _ :: nil ).
+Search (_ ++ _::nil = _).
 
 Theorem BB_sound:
   forall (cmds: list cmd),
