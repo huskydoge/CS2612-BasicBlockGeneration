@@ -506,8 +506,13 @@ Proof.
     ++ admit. (*err / inf*)
     ++ admit. (*err / inf*)
     ++ admit.
-  * admit.
+  * my_destruct H. destruct H2. 
+    sets_unfold in nrm_cequiv0. 
+    unfold cmd_BB_gen in H. 
+    simpl in H. apply app_inv_head_iff in H. destruct BBnow in H. simpl in H. injection H as ??.
 Admitted.
+Search "::".
+
 
 (* forall Q(C) => forall cmds, P cmds *)
 Lemma P_sound:
