@@ -345,8 +345,13 @@ Lemma Q_if:
 Proof.
   intros.
   unfold Q. intros. right.
+  unfold P in H. specialize (H BBs BBnow BBnum). unfold P in H0. specialize (H0 BBs BBnow BBnum).
+  my_destruct H. my_destruct H0.
+  set(BBs_ := x ++ x2). exists BBs_.
+  set(BBnum_ := (list_cmd_BB_gen cmd_BB_gen c2 BBs BBnow BBnum).(BBn).(block_num)).
+  exists BBnum_. (*这个找最后一个BBnum的方式显然不优雅*)
   (* first get the result of the block from c1 for preparing c2 *)
-  admit.
+  
  
 Admitted. 
 
@@ -566,7 +571,7 @@ Proof.
        simpl.
        destruct BBs'.
        ---- repeat split.
-            *** my_destruct H7. set(i_ := {|BB_num := BBnow''.(block_num); st := x0|}). exists i_. split.
+            *** my_destruct H7. set(i_ := {|BB_num := BBnow'.(block_num); st := x0|}). exists i_. split.
               **** split.
               assert (E BBcmd = e /\ X BBcmd = x). {
               destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. 
@@ -579,7 +584,8 @@ Proof.
                        destruct H11. rewrite H12. apply H9.
                        destruct H11. rewrite H12. intros. specialize (H10 y). pose proof H10 H13. rewrite H14. tauto.
                 ++++++ simpl. tauto.
-              **** simpl. unfold BAsgn_list_sem.  destruct BBcmds. 
+              **** simpl. unfold BAsgn_list_sem.  
+                induction BBcmds. 
                     (*Bcmds = nil*)
                     ++++++ simpl. assert (cmds = nil). {
                       (*此时BBnow'' = BBnow'，这是显然的*) destruct H1. simpl in H2.
@@ -596,19 +602,10 @@ Proof.
                       |} BBnum).(BBn)) = BBnow'). {
                         rewrite H. rewrite H11. simpl. reflexivity.
                       }
-                      subst bs2_. rewrite H12. rewrite <- H3. subst i_. rewrite H8. reflexivity.
+                      subst bs2_. rewrite H12. rewrite <- H3. subst i_. rewrite H8. rewrite H3. reflexivity.
                     (*Bcmds != nil*)
-                    ++++++ simpl. sets_unfold. exists bs1_.  repeat split.
-                            ***** exists x1. repeat split.
-                                   ****** subst . simpl.
-                                   ****** destruct H11. rewrite H12. apply H9.
-                                   ****** destruct H11. rewrite H12. intros. specialize (H10 y). pose proof H10 H13. rewrite H14. tauto.
-       ---- repeat split.
-            *** my_destruct H7. set(i_ := {|BB_num := BBnow''.(block_num); st := x0|}). exists i_. split.
-              ****  admit.
-              **** simpl. unfold BAsgn_list_sem.  destruct BBcmds. 
-                    ++++++ simpl. admit.
-                    ++++++ simpl. admit.
+                    ++++++ admit.
+      ---- admit.
     ++ admit. (*err / inf*)
     ++ admit. (*err / inf*)
     ++ admit. (*err / inf*)
