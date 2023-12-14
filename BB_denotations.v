@@ -499,7 +499,58 @@ Proof.
              simpl.
              simpl in H9. rewrite H9 in H12.
              apply H12.
-       +++ admit.
+       +++ my_destruct H7.
+           exists (st x3).
+           destruct H1. 
+           rewrite <- H in H1. 
+           simpl in H1. 
+           apply app_inj_tail in H1.
+           destruct H1.
+           repeat split. exists x4.
+           repeat split.
+           - rewrite H8 in H7.
+             rewrite <- H20 in H7.  simpl in H7.
+             apply H7.
+           - rewrite <- H20 in H15. simpl in H15.
+             apply H15. 
+           - intros.
+             pose proof H16 Y.
+             rewrite <- H20 in H22. simpl in H22.
+             apply H22 in H21.
+             rewrite <- H8.
+             rewrite H21.
+             tauto.
+           - destruct H5.
+             sets_unfold in nrm_cequiv0.
+             pose proof nrm_cequiv0 (st x3) a0.
+             destruct H5 as [? ?].
+             apply H5.
+             exists {| BB_num := BBnow''.(block_num); st := st x3 |}.
+             exists {| BB_num := ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow' BBnum).(BBn)).(block_num); st := a0 |}.
+             simpl.
+             repeat split.
+             sets_unfold.
+             exists x2.
+             repeat split.
+             -- rewrite <- H10.
+                rewrite H14.
+                destruct x3.
+                apply H13.
+             -- exists x5.
+                rewrite <- H12.
+                repeat split.
+                apply H18.
+                destruct BBs'.
+                --- simpl in H17.
+                    rewrite <- H9.
+                    rewrite H in H11.
+                    rewrite <- H11.
+                    destruct x1.
+                    simpl. apply H17.
+                --- admit.
+
+
+
     ++ admit.
     ++ admit. (*err / inf*)
     ++ admit. (*err / inf*)
