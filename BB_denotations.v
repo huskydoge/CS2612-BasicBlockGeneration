@@ -383,7 +383,7 @@ Proof.
   BBs那就是Q中的BBs ++ [BBnow]了 
   #TODO: Check!!!!!! *)
   (* Get correct num *)
-  set(BB_then_num := S(BBnum)). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_else_num)). set(BB_num1 := S(BB_next_num)).
+  set(BB_then_num := BBnum). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_else_num)). set(BB_num1 := S(BB_next_num)).
   (* Get correct BBnow for P c1 *)
   set(BB_then := {|block_num := BB_then_num;
                    commands := nil;
@@ -435,7 +435,10 @@ Proof.
   (* MAIN ========================================== *)
   split.
   - cbn [cmd_BB_gen]. simpl. 
-    subst BB_then_num. subst BB_next_num.
+    subst BB_then_num. subst BB_next_num. subst BB_else_num.
+    my_destruct H1. my_destruct H2. destruct H6. clear H11 err_cequiv0 inf_cequiv0.  
+    rewrite H7. rewrite H6. simpl. tauto.
+
 
   my_destruct H. my_destruct H0.
   set(BBs_ := x ++ x2). exists BBs_.
