@@ -353,7 +353,6 @@ Proof.
   split.
   -  cbn [cmd_BB_gen]. simpl.
      unfold to_result. simpl. 
-  -
   (* first get the result of the block from c1 for preparing c2 *)
   
  
@@ -427,13 +426,208 @@ Proof.
 Admitted.
 
 
+Lemma PAsgn_cons_sound:
+  forall (x: var_name) (e: expr) (cmds: list cmd),
+  Q (CAsgn x e) -> P cmds cmd_BB_gen -> P ((CAsgn x e) :: cmds) (cmd_BB_gen).
+Proof.
+  intros.
+  unfold Q in H. 
+  unfold P. 
+  intros. 
+  specialize (H BBs BBnow BBnum). 
+  destruct H.
+  unfold cmd_BB_gen in H. 
+  simpl in H.
+  * destruct H as [BBnow' [BBcmd []]]. 
+    unfold P in H0.    
+    specialize (H0 BBs BBnow' BBnum).
+    destruct H0 as [BBs' [BBnow'' [BBcmds []]]]. 
+    my_destruct H2.
+    exists BBs'. (*这里我们考虑到，a为Asgn，P(a::cmds)，归纳假设中的BBS'正好是我们要的delta量*)
+    exists BBnow''. (*这里我们考虑到，a为Asgn，证明P(a::cmds)，里面的BBnow'应是把(a::cmds)开头所有的asgns都放进去的那个BB，所以应该用归纳假设中的BBnow', 也即BBnow''*) 
+    exists (BBcmd :: BBcmds). (*这里我们考虑到，a为Asgn，证明P(a::cmds)，里面的BBcmds应该是把(a::cmds)开头所有的asgns都放进去的那个BB的cmds，所以应该用归纳假设中的BBcmds并上由单条指令产生的BBcmd, 也即(BBcmd :: BBcmds)*)
+    repeat split; simpl.
+    ++ destruct BBs'.
+      +++  rewrite H0. 
+           rewrite <- H. 
+           simpl. 
+           reflexivity.
+      +++  rewrite H0. reflexivity.
+    ++ rewrite H2.
+       destruct H1. 
+       simpl in H1. 
+       rewrite H1. 
+       simpl. 
+       apply app_assoc_reverse.
+    ++ rewrite H3. rewrite <- H. reflexivity.
+    ++ rewrite H. rewrite H4. reflexivity.
+    ++ sets_unfold.
+       intros.
+       my_destruct H7. 
+       destruct BBs'.
+       +++ my_destruct H7.
+           exists (st x2).
+           split.
+           - exists x3. repeat split.
+             -- rewrite H8 in H7.
+                destruct H1. rewrite <- H in H1. 
+                simpl in H1. apply app_inj_tail in H1. 
+                destruct H1. rewrite <- H17 in H7. 
+                simpl in H7. apply H7.
+             -- rewrite <- H14. destruct H1. 
+                rewrite <- H in H1. simpl in H1. 
+                apply app_inj_tail in H1. destruct H1. 
+                rewrite <- H17. simpl. reflexivity.
+             -- destruct H1. rewrite <- H in H1. 
+                simpl in H1. apply app_inj_tail in H1. 
+                destruct H1. rewrite <- H17 in H15. 
+                simpl in H12. intros. 
+                specialize (H15 Y). pose proof H15 H18. 
+                rewrite H8 in H19. rewrite H19. reflexivity.
+           - destruct H5.
+             sets_unfold in nrm_cequiv0.
+             pose proof nrm_cequiv0 (st x2) a0.
+             destruct H5 as [? ?].
+             apply H5.
+             exists {| BB_num := BBnow''.(block_num); st := st x2 |}.
+             exists {| BB_num := ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow' BBnum).(BBn)).(block_num); st := a0 |}.
+             simpl.
+             repeat split.
+             assert (BBnow''.(block_num) = x2.(BB_num)).
+             {
+              rewrite <- H13. rewrite H10. tauto.
+             }
+             assert (((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow' BBnum).(BBn)).(block_num) = x1.(BB_num)).
+             {
+              rewrite H11. rewrite H. tauto.
+             }
+             rewrite H17. rewrite H18.
+             destruct x1, x2.
+             simpl.
+             simpl in H9. rewrite H9 in H12.
+             apply H12.
+       +++ my_destruct H7.
+           exists (st x3).
+           destruct H1. 
+           rewrite <- H in H1. 
+           simpl in H1. 
+           apply app_inj_tail in H1.
+           destruct H1.
+           repeat split. exists x4.
+           repeat split.
+           - rewrite H8 in H7.
+             rewrite <- H20 in H7.  simpl in H7.
+             apply H7.
+           - rewrite <- H20 in H15. simpl in H15.
+             apply H15. 
+           - intros.
+             pose proof H16 Y.
+             rewrite <- H20 in H22. simpl in H22.
+             apply H22 in H21.
+             rewrite <- H8.
+             rewrite H21.
+             tauto.
+           - destruct H5.
+             sets_unfold in nrm_cequiv0.
+             pose proof nrm_cequiv0 (st x3) a0.
+             destruct H5 as [? ?].
+             apply H5.
+             exists {| BB_num := BBnow''.(block_num); st := st x3 |}.
+             exists {| BB_num := ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow' BBnum).(BBn)).(block_num); st := a0 |}.
+             simpl.
+             repeat split.
+             sets_unfold.
+             exists x2.
+             repeat split.
+             -- rewrite <- H10.
+                rewrite H14.
+                destruct x3.
+                apply H13.
+             -- exists x5.
+                rewrite <- H12.
+                repeat split.
+                apply H18.
+                destruct BBs'.
+                --- simpl in H17.
+                    rewrite <- H9.
+                    rewrite H in H11.
+                    rewrite <- H11.
+                    destruct x1.
+                    simpl. apply H17.
+                --- rewrite H in H11.
+                    assert ({|
+                    BB_num := ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow' BBnum).(BBn)).(block_num); st := a0|} = x1). {
+                      destruct x1. simpl in H11. rewrite <- H11. simpl in H9. rewrite H9. reflexivity.
+                    }
+                    rewrite H22. unfold BB_list_sem in H17. simpl in H17. sets_unfold in H17. destruct H17. exists x6. destruct H17. split.
+                    ++++ apply H17.
+                    ++++ apply H23.
+    ++ sets_unfold. repeat intros.  
+       set(bs1_ := {|BB_num := BBnow''.(block_num); st := a|}). exists bs1_.
+       set(bs2_ := {|BB_num := ((list_cmd_BB_gen cmd_BB_gen cmds BBs
+       {|
+         block_num := BBnow.(block_num);
+         commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+         jump_info := BBnow.(jump_info)
+       |} BBnum).(BBn)).(block_num); st := a0|}). exists bs2_.
+       simpl.
+       destruct BBs'.
+       ---- repeat split.
+            *** my_destruct H7. set(i_ := {|BB_num := BBnow'.(block_num); st := x0|}). exists i_. split.
+              **** split.
+              assert (E BBcmd = e /\ X BBcmd = x). {
+              destruct H1. rewrite <- H in H1. simpl in H1. apply app_inj_tail in H1. destruct H1. 
+              split.
+              rewrite <- H12. simpl. reflexivity.
+              rewrite <- H12. simpl. reflexivity.
+              }
+                ++++++ exists x1. repeat split; simpl.
+                       destruct H11. rewrite H11. apply H7.
+                       destruct H11. rewrite H12. apply H9.
+                       destruct H11. rewrite H12. intros. specialize (H10 y). pose proof H10 H13. rewrite H14. tauto.
+                ++++++ simpl. tauto.
+              **** simpl. unfold BAsgn_list_sem.  
+                induction BBcmds. 
+                    (*Bcmds = nil*)
+                    ++++++ simpl. assert (cmds = nil). {
+                      (*此时BBnow'' = BBnow'，这是显然的*) destruct H1. simpl in H2.
+                      admit.
+                      (*如果证明了上面的引理，就可以根据H4推出BBn没变，BBs也没变，那就说明cmds必然为空，再结合H8，即可证明结论*)
+                      }
+                      rewrite H11 in H8. simpl in H8. sets_unfold in H8.
+                      sets_unfold.
+                      assert (((list_cmd_BB_gen cmd_BB_gen cmds BBs
+                      {|
+                        block_num := BBnow.(block_num);
+                        commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+                        jump_info := BBnow.(jump_info)
+                      |} BBnum).(BBn)) = BBnow'). {
+                        rewrite H. rewrite H11. simpl. reflexivity.
+                      }
+                      subst bs2_. rewrite H12. rewrite <- H3. subst i_. rewrite H8. rewrite H3. reflexivity.
+                    (*Bcmds != nil*)
+                    ++++++ simpl. sets_unfold. admit.
+      ---- admit.
+    ++ admit. (*err / inf*)
+    ++ admit. (*err / inf*)
+    ++ admit. (*err / inf*)
+    ++ admit. (*err / inf*)
+    ++ admit.
+  * my_destruct H. destruct H2. 
+    sets_unfold in nrm_cequiv0. 
+    unfold cmd_BB_gen in H. 
+    simpl in H.
+Admitted.
+
+
 Lemma P_cons:
-  forall (c: cmd) (cmds: list cmd) (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
+  forall (c: cmd) (cmds: list cmd),
   Q c -> P cmds cmd_BB_gen -> P (c :: cmds) (cmd_BB_gen).
 Proof.
   intros.
   destruct c.
-  - admit.
+  - pose proof PAsgn_cons_sound x e cmds. 
+    apply H1. apply H. apply H0.
   - admit.
   - admit.
 Admitted. 
@@ -441,13 +635,13 @@ Admitted.
 
 Section BB_sound.
 
-Variable cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
+
 Variable cmd_BB_gen_sound: forall (c: cmd), Q c.
 
 Fixpoint cmd_list_BB_gen_sound (cmds: list cmd): P cmds cmd_BB_gen :=
   match cmds with
   | nil => P_nil cmd_BB_gen
-  | c :: cmds0 => P_cons c cmds0 cmd_BB_gen (cmd_BB_gen_sound c) (cmd_list_BB_gen_sound cmds0)
+  | c :: cmds0 => P_cons c cmds0 (cmd_BB_gen_sound c) (cmd_list_BB_gen_sound cmds0)
   end.
 
 End BB_sound.
@@ -457,10 +651,10 @@ Fixpoint cmd_BB_gen_sound (c: cmd): Q c :=
   | CAsgn x e => Q_asgn x e
   | CIf e cmds1 cmds2 =>
       Q_if e cmds1 cmds2
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds1)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds2)
   | CWhile cmds1 e cmds2 =>
       Q_while cmds1 e cmds2
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds1)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds2)
   end.
