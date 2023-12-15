@@ -54,7 +54,7 @@ Definition test_false_jmp (D: EDenote):
 Definition ujmp_sem (jum_dist: nat): BDenote :=
   {|
     Bnrm := fun (bs1: BB_state) (bs2 :BB_state) =>
-      bs1.(st) = bs2.(st) /\ bs2.(BB_num) = jum_dist;
+      bs1.(st) = bs2.(st) /\ bs2.(BB_num) = jum_dist /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
     Berr := ∅;
     Binf := ∅;
   |}.
@@ -62,7 +62,7 @@ Definition ujmp_sem (jum_dist: nat): BDenote :=
 Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
   {|
     Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\ 
-            ((bs2.(BB_num) = jmp_dist1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dist2) /\ (test_false_jmp D bs1.(st)))));
+            ((bs2.(BB_num) = jmp_dist1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dist2) /\ (test_false_jmp D bs1.(st))))) /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
     Berr := ∅; (* Ignore err cases now *)
     Binf := ∅;
   |}.
@@ -235,22 +235,22 @@ Definition Q(c: cmd): Prop :=
     (exists BBs' BBnum', 
       res.(BasicBlocks) ++ (res.(BBn)::nil) =  BBs ++ (BBnow :: nil) ++ BBs' /\
       res.(BBn).(block_num) = BBnum' /\
-      BCequiv (BB_list_sem BBs') (cmd_sem c) BBnum BBnum').
+      BCequiv (BB_list_sem BBs') (cmd_sem c) BBnum BBnum'). (* 这里的BBnum'是最后停留在BB的编号，要和cmd_BB_gen中的BBnum做区分！ *)
 
 
 (* c: the cmd we are currently facing
   BBs: list of Basic Blocks which have been already generated
-  BB_now: the Basic Block we are currently at
+  BBnow: the Basic Block we are currently at
   BB_num: we should start assigning new basic blocks with BB_num 
   
   Record basic_block_gen_results : Type := {
   BasicBlocks: list BasicBlock; (* already finished blocks*)
-  BBn: BasicBlock; (* current_block_num should be the block num of BB_now, I think *)
+  BBn: BasicBlock; (* current_block_num should be the block num of BBnow, I think *)
   next_block_num: nat (* I think next block should start with the number*)
 }.*)
 
 Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results): Prop :=
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd),
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd) BBnum',
     let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
 
@@ -282,6 +282,10 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
                     |} in
                     BBnow'.(jump_info) = BlockInfo'
     end /\
+
+    (*要拿到用于分配的下一个BBnum的信息*)
+
+    BBnum' = res.(next_block_num) /\
 
     BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\
 
@@ -344,8 +348,64 @@ Lemma Q_if:
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Q (CIf e c1 c2).
 Proof.
   intros.
-  unfold Q. intros. right.
-  unfold P in H. specialize (H BBs BBnow BBnum). unfold P in H0. specialize (H0 BBs BBnow BBnum).
+  unfold Q. intros. right. 
+  (* 这里要和BBgeneration里的情况对齐
+  P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
+  P c1用于分配的BBnum也是如此，如下：    
+    let BB_then_num := BB_num in
+    let BB_else_num := S(BB_then_num) in
+    let BB_next_num := S(BB_else_num) in
+    let BB_num1 := S(BB_next_num)
+  BBs那就是Q中的BBs ++ [BBnow]了 
+  #TODO: Check!!!!!! *)
+  (* Get correct num *)
+  set(BB_then_num := S(BBnum)). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_then_num)). set(BB_num1 := S(BB_next_num)).
+  (* Get correct BBnow for P c1 *)
+  set(BB_then := {|block_num := BB_then_num;
+                   commands := nil;
+                   jump_info := {|
+                      jump_kind := UJump;
+                      jump_dist_1 := BB_next_num; 
+                      jump_dist_2 := None; 
+                      jump_condition := None
+                      |};
+                   |}).
+  unfold P in H. specialize (H (BBs ++ BBnow::nil) BB_then BB_num1). 
+  
+  (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
+  (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
+  destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
+  (* Get correct BBnow for P c2 *)
+  set (BB_else := {|
+    block_num := BB_else_num;
+    commands := nil;
+    jump_info := {|
+        jump_kind := UJump;
+        jump_dist_1 := BB_next_num; 
+        jump_dist_2 := None; 
+        jump_condition := None
+      |}
+    |}).
+  (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_now_then ++ BBs_then, 注意这里的BB_now_then和BB_then不同！它里面的commands可能由于CAsgn有填充*)
+  (*此时的BBnow则应该用BB_else了*)
+
+  unfold P in H0. 
+  specialize (H0 (BBs ++ BBnow::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
+
+  (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
+  destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
+
+  (*接下来要去构造结论中的BBs'和BBnum'
+    BBnum'是最终停留在的BB的编号，应该是BBnext的编号
+    BBs', 根据Q中的定义，是要剔除掉BBnow之后的Delta的部分，因为这是IF，所以BBnow中是不会增加新的cmd了
+  *)
+  set(BB_next := {|
+  block_num := BB_next_num;
+  commands := nil; (* 创建一个空的命令列表 *)
+  jump_info := BBnow.(jump_info)
+  |}).
+  set(BBs'_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
+
   my_destruct H. my_destruct H0.
   set(BBs_ := x ++ x2). exists BBs_.
   set(BBnum_ := (list_cmd_BB_gen cmd_BB_gen c2 BBs BBnow BBnum).(BBn).(block_num)).
@@ -397,7 +457,7 @@ Proof.
 Admitted.
 
 
-Lemma P_nil: forall cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results,
+Lemma P_nil:
   P nil (cmd_BB_gen).
 Proof.
   unfold P. 
@@ -428,8 +488,12 @@ Admitted.
 
 
 Lemma P_cons:
-  forall (c: cmd) (cmds: list cmd) (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
+  forall (c: cmd) (cmds: list cmd),
   Q c -> P cmds cmd_BB_gen -> P (c :: cmds) (cmd_BB_gen).
+Proof.
+  intros.
+  induction cmds; simpl.
+  - unfold P. simpl. unfold P in H0. 
 Admitted.
 
 Lemma PAsgn_sound:
@@ -629,13 +693,12 @@ Admitted.
 
 Section BB_sound.
 
-Variable cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
 Variable cmd_BB_gen_sound: forall (c: cmd), Q c.
 
-Fixpoint cmd_list_BB_gen_sound (cmds: list cmd): P cmds cmd_BB_gen :=
+Fixpoint cmd_list_BB_gen_sound (cmds: list cmd) :=
   match cmds with
-  | nil => P_nil cmd_BB_gen
-  | c :: cmds0 => P_cons c cmds0 cmd_BB_gen (cmd_BB_gen_sound c) (cmd_list_BB_gen_sound cmds0)
+  | nil => P_nil
+  | c :: cmds0 => (P_cons c cmds0 ) (cmd_BB_gen_sound c) (cmd_list_BB_gen_sound cmds0)
   end.
 
 End BB_sound.
@@ -645,10 +708,12 @@ Fixpoint cmd_BB_gen_sound (c: cmd): Q c :=
   | CAsgn x e => Q_asgn x e
   | CIf e cmds1 cmds2 =>
       Q_if e cmds1 cmds2
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds1)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds2)
   | CWhile cmds1 e cmds2 =>
       Q_while cmds1 e cmds2
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds1)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds2)
   end.
+
+Check cmd_list_BB_gen_sound.
