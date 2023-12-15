@@ -350,6 +350,10 @@ Proof.
   set(BBs_ := x ++ x2). exists BBs_.
   set(BBnum_ := (list_cmd_BB_gen cmd_BB_gen c2 BBs BBnow BBnum).(BBn).(block_num)).
   exists BBnum_. (*这个找最后一个BBnum的方式显然不优雅*)
+  split.
+  -  cbn [cmd_BB_gen]. simpl.
+     unfold to_result. simpl. 
+  -
   (* first get the result of the block from c1 for preparing c2 *)
   
  
@@ -393,7 +397,7 @@ Proof.
 Admitted.
 
 
-Lemma P_nil:
+Lemma P_nil: forall cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results,
   P nil (cmd_BB_gen).
 Proof.
   unfold P. 
@@ -423,6 +427,10 @@ Proof.
 Admitted.
 
 
+Lemma P_cons:
+  forall (c: cmd) (cmds: list cmd) (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
+  Q c -> P cmds cmd_BB_gen -> P (c :: cmds) (cmd_BB_gen).
+Admitted.
 
 Lemma PAsgn_sound:
   forall (x: var_name) (e: expr) (cmds: list cmd),
@@ -646,7 +654,20 @@ Proof.
   + apply Q_if.
   + apply Q_while. *)
 
-    
+Section BB_sound.
+
+Variable cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
+Variable cmd_BB_gen_sound: forall (c: cmd), Q c.
+
+Fixpoint cmd_list_BB_gen_sound (cmds: list cmd): P cmds cmd_BB_gen :=
+  match cmds with
+  | nil => P_nil cmd_BB_gen
+  | c :: cmds0 => P_cons c cmds0 cmd_BB_gen (cmd_BB_gen_sound c) (cmd_list_BB_gen_sound cmds0)
+  end.
+
+End
+
+
 Search (_ ++ _::nil = _ ++ _ :: nil ).
 Search (_ ++ _::nil = _).
 
