@@ -665,7 +665,20 @@ Fixpoint cmd_list_BB_gen_sound (cmds: list cmd): P cmds cmd_BB_gen :=
   | c :: cmds0 => P_cons c cmds0 cmd_BB_gen (cmd_BB_gen_sound c) (cmd_list_BB_gen_sound cmds0)
   end.
 
-End
+End BB_sound.
+Check Q_if.
+Fixpoint cmd_BB_gen_sound (c: cmd): Q c :=
+  match c with
+  | CAsgn x e => Q_asgn x e
+  | CIf e cmds1 cmds2 =>
+      Q_if e cmds1 cmds2
+        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
+        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
+  | CWhile cmds1 e cmds2 =>
+      Q_while cmds1 e cmds2
+        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
+        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
+  end.
 
 
 Search (_ ++ _::nil = _ ++ _ :: nil ).
