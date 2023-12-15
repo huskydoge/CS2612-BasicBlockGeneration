@@ -232,8 +232,8 @@ Definition Q(c: cmd): Prop :=
       BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num)) (*还在当下的BBnow里，BBnum则是下一个BB的编号，不能用*)
     \/
     (*CIf / CWhile*)
-    (exists BBs' BBnum', 
-      res.(BasicBlocks) ++ (res.(BBn)::nil) =  BBs ++ (BBnow :: nil) ++ BBs' /\
+    (exists BBnow' BBs' BBnum', 
+      res.(BasicBlocks) ++ (res.(BBn)::nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\
       res.(BBn).(block_num) = BBnum' /\
       BCequiv (BB_list_sem BBs') (cmd_sem c) BBnum BBnum'). (* 这里的BBnum'是最后停留在BB的编号，要和cmd_BB_gen中的BBnum做区分！ *)
 
@@ -380,8 +380,8 @@ Proof.
     let BB_else_num := S(BB_then_num) in
     let BB_next_num := S(BB_else_num) in
     let BB_num1 := S(BB_next_num)
-  BBs那就是Q中的BBs ++ [BBnow]了 
-  #TODO: Check!!!!!! *)
+  # BBs并不是Q中的BBs ++ [BBnow]！BBnow要加上跳转信息！！！！ 
+  #: Check!!!!!! *)
   (* Get correct num *)
   set(BB_then_num := BBnum). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_else_num)). set(BB_num1 := S(BB_next_num)).
   (* Get correct BBnow for P c1 *)
@@ -394,7 +394,20 @@ Proof.
                       jump_condition := None
                       |};
                    |}).
-  unfold P in H. specialize (H (BBs ++ BBnow::nil) BB_then BB_num1). 
+  set(BBnow' := {|block_num := BBnow.(block_num);
+                   commands := BBnow.(commands);
+                   jump_info := {|
+                      jump_kind := CJump;
+                      jump_dist_1 := BB_then_num; 
+                      jump_dist_2 := Some BB_else_num; 
+                      jump_condition := Some e
+                      |};
+                   |}).
+  (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
+  (*此时的BBnow则应该用BB_then了*)
+  (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
+  (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
+  unfold P in H. specialize (H (BBs ++ BBnow'::nil) BB_then BB_num1). 
   
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
@@ -414,7 +427,7 @@ Proof.
   (*此时的BBnow则应该用BB_else了*)
 
   unfold P in H0. 
-  specialize (H0 (BBs ++ BBnow::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
+  specialize (H0 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
 
   (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
   destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
@@ -430,27 +443,79 @@ Proof.
   |}).
   set(BBs'_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
   
-  exists BBs'_. exists BB_next_num.
+  exists BBnow'. exists BBs'_. exists BB_next_num.
   (*========================================== *)
   (* MAIN ========================================== *)
   split.
   - cbn [cmd_BB_gen]. simpl. 
     subst BB_then_num. subst BB_next_num. subst BB_else_num.
-    my_destruct H1. my_destruct H2. destruct H6. clear H11 err_cequiv0 inf_cequiv0.  
-    rewrite H7. rewrite H6. simpl. tauto.
-
-
-  my_destruct H. my_destruct H0.
-  set(BBs_ := x ++ x2). exists BBs_.
-  set(BBnum_ := (list_cmd_BB_gen cmd_BB_gen c2 BBs BBnow BBnum).(BBn).(block_num)).
-  exists BBnum_. (*这个找最后一个BBnum的方式显然不优雅*)
-  split.
-  -  cbn [cmd_BB_gen]. simpl.
-     unfold to_result. simpl. 
-  -
-  (* first get the result of the block from c1 for preparing c2 *)
-  
- 
+    my_destruct H1. my_destruct H2.
+    replace (S (S (S BBnum))) with (BB_num1).
+    replace ({|
+    block_num := BBnum;
+    commands := nil;
+    jump_info :=
+      {|
+        jump_kind := UJump;
+        jump_dist_1 := S (S BBnum);
+        jump_dist_2 := None;
+        jump_condition := None
+      |}
+      |}) with (BB_then).
+      replace {|
+      block_num := S (S BBnum);
+      commands := nil;
+      jump_info := BBnow.(jump_info)
+    |} with (BB_next).
+    replace {|
+              block_num := BBnow.(block_num);
+              commands := BBnow.(cmd);
+              jump_info :=
+                {|
+                 jump_kind := CJump;
+                 jump_dist_1 := BBnum;
+                 jump_dist_2 := Some (S BBnum);
+                 jump_condition := Some e
+                |}
+              |} with BBnow'.
+    replace {|
+              block_num := S BBnum;
+              commands := nil;
+              jump_info :=
+                {|
+                  jump_kind := UJump;
+                  jump_dist_1 := S (S BBnum);
+                  jump_dist_2 := None;
+                  jump_condition := None
+                |}
+            |} with BB_else.
+      + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H5. simpl. rewrite <- H1. simpl in H10. 
+        assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
+        {
+          rewrite <- app_assoc. simpl. reflexivity.
+        }
+        rewrite <- H13. rewrite H10. rewrite <- app_assoc. simpl. rewrite <- app_assoc. simpl. reflexivity. 
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
+  - split.
+    * cbn [cmd_BB_gen]. simpl. reflexivity.
+    * my_destruct H2. my_destruct H1.
+      simpl in H11. simpl in H6.
+      assert (BB_now_else.(block_num) = BB_else_num).
+      {
+        rewrite H4. reflexivity.
+      }
+      rewrite H13 in H6.
+      split; sets_unfold.
+      ++ intros. destruct H6. destruct H11. clear err_cequiv0 inf_cequiv0 err_cequiv1 inf_cequiv1. 
+         sets_unfold in nrm_cequiv0. sets_unfold in nrm_cequiv1.
+         specialize (nrm_cequiv0 (a a0)). 
+         (*这一步，a是BBthen分支的*)
+      ++ admit. (*err*)
+      ++ admit. (*inf*)
 Admitted. 
 
 Search (S _ = _ ).
