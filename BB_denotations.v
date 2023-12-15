@@ -270,17 +270,41 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
     in
 
 
-
     (* 根据BBs' 的情况分配JumpInfo*)
     match BBs' with
     | nil => BBnow'.(jump_info) = BBnow.(jump_info)
-    | next_BB :: _  => let BlockInfo' := {|
-                      jump_kind := UJump;
-                      jump_dist_1 := next_BB.(block_num);
-                      jump_dist_2 := None;
-                      jump_condition := None
-                    |} in
-                    BBnow'.(jump_info) = BlockInfo'
+    | next_BB :: _  => 
+        (match cmds with
+        | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
+        | c :: tl =>
+          (match c with
+            | CAsgn x e => (let BlockInfo' := {|
+                                              jump_kind := UJump;
+                                              jump_dist_1 := next_BB.(block_num);
+                                              jump_dist_2 := None;
+                                              jump_condition := None
+                                            |} in
+                                            BBnow'.(jump_info) = BlockInfo')
+            | CIf e c1 c2 => (let BB_then_num := BBnum in
+                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+                   let BlockInfo' := {|
+                                        jump_kind := CJump;
+                                        jump_dist_1 := next_BB.(block_num);
+                                        jump_dist_2 := Some (S(next_BB.(block_num)));
+                                        jump_condition := Some e
+                                      |} in
+                                      BBnow'.(jump_info) = BlockInfo')
+            | CWhile pre e body => (let BB_then_num := BBnum in
+                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+                   let BlockInfo' := {|
+                                        jump_kind := UJump;
+                                        jump_dist_1 := next_BB.(block_num);
+                                        jump_dist_2 := None;
+                                        jump_condition := None
+                                      |} in
+                                      BBnow'.(jump_info) = BlockInfo') 
+          end)
+        end)
     end /\
 
     (*要拿到用于分配的下一个BBnum的信息*)
@@ -359,7 +383,7 @@ Proof.
   BBs那就是Q中的BBs ++ [BBnow]了 
   #TODO: Check!!!!!! *)
   (* Get correct num *)
-  set(BB_then_num := S(BBnum)). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_then_num)). set(BB_num1 := S(BB_next_num)).
+  set(BB_then_num := S(BBnum)). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_else_num)). set(BB_num1 := S(BB_next_num)).
   (* Get correct BBnow for P c1 *)
   set(BB_then := {|block_num := BB_then_num;
                    commands := nil;
@@ -405,6 +429,13 @@ Proof.
   jump_info := BBnow.(jump_info)
   |}).
   set(BBs'_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
+  
+  exists BBs'_. exists BB_next_num.
+  (*========================================== *)
+  (* MAIN ========================================== *)
+  split.
+  - cbn [cmd_BB_gen]. simpl. 
+    subst BB_then_num. subst BB_next_num.
 
   my_destruct H. my_destruct H0.
   set(BBs_ := x ++ x2). exists BBs_.
@@ -418,6 +449,8 @@ Proof.
   
  
 Admitted. 
+
+Search (S _ = _ ).
 
 Lemma Q_while:
   forall (pre: list cmd) (e: expr) (body: list cmd),
