@@ -627,33 +627,6 @@ Admitted.
 
 
 
-(* forall Q(C) => forall cmds, P cmds *)
-Lemma P_sound:
-  (forall (c: cmd), 
-    Q c) -> forall (cmds : list cmd), P (cmds) (cmd_BB_gen).
-Proof.
-  intros.
-  induction cmds.
-  + apply P_nil.
-  + destruct a.
-    - specialize (H (CAsgn x e)).
-      pose proof PAsgn_sound x e cmds.
-      apply H0 in IHcmds.
-      apply IHcmds. apply H.
-    - specialize (H (CIf e c1 c2)).
-      admit.
-    - specialize (H (CWhile pre e body)).
-      admit.
-Admitted.
-
-(* Lemma Q_sound:
-  forall (c: cmd), Q c.
-Proof.
-  destruct c.
-  + apply Q_asgn.
-  + apply Q_if.
-  + apply Q_while. *)
-
 Section BB_sound.
 
 Variable cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
@@ -666,7 +639,7 @@ Fixpoint cmd_list_BB_gen_sound (cmds: list cmd): P cmds cmd_BB_gen :=
   end.
 
 End BB_sound.
-Check Q_if.
+
 Fixpoint cmd_BB_gen_sound (c: cmd): Q c :=
   match c with
   | CAsgn x e => Q_asgn x e
@@ -679,21 +652,3 @@ Fixpoint cmd_BB_gen_sound (c: cmd): Q c :=
         (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
         (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
   end.
-
-
-Search (_ ++ _::nil = _ ++ _ :: nil ).
-Search (_ ++ _::nil = _).
-
-Theorem BB_sound:
-  forall (cmds: list cmd),
-  P cmds cmd_BB_gen.
-Proof.
-  intros.
-  induction cmds.
-  - apply P_nil.
-  - pose proof P_sound.
-    destruct a.
-    * pose proof Q_asgn x e.
-      admit.
-    * destruct cmds.
-Admitted.
