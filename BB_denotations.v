@@ -182,7 +182,7 @@ Fixpoint BB_sem_list(BBs: list BasicBlock): BDenote :=  {|
   Binf := ∅;
 |}.
 
-Fixpoint Iter_nrm_BBs_n(BD: BDenote)(n: nat):  BB_state -> BB_state  -> Prop :=
+Fixpoint Iter_nrm_BBs_n (BD: BDenote) (n: nat):  BB_state -> BB_state  -> Prop :=
   match n with
   | O => BD.(Bnrm)
   | S n0 => BD.(Bnrm) ∪ (BD.(Bnrm) ∘ (Iter_nrm_BBs_n BD n0))
@@ -546,11 +546,7 @@ Proof.
                 simpl. unfold BB_list_sem in H16.
               (*OK 到这一步就已经是分两部分走了, 开始看上面的命题，在jmp还是不jmp之间找共通，bs1，bs2的a和a0*)
               (*如果test true*)
-               pose proof H11 H6.
 
-         (*这一步，a是BBthen分支的*)
-      ++ admit. (*err*)
-      ++ admit. (*inf*)
 Admitted. 
 
 Search (S _ = _ ).
@@ -599,27 +595,44 @@ Proof.
   unfold P. 
   simpl.
   intros.
-  exists nil. exists BBnow. exists nil.
+  exists nil. exists BBnow. exists nil. exists BBnum.
   split. tauto.
-  split. rewrite append_nil_r. reflexivity.
   split. reflexivity.
+  split. admit.
   split. reflexivity.
-  split. split.
-  - split.
-    ++ intros. 
-      destruct H as [? [? [? [? [? [? ?]]]]]].
-      simpl in H.
-      simpl. sets_unfold.
-      sets_unfold in H. rewrite H in H0. rewrite H0 in H1. apply H1.
-    ++ intros.
-      exists {| st := a; BB_num := BBnow.(block_num) |}.
-      exists {| st := a0; BB_num := BBnow.(block_num) |}.
-      simpl in H. sets_unfold in H.
-      simpl. sets_unfold.
-      repeat split.
-      rewrite H. reflexivity.
-  - admit. (*err*)
-  - admit. (*inf*)
+  split. split. split.
+  - intros. simpl.
+    split.
+    + sets_unfold. intros.
+      split. 
+      ++ intros.
+         my_destruct H. simpl in H. my_destruct H.
+         simpl.
+         induction x1.
+         -- simpl in H. destruct H. tauto. 
+            my_destruct H.
+            rewrite <- H0. rewrite <- H1.
+            rewrite <- H4. rewrite H. tauto.
+         -- unfold Iter_nrm_BBs_n in H. simpl in H.
+            sets_unfold in H.
+            destruct H as [[? | ?]| ?].
+            * tauto.
+            * my_destruct H.
+              rewrite <- H0. rewrite <- H1.
+              rewrite <- H4. rewrite H. tauto.
+            * my_destruct H. destruct H as [? | ?]. tauto.
+              my_destruct H.
+              assert (x2 = x). {
+                (* 只需要证明x2, x3 block_num相同；需要从已知条件中推一下 *)
+                repeat rewrite <- H5.
+                admit.
+              }
+              rewrite H7 in H4.
+              apply IHx1 in H4.
+              apply H4.
+    + admit.
+    + admit. 
+  - reflexivity.
 Admitted.
 
 
