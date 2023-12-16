@@ -42,6 +42,8 @@ Definition empty_sem : BDenote := {|
 Definition get_state (bs: BB_state): state := bs.(st).
 
 
+(* Handle Jmp Sem ====================================================================================================================== *)
+
 
 Definition test_true_jmp (D: EDenote):
   state -> Prop :=
@@ -62,7 +64,8 @@ Definition ujmp_sem (jum_dist: nat): BDenote :=
 Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
   {|
     Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\ 
-            ((bs2.(BB_num) = jmp_dist1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dist2) /\ (test_false_jmp D bs1.(st))))) /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
+            ((bs2.(BB_num) = jmp_dist1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dist2) 
+            /\ (test_false_jmp D bs1.(st))))) /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
     Berr := ∅; (* Ignore err cases now *)
     Binf := ∅;
   |}.
@@ -77,19 +80,23 @@ Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :
               end
   end.
 
-Definition BAsgn_sem (x: var_name) (e:EDenote) : BDenote := {|
-  Bnrm := fun (bs1:BB_state) (bs2:BB_state) => 
-     exists i,
-     (e.(nrm) bs1.(st) i) /\  (bs2.(st) x = Vint i) /\ (forall y, x <> y -> bs1.(st) y = bs2.(st) y);
-  Berr := fun(bs1:BB_state) => bs1.(st) ∈ e.(err);
-  Binf := ∅;
-|}.
-
 
 Definition BJump_sem (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote) : BDenote := {|
   Bnrm := fun bs1 bs2 => 
       bs1.(st) = bs2.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(Bnrm) bs1 bs2;
   Berr := ∅;
+  Binf := ∅;
+|}.
+
+(* =================================================================================================================================================================================    *)
+
+
+
+Definition BAsgn_sem (x: var_name) (e:EDenote) : BDenote := {|
+  Bnrm := fun (bs1:BB_state) (bs2:BB_state) => 
+     exists i,
+     (e.(nrm) bs1.(st) i) /\  (bs2.(st) x = Vint i) /\ (forall y, x <> y -> bs1.(st) y = bs2.(st) y);
+  Berr := fun(bs1:BB_state) => bs1.(st) ∈ e.(err);
   Binf := ∅;
 |}.
 
