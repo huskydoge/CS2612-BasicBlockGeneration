@@ -598,7 +598,7 @@ Proof.
   exists nil. exists BBnow. exists nil. exists BBnum.
   split. tauto.
   split. reflexivity.
-  split. admit.
+  split. admit. 
   split. reflexivity.
   split. split. split.
   - intros. simpl.
@@ -630,6 +630,14 @@ Proof.
               rewrite H7 in H4.
               apply IHx1 in H4.
               apply H4.
+      ++ intros.
+         exists {| st := a; BB_num := BBnow.(block_num) |}.
+         exists {| st := a0; BB_num := BBnow.(block_num) |}.
+         repeat split; simpl.
+         exists (S O).
+         simpl. right. sets_unfold.
+         exists {| st := a; BB_num := BBnow.(block_num) |}.
+         admit.
     + admit.
     + admit. 
   - reflexivity.
