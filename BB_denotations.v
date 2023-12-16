@@ -160,17 +160,32 @@ Definition BB_cmds_sem (BB: BasicBlock): BDenote := {|
   Binf := ∅;
 |}.
 
-(* Combine the single_step_stem to form the denotation for BB_list_sem.
-   Not certain about its correctness  *)
-Fixpoint BB_list_sem (BBs: list BasicBlock): BDenote := {|
+Definition BB_sem (BB: BasicBlock): BDenote := {|
+  Bnrm := (BB_cmds_sem BB).(Bnrm) ∘ (BB_jmp_sem BB).(Bnrm) ;
+  Berr :=  ∅;
+  Binf :=  ∅;
+|}.
+
+Fixpoint BB_sem_list(BBs: list BasicBlock): BDenote :=  {|
   Bnrm := 
     match BBs with 
-    | BB :: tl => match tl with
-                  | nil => (BB_cmds_sem BB).(Bnrm)
-                  | _ => (BB_cmds_sem BB).(Bnrm) ∘ (BB_jmp_sem BB).(Bnrm) ∘ (BB_list_sem tl).(Bnrm)
-                  end
-    | _ => Rels.id
+    | BB :: tl =>(BB_sem_list tl).(Bnrm) ∪ (BB_sem BB).(Bnrm)
+    | _ => ∅
     end;
+  Berr := ∅;
+  Binf := ∅;
+|}.
+
+Fixpoint Iter_nrm_BBs_n(BD: BDenote)(n: nat):  BB_state -> BB_state  -> Prop :=
+  match n with
+  | O => BD.(Bnrm)
+  | S n0 => BD.(Bnrm) ∪ (BD.(Bnrm) ∘ (Iter_nrm_BBs_n BD n0))
+  end.
+
+(* Combine the single_step_stem to form the denotation for BB_list_sem.
+   Not certain about its correctness  *)
+Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
+  Bnrm := ⋃ (Iter_nrm_BBs_n (BB_sem_list BBs)); 
   Berr := ∅;
   Binf := ∅;
 |}.
