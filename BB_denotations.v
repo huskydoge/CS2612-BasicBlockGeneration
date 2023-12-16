@@ -160,17 +160,16 @@ Definition BB_cmds_sem (BB: BasicBlock): BDenote := {|
   Binf := ∅;
 |}.
 
+Definition BB_single_step_sem (BB: BasicBlock): BDenote := {|
+  Bnrm := (BB_cmds_sem BB).(Bnrm) ∘ (BB_jmp_sem BB).(Bnrm);
+  Berr := ∅;
+  Binf := ∅;
+|}.
+
 (* Combine the single_step_stem to form the denotation for BB_list_sem.
    Not certain about its correctness  *)
 Fixpoint BB_list_sem (BBs: list BasicBlock): BDenote := {|
   Bnrm := 
-    match BBs with 
-    | BB :: tl => match tl with
-                  | nil => (BB_cmds_sem BB).(Bnrm)
-                  | _ => (BB_cmds_sem BB).(Bnrm) ∘ (BB_jmp_sem BB).(Bnrm) ∘ (BB_list_sem tl).(Bnrm)
-                  end
-    | _ => Rels.id
-    end;
   Berr := ∅;
   Binf := ∅;
 |}.
