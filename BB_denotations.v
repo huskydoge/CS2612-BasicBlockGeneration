@@ -8,7 +8,6 @@ Require Import Coq.Logic.Classical_Prop.
 Require Import compcert.lib.Integers.
 Local Open Scope bool.
 Local Open Scope string.
-Local Open Scope Z.
 Local Open Scope sets.
 Require Import Main.grammer.
 Require Import Main.cmd_denotations.
@@ -203,8 +202,6 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
 |}.
 
 
-
-
 (* Some Important Property for S ========================================================================================================
   假如(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2)
   但是所有S的分项当中只有S1能够从 BBnum_start出发, 也就是说，对于i >= 2都有， (S2 U ... U Sn)  (BBnum_start, s) (_, s') -> False
@@ -215,183 +212,20 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
 (* 然后如果它们节点之间有不交之类的性质的话，就有机会证明类似 (S1 U S2) o (S1 U S2) = S1 o S1 U S2 o S2这样的性质 *)
 Definition BB_num_set := nat -> Prop.
 
+Definition add_one_num (oldset: BB_num_set)(new: nat): BB_num_set :=
+  fun BBnum => oldset BBnum \/ BBnum = new.
+
+(*BBnum \in (nat \cap [BBnum_start, BBnum_end]) *)
+Definition BBnum_start_end_set (BBnum_start: nat) (BBnum_end: nat): BB_num_set :=
+  fun BBnum => Nat.le BBnum_start BBnum /\ Nat.le BBnum BBnum_end.
+
 Definition BBnum_set (BBs: list BasicBlock): BB_num_set :=
   (* 拿到一串BBs里，所有出现的BBnum，包括blocknum和jmpdestnum*)
-  fun BBnum => exists BB, In BB BBs /\ BB.(block_num) = BBnum.
+  fun BBnum => exists BB, (In BB BBs) /\ BB.(block_num) = BBnum.
 
 Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
-  fun BBnum => exists BB, In BB BBs /\ BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum.
+  fun BBnum => exists BB,(In BB BBs) /\ BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum.
 
-Definition internal_property (BBs: list BasicBlock)(start_num end_num: nat): Prop :=
-  BBnum_set BBs ∪ end_num -> true =  BBjmp_dest_set BBs ∪ start_num. (* 老师，这里往集合里添加一个元素用？ *)
-
-Definition disjoint_property(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results): Prop :=
-    forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd),
-      let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
-      let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
-      (* 根据BBs' 的情况分配JumpInfo*)
-      match BBs' with
-      | nil => BBnow'.(jump_info) = BBnow.(jump_info)
-      | next_BB :: _  => 
-          (match cmds with
-          | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
-          | c :: tl =>
-            (match c with
-              | CAsgn x e => (let BlockInfo' := {|
-                                                jump_kind := UJump;
-                                                jump_dest_1 := next_BB.(block_num);
-                                                jump_dest_2 := None;
-                                                jump_condition := None
-                                              |} in
-                                              BBnow'.(jump_info) = BlockInfo')
-              | CIf e c1 c2 => (let BB_then_num := BBnum in
-                     let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-                     let BlockInfo' := {|
-                                          jump_kind := CJump;
-                                          jump_dest_1 := next_BB.(block_num);
-                                          jump_dest_2 := Some (S(next_BB.(block_num)));
-                                          jump_condition := Some e
-                                        |} in
-                                        BBnow'.(jump_info) = BlockInfo')
-              | CWhile pre e body => (let BB_then_num := BBnum in
-                     let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-                     let BlockInfo' := {|
-                                          jump_kind := UJump;
-                                          jump_dest_1 := next_BB.(block_num);
-                                          jump_dest_2 := None;
-                                          jump_condition := None
-                                        |} in
-                                        BBnow'.(jump_info) = BlockInfo') 
-            end)
-          end)
-      end 
-      /\ BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) 
-      /\ BBres = BBs ++ (BBnow' :: nil) ++ BBs'
-       (*BBnum正好是BBs的开始blocknum*)
-      /\ internal_property BBs' BBnum BBnow.(jump_info).(jump_dest_1) 
-      (*我这里说的是，BBs + 当前的BBnow，他们的num和BBs完全不交，并没有考虑jmpdest，有必要吗？*)
-      /\ (BBnum_set BBs' ∩ BBnum_set (BBs ++ BBnow'::nil)) = ∅ . 
-
-  
-  
-
-Lemma disjoint_property: Prop :=
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd) BBnum',
-    let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
-    let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
-
-    (* 根据BBs' 的情况分配JumpInfo*)
-    match BBs' with
-    | nil => BBnow'.(jump_info) = BBnow.(jump_info)
-    | next_BB :: _  => 
-        (match cmds with
-        | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
-        | c :: tl =>
-          (match c with
-            | CAsgn x e => (let BlockInfo' := {|
-                                              jump_kind := UJump;
-                                              jump_dest_1 := next_BB.(block_num);
-                                              jump_dest_2 := None;
-                                              jump_condition := None
-                                            |} in
-                                            BBnow'.(jump_info) = BlockInfo')
-            | CIf e c1 c2 => (let BB_then_num := BBnum in
-                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-                   let BlockInfo' := {|
-                                        jump_kind := CJump;
-                                        jump_dest_1 := next_BB.(block_num);
-                                        jump_dest_2 := Some (S(next_BB.(block_num)));
-                                        jump_condition := Some e
-                                      |} in
-                                      BBnow'.(jump_info) = BlockInfo')
-            | CWhile pre e body => (let BB_then_num := BBnum in
-                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-                   let BlockInfo' := {|
-                                        jump_kind := UJump;
-                                        jump_dest_1 := next_BB.(block_num);
-                                        jump_dest_2 := None;
-                                        jump_condition := None
-                                      |} in
-                                      BBnow'.(jump_info) = BlockInfo') 
-          end)
-        end)
-    end /\
-
-    (*要拿到用于分配的下一个BBnum的信息*)
-
-    BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\ BBres = BBs ++ (BBnow' :: nil) ++ BBs'
-    /\ internal_property BBs' /\ (BBnum_set BBs' ∩ BBnum_set (BBs ++ BBnow'::nil)) = ∅ .
-
-
-Lemma BBs_and_BBs'_has_no_intersect_num:
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd) BBnum',
-  let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
-  let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
-
-(* 根据BBs' 的情况分配JumpInfo*)
-match BBs' with
-| nil => BBnow'.(jump_info) = BBnow.(jump_info)
-| next_BB :: _  => 
-    (match cmds with
-    | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
-    | c :: tl =>
-      (match c with
-        | CAsgn x e => (let BlockInfo' := {|
-                                          jump_kind := UJump;
-                                          jump_dest_1 := next_BB.(block_num);
-                                          jump_dest_2 := None;
-                                          jump_condition := None
-                                        |} in
-                                        BBnow'.(jump_info) = BlockInfo')
-        | CIf e c1 c2 => (let BB_then_num := BBnum in
-               let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-               let BlockInfo' := {|
-                                    jump_kind := CJump;
-                                    jump_dest_1 := next_BB.(block_num);
-                                    jump_dest_2 := Some (S(next_BB.(block_num)));
-                                    jump_condition := Some e
-                                  |} in
-                                  BBnow'.(jump_info) = BlockInfo')
-        | CWhile pre e body => (let BB_then_num := BBnum in
-               let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-               let BlockInfo' := {|
-                                    jump_kind := UJump;
-                                    jump_dest_1 := next_BB.(block_num);
-                                    jump_dest_2 := None;
-                                    jump_condition := None
-                                  |} in
-                                  BBnow'.(jump_info) = BlockInfo') 
-      end)
-    end)
-end /\
-
-
-
-Lemma serperate_carry_step:
-  forall (BD1: BDenote) (BD2: BDenote),
-  nodes_of_BD BD1 ∩ nodes_of_BD BD2 = ∅ ->
-  (BD1.(Bnrm) ∪ BD2.(Bnrm)) ∘ (BD1.(Bnrm) ∪ BD2.(Bnrm)) = (BD1.(Bnrm) ∘ BD1.(Bnrm)) ∪ (BD2.(Bnrm) ∘ BD2.(Bnrm)).
-Proof.
-  intros.
-  Admitted.
-
-Lemma seperate_single_step:
-forall (BB1: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state),
-(nodes_of_BD (BB_sem_union (BBs))) ∩ nodes_of_BD (BB_sem BB1) = ∅ /\
-(BB_list_sem (BB1::BBs)).(Bnrm) bs1 bs2 -> 
-(*这里这一条好像就不需要了*)
-(exists (bs' : BB_state), (BB_sem BB1).(Bnrm) bs1 bs') /\ (forall (bs'':BB_state), ((BB_sem_union BBs)).(Bnrm) bs1 bs'' = False) ->
-(exists s1', (BB_sem BB1).(Bnrm) bs1 s1' /\ ((BB_list_sem  BBs)).(Bnrm) s1' bs2).
-Proof.
-  intros.
-  destruct H0.
-  destruct H0. exists x. split. apply H0.
-  destruct H. unfold BB_list_sem in H2. simpl in H2. destruct H2.
-  - admit.
-  - admit.
-  destruct H2. simpl in H2.
-  exists bs'.
-Admitted.
 
 
 (* Construct the denotation for the original cmds, should be in cmd_denotations.v 
@@ -444,6 +278,55 @@ Ltac my_destruct H :=
               destruct H as [H H1];my_destruct H; my_destruct H1
   | _ => idtac 
   end.
+
+Definition disjoint(c: cmd): Prop :=
+    (* Q(Asgn)里面不能出现cmds, 或者说Q(c)里面你就要讲BBs等等变化前后有什么区别, 别去搞cmds，你们搞得那个反而把问题搞复杂了
+      嗯，当然你要证明的是语义的变化，所以你要说多出来的commands的语义，和那个c的语义一样 -- by cqx *)
+    forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd),
+      let res := cmd_BB_gen c BBs BBnow BBnum in
+      let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in 
+
+          match c with
+            | CAsgn x e => (let BlockInfo' := BBnow.(jump_info) in
+                                            BBnow'.(jump_info) = BlockInfo')
+            | CIf e c1 c2 => (let BB_then_num := BBnum in
+                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+                   let BlockInfo' := {|
+                                        jump_kind := CJump;
+                                        jump_dest_1 := BB_then_num;
+                                        jump_dest_2 := Some (S(BB_then_num));
+                                        jump_condition := Some e
+                                      |} in
+                                      BBnow'.(jump_info) = BlockInfo')
+            | CWhile pre e body => (let BB_pre_num := BBnum in
+                   let BB_body_num := S(BB_pre_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+                   let BlockInfo' := {|
+                                        jump_kind := UJump;
+                                        jump_dest_1 := BB_pre_num;
+                                        jump_dest_2 := None;
+                                        jump_condition := None
+                                      |} in
+                                      BBnow'.(jump_info) = BlockInfo') 
+        end
+     /\
+
+    (*要拿到用于分配的下一个BBnum的信息*)
+
+    BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\
+
+    BBres = BBs ++ (BBnow' :: nil) ++ BBs' 
+
+    /\  BBnum_set BBs' ⊆ BBnum_start_end_set BBnum res.(BBn).(block_num)
+    (*新的BBs'的jmpnum在 Z \cap ([BBnum, BBn.(block_num)] \cup endinfo) *)
+    /\ (BBjmp_dest_set BBs) ⊆ add_one_num (BBnum_start_end_set BBnum res.(BBn).(block_num)) (BBnow.(jump_info).(jump_dest_1)) 
+    /\ (BBnum_set BBs' ∩ BBnum_set (BBs ++ BBnow'::nil)) = ∅ . 
+
+Lemma disjoint_c:
+  forall (c: cmd),
+  disjoint c.
+Proof.
+Admitted.
+ 
 
 Definition Q(c: cmd): Prop :=
   (* Q(Asgn)里面不能出现cmds, 或者说Q(c)里面你就要讲BBs等等变化前后有什么区别, 别去搞cmds，你们搞得那个反而把问题搞复杂了
@@ -519,8 +402,8 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
                                         jump_condition := Some e
                                       |} in
                                       BBnow'.(jump_info) = BlockInfo')
-            | CWhile pre e body => (let BB_then_num := BBnum in
-                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+            | CWhile pre e body => (let BB_pre_num := BBnum in
+                   let BB_body_num := S(BB_pre_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
                    let BlockInfo' := {|
                                         jump_kind := UJump;
                                         jump_dest_1 := next_BB.(block_num);

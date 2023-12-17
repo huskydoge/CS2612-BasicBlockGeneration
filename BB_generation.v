@@ -19,8 +19,8 @@ Inductive JumpKind : Type :=
 (* Definition of BlockInfo *)
 Record BlockInfo : Type := {
   jump_kind : JumpKind; (* Represents the type of jump instruction *)
-  jump_dist_1 : nat; (* Represents the target block's identifier or label *)
-  jump_dist_2 : option nat; (* Represents the target block's identifier or label, used for CJump *)
+  jump_dest_1 : nat; (* Represents the target block's identifier or label *)
+  jump_dest_2 : option nat; (* Represents the target block's identifier or label, used for CJump *)
   jump_condition : option expr (* Represents the condition for conditional jumps, if any *)
 }.
 
@@ -60,8 +60,8 @@ Definition EmptyBlock : BasicBlock := {|
   commands := [];
   jump_info := {|
     jump_kind := UJump;
-    jump_dist_1 := 9; (* default endinfo *)
-    jump_dist_2 := None;
+    jump_dest_1 := 9; (* default endinfo *)
+    jump_dest_2 := None;
     jump_condition := None
   |}
 |}.
@@ -133,8 +133,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       commands := BB_now.(commands);
       jump_info := {|
         jump_kind := CJump;
-        jump_dist_1 := BB_then_num;
-        jump_dist_2 := Some (BB_else_num);
+        jump_dest_1 := BB_then_num;
+        jump_dest_2 := Some (BB_else_num);
         jump_condition := Some (e);
         |}
       |} in
@@ -144,8 +144,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       commands := [];
       jump_info := {|
         jump_kind := UJump;
-        jump_dist_1 := BB_next_num; 
-        jump_dist_2 := None; 
+        jump_dest_1 := BB_next_num; 
+        jump_dest_2 := None; 
         jump_condition := None
       |}
     |} in
@@ -159,8 +159,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       commands := [];
       jump_info := {|
         jump_kind := UJump;
-        jump_dist_1 := BB_next_num; 
-        jump_dist_2 := None; 
+        jump_dest_1 := BB_next_num; 
+        jump_dest_2 := None; 
         jump_condition := None
       |}
     |} in
@@ -191,8 +191,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       commands := BB_now.(commands);
       jump_info := {|
         jump_kind := UJump;
-        jump_dist_1 := BB_pre_num; (* update jump info*)
-        jump_dist_2 := None;
+        jump_dest_1 := BB_pre_num; (* update jump info*)
+        jump_dest_2 := None;
         jump_condition := None
       |}
     |} in
@@ -202,8 +202,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
     commands := [];
     jump_info := {|
       jump_kind := CJump;
-      jump_dist_1 := BB_body_num; (* jump to the body *)
-      jump_dist_2 := Some BB_next_num; (* jump out of the loop *)
+      jump_dest_1 := BB_body_num; (* jump to the body *)
+      jump_dest_2 := Some BB_next_num; (* jump out of the loop *)
       jump_condition := Some e
       |}
     |} in
@@ -217,8 +217,8 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
       commands := [];
       jump_info := {|
         jump_kind := UJump;
-        jump_dist_1 := BB_pre_num; 
-        jump_dist_2 := None;
+        jump_dest_1 := BB_pre_num; 
+        jump_dest_2 := None;
         jump_condition := None
       |}
     |} in
