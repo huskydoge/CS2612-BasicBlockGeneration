@@ -172,10 +172,10 @@ Definition BB_sem (BB: BasicBlock): BDenote := {|
   Binf :=  ∅;
 |}.
 
-Fixpoint BB_sem_list(BBs: list BasicBlock): BDenote :=  {|
+Fixpoint BB_sem_union(BBs: list BasicBlock): BDenote :=  {|
   Bnrm := 
     match BBs with 
-    | BB :: tl =>(BB_sem_list tl).(Bnrm) ∪ (BB_sem BB).(Bnrm)
+    | BB :: tl =>(BB_sem_union tl).(Bnrm) ∪ (BB_sem BB).(Bnrm)
     | _ => ∅
     end;
   Berr := ∅;
@@ -184,17 +184,63 @@ Fixpoint BB_sem_list(BBs: list BasicBlock): BDenote :=  {|
 
 Fixpoint Iter_nrm_BBs_n (BD: BDenote) (n: nat):  BB_state -> BB_state  -> Prop :=
   match n with
-  | O => BD.(Bnrm)
-  | S n0 => BD.(Bnrm) ∪ (BD.(Bnrm) ∘ (Iter_nrm_BBs_n BD n0))
+  | O => Rels.id
+  | S n0 => (BD.(Bnrm) ∘ (Iter_nrm_BBs_n BD n0))
   end.
+
+
+(*
+S = ⋃ BBsems
+BBlistsem = I ∪ S ∪ (S ∘ S) ∪ (S ∘ S ∘ S) U ... *)
 
 (* Combine the single_step_stem to form the denotation for BB_list_sem.
    Not certain about its correctness  *)
 Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
-  Bnrm := ⋃ (Iter_nrm_BBs_n (BB_sem_list BBs)); 
+  Bnrm := ⋃ (Iter_nrm_BBs_n (BB_sem_union BBs)); 
   Berr := ∅;
   Binf := ∅;
 |}.
+
+
+
+
+(* Some Important Property for S ========================================================================================================
+  假如(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2)
+  但是所有S的分项当中只有S1能够从 BBnum_start出发, 也就是说，对于i >= 2都有， (S2 U ... U Sn)  (BBnum_start, s) (_, s') -> False
+  那么(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2) -> exists BBnum s1', S1 (BBnum_start, s1) (BBnum s1') /\ (S2 U ... U Sn) (BBnum s1') (BBnum_end, s2)
+  S1 (BBnum_start, s1) (BBnum s1') 这个就是有cjump的那一步啊
+*)
+
+(* 然后如果它们节点之间有不交之类的性质的话，就有机会证明类似 (S1 U S2) o (S1 U S2) = S1 o S1 U S2 o S2这样的性质 *)
+Definition BB_state_set := BB_state -> Prop.
+
+Definition nodes_of_BD (BD: BDenote): BB_state_set :=
+  fun bs => exists bs', BD.(Bnrm) bs bs' \/ exists bs', BD.(Bnrm) bs' bs.
+
+Lemma serperate_carry_step:
+  forall (BD1: BDenote) (BD2: BDenote),
+  nodes_of_BD BD1 ∩ nodes_of_BD BD2 = ∅ ->
+  (BD1.(Bnrm) ∪ BD2.(Bnrm)) ∘ (BD1.(Bnrm) ∪ BD2.(Bnrm)) = (BD1.(Bnrm) ∘ BD1.(Bnrm)) ∪ (BD2.(Bnrm) ∘ BD2.(Bnrm)).
+Proof.
+  intros.
+  Admitted.
+
+Lemma seperate_single_step:
+forall (BB1: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state),
+(nodes_of_BD (BB_sem_union (BBs))) ∩ nodes_of_BD (BB_sem BB1) = ∅ /\
+(BB_list_sem (BB1::BBs)).(Bnrm) bs1 bs2 -> 
+(exists (bs' : BB_state), (BB_sem BB1).(Bnrm) bs1 bs') /\ (forall (bs'':BB_state), ((BB_sem_union BBs)).(Bnrm) bs1 bs'' = False) ->
+(exists s1', (BB_sem BB1).(Bnrm) bs1 s1' /\ ((BB_list_sem  BBs)).(Bnrm) s1' bs2).
+Proof.
+  intros.
+  destruct H0.
+  destruct H0. exists x. split. apply H0.
+  destruct H. unfold BB_list_sem in H2. simpl in H2. destruct H2.
+  - admit.
+  - admit.
+  destruct H2. simpl in H2.
+  exists bs'.
+Admitted.
 
 
 (* Construct the denotation for the original cmds, should be in cmd_denotations.v 
@@ -263,7 +309,7 @@ Definition Q(c: cmd): Prop :=
     (exists BBnow' BBs' BBnum', 
       res.(BasicBlocks) ++ (res.(BBn)::nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\
       res.(BBn).(block_num) = BBnum' /\
-      BCequiv (BB_list_sem BBs') (cmd_sem c) BBnum BBnum'). (* 这里的BBnum'是最后停留在BB的编号，要和cmd_BB_gen中的BBnum做区分！ *)
+      BCequiv (BB_list_sem BBs') (cmd_sem c) BBnum (S (S BBnum))). (* 这里的BBnum'是最后停留在BB的编号，对于If和while，都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
 
 
 (* c: the cmd we are currently facing
@@ -341,7 +387,7 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
     BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\
 
-    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) res.(BBn).(block_num) (*总是从当前所在的BB开始*)
+    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) (jump_dist_1 BBnow.(jump_info)) (*总是从当前所在的BB开始*)
 
     /\ res.(BBn).(jump_info) = BBnow.(jump_info).
 
@@ -394,6 +440,37 @@ Proof.
     - admit. 
 Admitted.
 
+
+(* How to do this？？？？*)
+Lemma true_or_false:
+  forall (e: expr) (s: state),
+  (test_true_jmp (eval_expr e)) s \/ (test_false_jmp (eval_expr e)) s.
+Proof.
+Admitted.
+
+Lemma BB_true_jmp_iff_test_true_jmp:
+  forall (e: expr) (a: state),
+  (test_true_jmp (eval_expr e)) a <-> (test_true (eval_expr e)) a a.
+Proof.
+  intros.
+  split.
+  - unfold test_true_jmp. unfold test_true.
+    intros. destruct H as [i [? ?]]. sets_unfold. split.
+    + exists i. split.
+      * apply H.
+      * apply H0.
+    + reflexivity.
+  - unfold test_true_jmp. unfold test_true.
+    intros. sets_unfold in H. my_destruct H. exists x. split.
+      * apply H.
+      * apply H1.
+Qed.
+
+Lemma BB_false_jmp_iff_test_false_jmp:
+  forall (e: expr) (a: state),
+  (test_false_jmp (eval_expr e)) a <-> (test_false (eval_expr e)) a a.
+Proof.
+Admitted.
 
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
@@ -542,11 +619,54 @@ Proof.
           specialize (nrm_cequiv1 a a0). destruct nrm_cequiv1.
           specialize (nrm_cequiv0 a a0). destruct nrm_cequiv0.
          repeat split.
-         +++ intros.
-                simpl. unfold BB_list_sem in H16.
-              (*OK 到这一步就已经是分两部分走了, 开始看上面的命题，在jmp还是不jmp之间找共通，bs1，bs2的a和a0*)
-              (*如果test true*)
+         +++ intros. (*BB推cmds*)
+         (*OK 到这一步就已经是分两部分走了, 开始看上面的命题，在jmp还是不jmp之间找共通，bs1，bs2的a和a0*)
+         simpl. unfold BB_list_sem in H16. simpl in H16. clear H15 H11. 
 
+              assert (BB_then.(cmd) = nil).  reflexivity.
+              rewrite H11 in H8. simpl in H8. (* BB_now_then.(cmd) = BB_cmds_then *)
+              sets_unfold. 
+              my_destruct H16.
+              pose proof true_or_false e a. destruct H20.
+              --- left. (*如果test true*)
+                  clear H14.
+                  exists a. split. 
+                  ++++ pose proof BB_true_jmp_iff_test_true_jmp e a. apply H14 in H20. apply H20. 
+                  ++++ assert (exists bs1 bs2 : BB_state,
+                  Bnrm
+                    {|
+                      Bnrm :=
+                        ⋃ (Iter_nrm_BBs_n
+                             {|
+                               Bnrm :=
+                                 Bnrm (BB_sem_union BBs_then)
+                                 ∪ Bnrm (BAsgn_list_sem BB_cmds_then)
+                                   ∘ (fun bs3 bs4 : BB_state =>
+                                      st bs3 = st bs4 /\
+                                      Bnrm
+                                        (jmp_sem (jump_dist_1 BB_now_then.(jump_info)) (jump_dist_2 BB_now_then.(jump_info))
+                                           (eval_cond_expr (jump_condition BB_now_then.(jump_info)))) bs3 bs4);
+                               Berr := ∅;
+                               Binf := ∅
+                             |});
+                      Berr := ∅;
+                      Binf := ∅
+                    |} bs1 bs2 /\ st bs1 = a /\ st bs2 = a0 /\ BB_num bs1 = BB_now_then.(block_num) /\ BB_num bs2 = BB_next_num).
+                  {
+                    clear H6.
+                    exists x, x0. repeat split.
+                    - admit.
+                    - apply H15.
+                    - apply H17.
+                    - rewrite H18. rewrite H9. reflexivity.
+                    - rewrite H19.
+                  }
+                  pose proof H6 H14. apply H21.
+              ---  right. 
+                  admit.
+          +++ intros. (* cmds推BB *) admit.
+      ++ admit. (*err*)
+      ++ admit. (*inf*)
 Admitted. 
 
 Search (S _ = _ ).
