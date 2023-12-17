@@ -53,37 +53,37 @@ Definition test_false_jmp (D: EDenote):
   state -> Prop :=
     (fun s => D.(nrm) s (Int64.repr 0)).
 
-Definition ujmp_sem (jum_dist: nat): BDenote :=
+Definition ujmp_sem (jum_dest: nat): BDenote :=
   {|
     Bnrm := fun (bs1: BB_state) (bs2 :BB_state) =>
-      bs1.(st) = bs2.(st) /\ bs2.(BB_num) = jum_dist /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
+      bs1.(st) = bs2.(st) /\ bs2.(BB_num) = jum_dest /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
     Berr := ∅;
     Binf := ∅;
   |}.
 
-Definition cjmp_sem (jmp_dist1: nat) (jmp_dist2: nat) (D: EDenote) : BDenote :=
+Definition cjmp_sem (jmp_dest1: nat) (jmp_dest2: nat) (D: EDenote) : BDenote :=
   {|
     Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\ 
-            ((bs2.(BB_num) = jmp_dist1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dist2) 
+            ((bs2.(BB_num) = jmp_dest1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dest2) 
             /\ (test_false_jmp D bs1.(st))))) /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
     Berr := ∅; (* Ignore err cases now *)
     Binf := ∅;
   |}.
 
 
-Definition jmp_sem (jmp_dist1: nat) (jmp_dist2: option nat)(D: option EDenote) :BDenote :=
+Definition jmp_sem (jmp_dest1: nat) (jmp_dest2: option nat)(D: option EDenote) :BDenote :=
   match D with 
-  | None => ujmp_sem jmp_dist1 (* No expr *)
-  | Some D => match jmp_dist2 with
-              | None => ujmp_sem jmp_dist1
-              | Some jmp_dist2 => cjmp_sem jmp_dist1 jmp_dist2 D
+  | None => ujmp_sem jmp_dest1 (* No expr *)
+  | Some D => match jmp_dest2 with
+              | None => ujmp_sem jmp_dest1
+              | Some jmp_dest2 => cjmp_sem jmp_dest1 jmp_dest2 D
               end
   end.
 
 
-Definition BJump_sem (jmp_dist1: nat) (jmp_dist2: option nat) (D: option EDenote) : BDenote := {|
+Definition BJump_sem (jmp_dest1: nat) (jmp_dest2: option nat) (D: option EDenote) : BDenote := {|
   Bnrm := fun bs1 bs2 => 
-      bs1.(st) = bs2.(st) /\ (jmp_sem jmp_dist1 jmp_dist2 D).(Bnrm) bs1 bs2;
+      bs1.(st) = bs2.(st) /\ (jmp_sem jmp_dest1 jmp_dest2 D).(Bnrm) bs1 bs2;
   Berr := ∅;
   Binf := ∅;
 |}.
@@ -145,10 +145,10 @@ Definition eval_cond_expr (e: option expr): option EDenote :=
 (* Combine list of BAsgn and the final BJump *)
 Definition BB_jmp_sem (BB: BasicBlock): BDenote := {| 
   Bnrm := 
-    let jmp_dist1 := BB.(jump_info).(jump_dist_1) in
-    let jmp_dist2 := BB.(jump_info).(jump_dist_2) in
+    let jmp_dest1 := BB.(jump_info).(jump_dest_1) in
+    let jmp_dest2 := BB.(jump_info).(jump_dest_2) in
     let jmp_cond := BB.(jump_info).(jump_condition) in
-    (BJump_sem jmp_dist1 jmp_dist2 (eval_cond_expr jmp_cond)).(Bnrm); 
+    (BJump_sem jmp_dest1 jmp_dest2 (eval_cond_expr jmp_cond)).(Bnrm); 
   Berr := ∅;
   Binf := ∅;
 |}.
@@ -212,10 +212,159 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
 *)
 
 (* 然后如果它们节点之间有不交之类的性质的话，就有机会证明类似 (S1 U S2) o (S1 U S2) = S1 o S1 U S2 o S2这样的性质 *)
-Definition BB_state_set := BB_state -> Prop.
+Definition BB_num_set := nat -> Prop.
 
-Definition nodes_of_BD (BD: BDenote): BB_state_set :=
-  fun bs => exists bs', BD.(Bnrm) bs bs' \/ exists bs', BD.(Bnrm) bs' bs.
+Definition BBnum_set (BBs: list BasicBlock): BB_num_set :=
+  (* 拿到一串BBs里，所有出现的BBnum，包括blocknum和jmpdestnum*)
+  fun BBnum => exists BB, In BB BBs /\ BB.(block_num) = BBnum.
+
+Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
+  fun BBnum => exists BB, In BB BBs /\ BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum.
+
+Definition internal_property (BBs: list BasicBlock)(start_num end_num: nat): Prop :=
+  BBnum_set BBs ∪ end_num -> true =  BBjmp_dest_set BBs ∪ start_num. (* 老师，这里往集合里添加一个元素用？ *)
+
+Definition disjoint_property(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results): Prop :=
+    forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd),
+      let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
+      let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
+      (* 根据BBs' 的情况分配JumpInfo*)
+      match BBs' with
+      | nil => BBnow'.(jump_info) = BBnow.(jump_info)
+      | next_BB :: _  => 
+          (match cmds with
+          | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
+          | c :: tl =>
+            (match c with
+              | CAsgn x e => (let BlockInfo' := {|
+                                                jump_kind := UJump;
+                                                jump_dest_1 := next_BB.(block_num);
+                                                jump_dest_2 := None;
+                                                jump_condition := None
+                                              |} in
+                                              BBnow'.(jump_info) = BlockInfo')
+              | CIf e c1 c2 => (let BB_then_num := BBnum in
+                     let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+                     let BlockInfo' := {|
+                                          jump_kind := CJump;
+                                          jump_dest_1 := next_BB.(block_num);
+                                          jump_dest_2 := Some (S(next_BB.(block_num)));
+                                          jump_condition := Some e
+                                        |} in
+                                        BBnow'.(jump_info) = BlockInfo')
+              | CWhile pre e body => (let BB_then_num := BBnum in
+                     let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+                     let BlockInfo' := {|
+                                          jump_kind := UJump;
+                                          jump_dest_1 := next_BB.(block_num);
+                                          jump_dest_2 := None;
+                                          jump_condition := None
+                                        |} in
+                                        BBnow'.(jump_info) = BlockInfo') 
+            end)
+          end)
+      end 
+      /\ BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) 
+      /\ BBres = BBs ++ (BBnow' :: nil) ++ BBs'
+       (*BBnum正好是BBs的开始blocknum*)
+      /\ internal_property BBs' BBnum BBnow.(jump_info).(jump_dest_1) 
+      (*我这里说的是，BBs + 当前的BBnow，他们的num和BBs完全不交，并没有考虑jmpdest，有必要吗？*)
+      /\ (BBnum_set BBs' ∩ BBnum_set (BBs ++ BBnow'::nil)) = ∅ . 
+
+  
+  
+
+Lemma disjoint_property: Prop :=
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd) BBnum',
+    let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
+    let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
+
+    (* 根据BBs' 的情况分配JumpInfo*)
+    match BBs' with
+    | nil => BBnow'.(jump_info) = BBnow.(jump_info)
+    | next_BB :: _  => 
+        (match cmds with
+        | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
+        | c :: tl =>
+          (match c with
+            | CAsgn x e => (let BlockInfo' := {|
+                                              jump_kind := UJump;
+                                              jump_dest_1 := next_BB.(block_num);
+                                              jump_dest_2 := None;
+                                              jump_condition := None
+                                            |} in
+                                            BBnow'.(jump_info) = BlockInfo')
+            | CIf e c1 c2 => (let BB_then_num := BBnum in
+                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+                   let BlockInfo' := {|
+                                        jump_kind := CJump;
+                                        jump_dest_1 := next_BB.(block_num);
+                                        jump_dest_2 := Some (S(next_BB.(block_num)));
+                                        jump_condition := Some e
+                                      |} in
+                                      BBnow'.(jump_info) = BlockInfo')
+            | CWhile pre e body => (let BB_then_num := BBnum in
+                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+                   let BlockInfo' := {|
+                                        jump_kind := UJump;
+                                        jump_dest_1 := next_BB.(block_num);
+                                        jump_dest_2 := None;
+                                        jump_condition := None
+                                      |} in
+                                      BBnow'.(jump_info) = BlockInfo') 
+          end)
+        end)
+    end /\
+
+    (*要拿到用于分配的下一个BBnum的信息*)
+
+    BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\ BBres = BBs ++ (BBnow' :: nil) ++ BBs'
+    /\ internal_property BBs' /\ (BBnum_set BBs' ∩ BBnum_set (BBs ++ BBnow'::nil)) = ∅ .
+
+
+Lemma BBs_and_BBs'_has_no_intersect_num:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd) BBnum',
+  let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
+  let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
+
+(* 根据BBs' 的情况分配JumpInfo*)
+match BBs' with
+| nil => BBnow'.(jump_info) = BBnow.(jump_info)
+| next_BB :: _  => 
+    (match cmds with
+    | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
+    | c :: tl =>
+      (match c with
+        | CAsgn x e => (let BlockInfo' := {|
+                                          jump_kind := UJump;
+                                          jump_dest_1 := next_BB.(block_num);
+                                          jump_dest_2 := None;
+                                          jump_condition := None
+                                        |} in
+                                        BBnow'.(jump_info) = BlockInfo')
+        | CIf e c1 c2 => (let BB_then_num := BBnum in
+               let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+               let BlockInfo' := {|
+                                    jump_kind := CJump;
+                                    jump_dest_1 := next_BB.(block_num);
+                                    jump_dest_2 := Some (S(next_BB.(block_num)));
+                                    jump_condition := Some e
+                                  |} in
+                                  BBnow'.(jump_info) = BlockInfo')
+        | CWhile pre e body => (let BB_then_num := BBnum in
+               let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+               let BlockInfo' := {|
+                                    jump_kind := UJump;
+                                    jump_dest_1 := next_BB.(block_num);
+                                    jump_dest_2 := None;
+                                    jump_condition := None
+                                  |} in
+                                  BBnow'.(jump_info) = BlockInfo') 
+      end)
+    end)
+end /\
+
+
 
 Lemma serperate_carry_step:
   forall (BD1: BDenote) (BD2: BDenote),
@@ -229,6 +378,7 @@ Lemma seperate_single_step:
 forall (BB1: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state),
 (nodes_of_BD (BB_sem_union (BBs))) ∩ nodes_of_BD (BB_sem BB1) = ∅ /\
 (BB_list_sem (BB1::BBs)).(Bnrm) bs1 bs2 -> 
+(*这里这一条好像就不需要了*)
 (exists (bs' : BB_state), (BB_sem BB1).(Bnrm) bs1 bs') /\ (forall (bs'':BB_state), ((BB_sem_union BBs)).(Bnrm) bs1 bs'' = False) ->
 (exists s1', (BB_sem BB1).(Bnrm) bs1 s1' /\ ((BB_list_sem  BBs)).(Bnrm) s1' bs2).
 Proof.
@@ -354,8 +504,8 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
           (match c with
             | CAsgn x e => (let BlockInfo' := {|
                                               jump_kind := UJump;
-                                              jump_dist_1 := next_BB.(block_num);
-                                              jump_dist_2 := None;
+                                              jump_dest_1 := next_BB.(block_num);
+                                              jump_dest_2 := None;
                                               jump_condition := None
                                             |} in
                                             BBnow'.(jump_info) = BlockInfo')
@@ -363,8 +513,8 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
                    let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
                    let BlockInfo' := {|
                                         jump_kind := CJump;
-                                        jump_dist_1 := next_BB.(block_num);
-                                        jump_dist_2 := Some (S(next_BB.(block_num)));
+                                        jump_dest_1 := next_BB.(block_num);
+                                        jump_dest_2 := Some (S(next_BB.(block_num)));
                                         jump_condition := Some e
                                       |} in
                                       BBnow'.(jump_info) = BlockInfo')
@@ -372,8 +522,8 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
                    let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
                    let BlockInfo' := {|
                                         jump_kind := UJump;
-                                        jump_dist_1 := next_BB.(block_num);
-                                        jump_dist_2 := None;
+                                        jump_dest_1 := next_BB.(block_num);
+                                        jump_dest_2 := None;
                                         jump_condition := None
                                       |} in
                                       BBnow'.(jump_info) = BlockInfo') 
@@ -387,7 +537,7 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
     BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\
 
-    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) (jump_dist_1 BBnow.(jump_info)) (*总是从当前所在的BB开始*)
+    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) (jump_dest_1 BBnow.(jump_info)) (*总是从当前所在的BB开始*)
 
     /\ res.(BBn).(jump_info) = BBnow.(jump_info).
 
@@ -494,8 +644,8 @@ Proof.
                    commands := nil;
                    jump_info := {|
                       jump_kind := UJump;
-                      jump_dist_1 := BB_next_num; 
-                      jump_dist_2 := None; 
+                      jump_dest_1 := BB_next_num; 
+                      jump_dest_2 := None; 
                       jump_condition := None
                       |};
                    |}).
@@ -503,8 +653,8 @@ Proof.
                    commands := BBnow.(commands);
                    jump_info := {|
                       jump_kind := CJump;
-                      jump_dist_1 := BB_then_num; 
-                      jump_dist_2 := Some BB_else_num; 
+                      jump_dest_1 := BB_then_num; 
+                      jump_dest_2 := Some BB_else_num; 
                       jump_condition := Some e
                       |};
                    |}).
@@ -523,8 +673,8 @@ Proof.
     commands := nil;
     jump_info := {|
         jump_kind := UJump;
-        jump_dist_1 := BB_next_num; 
-        jump_dist_2 := None; 
+        jump_dest_1 := BB_next_num; 
+        jump_dest_2 := None; 
         jump_condition := None
       |}
     |}).
@@ -562,8 +712,8 @@ Proof.
     jump_info :=
       {|
         jump_kind := UJump;
-        jump_dist_1 := S (S BBnum);
-        jump_dist_2 := None;
+        jump_dest_1 := S (S BBnum);
+        jump_dest_2 := None;
         jump_condition := None
       |}
       |}) with (BB_then).
@@ -578,8 +728,8 @@ Proof.
               jump_info :=
                 {|
                  jump_kind := CJump;
-                 jump_dist_1 := BBnum;
-                 jump_dist_2 := Some (S BBnum);
+                 jump_dest_1 := BBnum;
+                 jump_dest_2 := Some (S BBnum);
                  jump_condition := Some e
                 |}
               |} with BBnow'.
@@ -589,8 +739,8 @@ Proof.
               jump_info :=
                 {|
                   jump_kind := UJump;
-                  jump_dist_1 := S (S BBnum);
-                  jump_dist_2 := None;
+                  jump_dest_1 := S (S BBnum);
+                  jump_dest_2 := None;
                   jump_condition := None
                 |}
             |} with BB_else.
@@ -623,7 +773,7 @@ Proof.
          (*OK 到这一步就已经是分两部分走了, 开始看上面的命题，在jmp还是不jmp之间找共通，bs1，bs2的a和a0*)
          simpl. unfold BB_list_sem in H16. simpl in H16. clear H15 H11. 
 
-              assert (BB_then.(cmd) = nil).  reflexivity.
+              assert (BB_then.(cmd) = nil).  reflexivity. (*遇到if的话，BB_then里不会添加新的cmds了*)
               rewrite H11 in H8. simpl in H8. (* BB_now_then.(cmd) = BB_cmds_then *)
               sets_unfold. 
               my_destruct H16.
@@ -644,7 +794,7 @@ Proof.
                                    ∘ (fun bs3 bs4 : BB_state =>
                                       st bs3 = st bs4 /\
                                       Bnrm
-                                        (jmp_sem (jump_dist_1 BB_now_then.(jump_info)) (jump_dist_2 BB_now_then.(jump_info))
+                                        (jmp_sem (jump_dest_1 BB_now_then.(jump_info)) (jump_dest_2 BB_now_then.(jump_info))
                                            (eval_cond_expr (jump_condition BB_now_then.(jump_info)))) bs3 bs4);
                                Berr := ∅;
                                Binf := ∅
@@ -655,7 +805,15 @@ Proof.
                   {
                     clear H6.
                     exists x, x0. repeat split.
-                    - admit.
+                    - simpl. assert ( 
+                      Bnrm (BB_sem_union (BBs_then ++ BB_now_else :: BBs_else ++ BB_next :: nil))
+                      = 
+                      Bnrm (BB_sem_union BBs_then)
+                    ). {
+                      unfold BB_sem_union. simpl.
+                      simpl.
+                      injection H16. intros. rewrite H21. reflexivity.
+                    } rewrite <- H6. rewrite <- H8. apply H16.
                     - apply H15.
                     - apply H17.
                     - rewrite H18. rewrite H9. reflexivity.
@@ -693,8 +851,8 @@ Qed.
 Lemma P_nil_aux1:
   forall (BBnow : BasicBlock) (a0 : state),
   Bnrm
-    (jmp_sem (jump_dist_1 BBnow.(jump_info))
-      (jump_dist_2 BBnow.(jump_info))
+    (jmp_sem (jump_dest_1 BBnow.(jump_info))
+      (jump_dest_2 BBnow.(jump_info))
       (eval_cond_expr (jump_condition BBnow.(jump_info))))
     {| BB_num := BBnow.(block_num); st := a0 |}
     {| BB_num := BBnow.(block_num); st := a0 |}.
@@ -709,6 +867,8 @@ Proof.
 Admitted.
 
 
+
+(* #TODO: fix p_nil*)
 Lemma P_nil: forall cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results,
   P nil (cmd_BB_gen).
 Proof.
@@ -729,10 +889,7 @@ Proof.
          my_destruct H. simpl in H. my_destruct H.
          simpl.
          induction x1.
-         -- simpl in H. destruct H. tauto. 
-            my_destruct H.
-            rewrite <- H0. rewrite <- H1.
-            rewrite <- H4. rewrite H. tauto.
+         -- simpl in H. destruct H. rewrite H0 in H1. apply H1. 
          -- unfold Iter_nrm_BBs_n in H. simpl in H.
             sets_unfold in H.
             destruct H as [[? | ?]| ?].
