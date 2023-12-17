@@ -4,6 +4,7 @@ Require Import Coq.Strings.String.
 Require Import Coq.Classes.Morphisms.
 Require Import SetsClass.SetsClass. 
 Import SetsNotation.
+Require Import Coq.Logic.Classical_Prop.
 Require Import compcert.lib.Integers.
 Local Open Scope bool.
 Local Open Scope string.
@@ -594,9 +595,18 @@ Admitted.
 (* How to do this？？？？*)
 Lemma true_or_false:
   forall (e: expr) (s: state),
+  (exists (i : int64), (eval_expr e).(nrm) s i) ->
   (test_true_jmp (eval_expr e)) s \/ (test_false_jmp (eval_expr e)) s.
 Proof.
-Admitted.
+  intros.
+  destruct H.
+  pose proof classic (Int64.signed x = 0).
+  unfold test_true_jmp. unfold test_false_jmp.
+  destruct H0.
+  - right. rewrite <- H0. rewrite Int64.repr_signed. apply H.
+  - left. exists x. split. apply H. apply H0.
+Qed.
+
 
 Lemma BB_true_jmp_iff_test_true_jmp:
   forall (e: expr) (a: state),
@@ -620,7 +630,14 @@ Lemma BB_false_jmp_iff_test_false_jmp:
   forall (e: expr) (a: state),
   (test_false_jmp (eval_expr e)) a <-> (test_false (eval_expr e)) a a.
 Proof.
-Admitted.
+  intros.
+  split.
+  - unfold test_false_jmp. unfold test_false.
+    intros. sets_unfold. split; try tauto.
+  - unfold test_false_jmp. unfold test_false.
+    intros. sets_unfold in H. destruct H as [? ?]. apply H.
+Qed.
+
 
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
@@ -878,7 +895,7 @@ Proof.
   exists nil. exists BBnow. exists nil. exists BBnum.
   split. tauto.
   split. reflexivity.
-  split. admit.
+  split. admit. 
   split. reflexivity.
   split. split. split.
   - intros. simpl.
@@ -907,6 +924,14 @@ Proof.
               rewrite H7 in H4.
               apply IHx1 in H4.
               apply H4.
+      ++ intros.
+         exists {| st := a; BB_num := BBnow.(block_num) |}.
+         exists {| st := a0; BB_num := BBnow.(block_num) |}.
+         repeat split; simpl.
+         exists (S O).
+         simpl. right. sets_unfold.
+         exists {| st := a; BB_num := BBnow.(block_num) |}.
+         admit.
     + admit.
     + admit. 
   - reflexivity.
