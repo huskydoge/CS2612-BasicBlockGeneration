@@ -202,14 +202,6 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
 |}.
 
 
-(* Some Important Property for S ========================================================================================================
-  假如(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2)
-  但是所有S的分项当中只有S1能够从 BBnum_start出发, 也就是说，对于i >= 2都有， (S2 U ... U Sn)  (BBnum_start, s) (_, s') -> False
-  那么(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2) -> exists BBnum s1', S1 (BBnum_start, s1) (BBnum s1') /\ (S2 U ... U Sn) (BBnum s1') (BBnum_end, s2)
-  S1 (BBnum_start, s1) (BBnum s1') 这个就是有cjump的那一步啊
-*)
-
-(* 然后如果它们节点之间有不交之类的性质的话，就有机会证明类似 (S1 U S2) o (S1 U S2) = S1 o S1 U S2 o S2这样的性质 *)
 Definition BB_num_set := nat -> Prop.
 
 Definition add_one_num (oldset: BB_num_set)(new: nat): BB_num_set :=
@@ -226,6 +218,45 @@ Definition BBnum_set (BBs: list BasicBlock): BB_num_set :=
 Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
   fun BBnum => exists BB,(In BB BBs) /\ BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum.
 
+(* Some Important Property for S ========================================================================================================
+  假如(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2)
+
+  缺少还有一个分离的性质
+
+  但是所有S的分项当中只有S1能够从 BBnum_start出发, 也就是说，对于i >= 2都有， (S2 U ... U Sn)  (BBnum_start, s) (_, s') -> False
+
+  那么(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2) -> exists BBnum s1', S1 (BBnum_start, s1) (BBnum s1') /\ (S2 U ... U Sn) (BBnum s1') (BBnum_end, s2)
+  
+  S1 (BBnum_start, s1) (BBnum s1') 这个就是有cjump的那一步啊
+*)
+
+Lemma serperate_concate:
+  forall (BB1: BasicBlock) (BBs: list BasicBlock), (*缺少前提！*)
+  (BB_sem_union (BB1::BBs)).(Bnrm) ∘ (BB_sem_union (BB1::BBs)).(Bnrm) = ((BB_sem BB1).(Bnrm) ∘ (BB_sem BB1).(Bnrm)) ∪ ((BB_sem_union (BBs)).(Bnrm) ∘ (BB_sem_union (BBs)).(Bnrm)) .
+Proof.
+  intros.
+  Admitted. 
+
+Lemma seperate_single_step:
+  forall (BB1: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state), (*缺少前提！*)
+  (* (nodes_of_BD (BB_sem_union (BBs))) ∩ nodes_of_BD (BB_sem BB1) = ∅ /\ *)
+  (BB_list_sem (BB1::BBs)).(Bnrm) bs1 bs2 -> 
+  (*这里这一条好像就不需要了*)
+  (exists (bs' : BB_state), (BB_sem BB1).(Bnrm) bs1 bs') /\ (forall (bs'':BB_state), ((BB_sem_union BBs)).(Bnrm) bs1 bs'' = False) ->
+  (exists s1', (BB_sem BB1).(Bnrm) bs1 s1' /\ ((BB_list_sem  BBs)).(Bnrm) s1' bs2).
+Proof.
+  intros.
+  destruct H0.
+  destruct H0. exists x. split. apply H0.
+  unfold BB_list_sem in H. unfold BB_sem_union in H. simpl in H. sets_unfold in H. destruct H. unfold Iter_nrm_BBs_n in H.
+  - simpl in H. sets_unfold in H. rewrite H in H0. appl
+Admitted.
+
+
+(* 然后如果它们BBnum之间有不交之类的性质的话，就有机会证明类似 (S1 U S2) o (S1 U S2) = S1 o S1 U S2 o S2这样的性质 *)
+
+
+(* ==================================================================================================================================== *)
 
 
 (* Construct the denotation for the original cmds, should be in cmd_denotations.v 
@@ -475,7 +506,6 @@ Proof.
 Admitted.
 
 
-(* How to do this？？？？*)
 Lemma true_or_false:
   forall (e: expr) (s: state),
   (exists (i : int64), (eval_expr e).(nrm) s i) ->
@@ -677,11 +707,16 @@ Proof.
               rewrite H11 in H8. simpl in H8. (* BB_now_then.(cmd) = BB_cmds_then *)
               sets_unfold. 
               my_destruct H16.
-              pose proof true_or_false e a. destruct H20.
+              pose proof true_or_false e a.
+              assert (exists i : int64, EDenote.nrm (eval_expr e) a i). {
+                admit. (* 不考虑出错或无穷的情况 *)
+              }
+              pose proof H20 H21.
+              destruct H22.
               --- left. (*如果test true*)
                   clear H14.
                   exists a. split. 
-                  ++++ pose proof BB_true_jmp_iff_test_true_jmp e a. apply H14 in H20. apply H20. 
+                  ++++ pose proof BB_true_jmp_iff_test_true_jmp e a. apply H14. apply H22.
                   ++++ assert (exists bs1 bs2 : BB_state,
                   Bnrm
                     {|
@@ -705,15 +740,7 @@ Proof.
                   {
                     clear H6.
                     exists x, x0. repeat split.
-                    - simpl. assert ( 
-                      Bnrm (BB_sem_union (BBs_then ++ BB_now_else :: BBs_else ++ BB_next :: nil))
-                      = 
-                      Bnrm (BB_sem_union BBs_then)
-                    ). {
-                      unfold BB_sem_union. simpl.
-                      simpl.
-                      injection H16. intros. rewrite H21. reflexivity.
-                    } rewrite <- H6. rewrite <- H8. apply H16.
+                    - simpl.x 
                     - apply H15.
                     - apply H17.
                     - rewrite H18. rewrite H9. reflexivity.
