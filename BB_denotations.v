@@ -219,10 +219,10 @@ Proof.
       unfold BB_list_sem. simpl.
       assert(Rels.id = Iter_nrm_BBs_n (BB_sem_union BBs) 0).
       -- tauto.
-      -- rewrite H. admit. (*what lemma should be used?*)
+      -- rewrite H. simpl. sets_unfold. intros. exists O. rewrite H0. rewrite <- H. sets_unfold. tauto.
     -
       unfold BB_list_sem. simpl.
-      admit.
+      sets_unfold.
 Admitted.
 
 Definition BDenote_concate (BD1: BDenote) (BD2: BDenote): BDenote := {|
@@ -242,7 +242,7 @@ Definition BBnum_start_end_set (BBnum_start: nat) (BBnum_end: nat): BB_num_set :
   fun BBnum => Nat.le BBnum_start BBnum /\ Nat.le BBnum BBnum_end.
 
 Definition BBnum_set (BBs: list BasicBlock): BB_num_set :=
-  (* 拿到一串BBs里，所有出现的BBnum，包括blocknum和jmpdestnum*)
+  (* 拿到一串BBs里，所有出现的BBnum，包括block num和jmp dest num*)
   fun BBnum => exists BB, (In BB BBs) /\ BB.(block_num) = BBnum.
 
 Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
@@ -271,6 +271,7 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
   BBnum_set (BB1::nil) ∩ BBjmp_dest_set (BB1::BBs) = ∅.
 
+
 Lemma separate_concate:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock), 
   separate_property BBnow BBs -> (* BBnum本身不交 *)
@@ -279,6 +280,12 @@ Proof.
   intros.
   rewrite Rels_concat_union_distr_r.
   apply Sets_equiv_Sets_included. split.
+  unfold separate_property in H.
+  - sets_unfold. intros.
+    unfold BB_list_sem in H0. simpl in H0.
+    unfold Iter_nrm_BBs_n in H0.
+
+
   - assert (Bnrm (BB_list_sem (BBnow :: BBs)) == Bnrm (BB_sem BBnow) ∘ Bnrm (BB_list_sem BBs)).
   {
     unfold BB_list_sem. simpl. unfold Iter_nrm_BBs_n. simpl. 
