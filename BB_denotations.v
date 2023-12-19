@@ -158,10 +158,10 @@ Definition BB_sem (BB: BasicBlock): BDenote := {|
   Binf :=  ∅;
 |}.
 
-Fixpoint BB_sem_union(BBs: list BasicBlock): BDenote :=  {|
+Fixpoint BB_sem_union (BBs: list BasicBlock): BDenote :=  {|
   Bnrm := 
     match BBs with 
-    | BB :: tl =>(BB_sem_union tl).(Bnrm) ∪ (BB_sem BB).(Bnrm)
+    | BB :: tl => (BB_sem_union tl).(Bnrm) ∪ (BB_sem BB).(Bnrm)
     | _ => ∅
     end;
   Berr := ∅;
@@ -195,34 +195,32 @@ Lemma unfold_once:
 Proof.
   intros. apply Sets_equiv_Sets_included.
   split.
-  + 
-  intros.
-  unfold BB_list_sem.
-  simpl.
-  apply Sets_indexed_union_included.
-  destruct n.
-  -
-    left.
-    tauto.
-  -
-    right.
+  + intros.
     unfold BB_list_sem.
-    assert(Iter_nrm_BBs_n (BB_sem_union BBs) (S n) = Bnrm (BB_sem_union BBs) ∘ Iter_nrm_BBs_n (BB_sem_union BBs) (n)).
-    --
-      reflexivity.
-    --
-      rewrite H0 in H. 
-      admit. (*should be easy? *)
-  +
-    apply Sets_union_included.
+    simpl.
+    apply Sets_indexed_union_included.
+    destruct n.
+    - left. tauto.
+    - right.
+      unfold BB_list_sem.
+      assert(Iter_nrm_BBs_n (BB_sem_union BBs) (S n) = Bnrm (BB_sem_union BBs) ∘ Iter_nrm_BBs_n (BB_sem_union BBs) (n)).
+      -- reflexivity.
+      -- rewrite H0 in H. 
+         admit. (*should be easy? *) 
+  + apply Sets_union_included.
     - 
       unfold BB_list_sem. simpl.
       assert(Rels.id = Iter_nrm_BBs_n (BB_sem_union BBs) 0).
       -- tauto.
       -- rewrite H. simpl. sets_unfold. intros. exists O. rewrite H0. rewrite <- H. sets_unfold. tauto.
-    -
-      unfold BB_list_sem. simpl.
-      sets_unfold.
+    - unfold BB_list_sem. simpl.
+      sets_unfold. intros.
+      destruct H as [? [? [? ?]]].
+      exists  (S x0). unfold Iter_nrm_BBs_n. sets_unfold.
+      exists x.
+      split. apply H.
+      unfold Iter_nrm_BBs_n in H0. apply H0.
+      
 Admitted.
 
 Definition BDenote_concate (BD1: BDenote) (BD2: BDenote): BDenote := {|
