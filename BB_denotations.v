@@ -271,16 +271,18 @@ Lemma separate_concate:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock), 
   separate_property BBnow BBs -> (* BBnum本身不交 *)
     (BB_list_sem (BBnow::BBs)).(Bnrm) == (Rels.id ∪ (BB_sem BBnow).(Bnrm)) ∘ (BB_list_sem BBs).(Bnrm).
-Proof.
+Admitted.
+(* Proof.
   intros.
   rewrite Rels_concat_union_distr_r.
   apply Sets_equiv_Sets_included. split.
   unfold separate_property in H.
   - sets_unfold. intros.
-    unfold BB_list_sem in H0. simpl in H0.
+    pose proof unfold_once (BBnow :: BBs).
+
+    unfold BB_list_sem in H0. cbn[Bnrm] in H0.
+    destruct H1.
     unfold Iter_nrm_BBs_n in H0.
-
-
   - assert (Bnrm (BB_list_sem (BBnow :: BBs)) == Bnrm (BB_sem BBnow) ∘ Bnrm (BB_list_sem BBs)).
   {
     unfold BB_list_sem. simpl. unfold Iter_nrm_BBs_n. simpl. 
@@ -291,8 +293,8 @@ Proof.
          (BJump_sem (jump_dest_1 BBnow.(jump_info))
             (jump_dest_2 BBnow.(jump_info))
             (eval_cond_expr (jump_condition BBnow.(jump_info))))
-         bs1 bs2)) as BBnow1sem. 
-  }
+         bs1 bs2)) as BBnow1sem. admit.
+  } *)
 (* ==================================================================================================================================== *)
 
 (* Some Important Property for S ========================================================================================================
@@ -323,7 +325,7 @@ Proof.
   
   Admitted.  *)
 
-Lemma separate_single_step:
+(* Lemma separate_single_step:
   forall (BB1: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state), (*缺少前提！*)
   (* (nodes_of_BD (BB_sem_union (BBs))) ∩ nodes_of_BD (BB_sem BB1) = ∅ /\ *)
   (BB_list_sem (BB1::BBs)).(Bnrm) bs1 bs2 -> 
@@ -336,7 +338,32 @@ Proof.
   destruct H0. exists x. split. apply H0.
   unfold BB_list_sem in H. unfold BB_sem_union in H. simpl in H. sets_unfold in H. destruct H. unfold Iter_nrm_BBs_n in H.
   - simpl in H. sets_unfold in H. admit.
+Admitted. *)
+
+Lemma try:
+  forall (bs_start bs_end: BB_state)(BBnow: BasicBlock) (BB_then: BasicBlock)(BB_then_ss: list BasicBlock) (BB_else: BasicBlock) (BB_else_ss: list BasicBlock) (e: expr),
+  (BBnow.(jump_info) = 
+  {|
+  jump_kind := CJump; 
+  jump_dest_1 := (BB_then).(block_num); 
+  jump_dest_2 := Some ((BB_else).(block_num)); 
+  jump_condition := Some e
+  |})
+  
+  ->
+
+  test_true_jmp(eval_expr e) (bs_start.(st))
+  /\ (BB_jmp_sem BBnow).(Bnrm) ∘ (BB_list_sem (BB_then::nil ++ BB_then_ss)).(Bnrm)
+      =
+      (BB_jmp_sem BBnow).(Bnrm) ∘ (BB_list_sem (BB_then::nil ++ BB_then_ss ++ BB_else::nil ++ BB_else_ss)).(Bnrm)
+  \/
+  test_false_jmp(eval_expr e) (bs_start.(st))
+  /\ (BB_jmp_sem BBnow).(Bnrm) ∘ (BB_list_sem (BB_else::nil ++ BB_else_ss)).(Bnrm)
+      =
+      (BB_jmp_sem BBnow).(Bnrm) ∘ (BB_list_sem (BB_then::nil ++ BB_then_ss ++ BB_else::nil ++ BB_else_ss)).(Bnrm).
+
 Admitted.
+
 
 
 
