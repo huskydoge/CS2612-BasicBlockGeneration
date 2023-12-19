@@ -188,7 +188,6 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
 |}.
 
 
-(* almost done *)
 Lemma unfold_once:
   forall (BBs: list BasicBlock),
 (BB_list_sem BBs).(Bnrm) == Rels.id ∪ (BB_sem_union BBs).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm).
@@ -264,35 +263,31 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 
 
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
-  BBnum_set (BB1::nil) ∩ BBjmp_dest_set (BB1::BBs) = ∅.
+  BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) = ∅.
 
 
-Lemma separate_concate:
+Lemma separate_concat:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock), 
   separate_property BBnow BBs -> (* BBnum本身不交 *)
-    (BB_list_sem (BBnow::BBs)).(Bnrm) == (Rels.id ∪ (BB_sem BBnow).(Bnrm)) ∘ (BB_list_sem BBs).(Bnrm).
+    (BB_list_sem (BBnow :: BBs)).(Bnrm) == (Rels.id ∪ (BB_sem BBnow).(Bnrm)) ∘ (BB_list_sem BBs).(Bnrm).
 Proof.
   intros.
   rewrite Rels_concat_union_distr_r.
+  pose proof unfold_once (BBnow :: BBs).
+  apply Sets_equiv_Sets_included in H0. destruct H0 as [? ?].
   apply Sets_equiv_Sets_included. split.
   unfold separate_property in H.
-  - sets_unfold. intros.
-    unfold BB_list_sem in H0. simpl in H0.
-    unfold Iter_nrm_BBs_n in H0.
-
-
-  - assert (Bnrm (BB_list_sem (BBnow :: BBs)) == Bnrm (BB_sem BBnow) ∘ Bnrm (BB_list_sem BBs)).
-  {
-    unfold BB_list_sem. simpl. unfold Iter_nrm_BBs_n. simpl. 
-    remember (Bnrm (BAsgn_list_sem BBnow.(cmd))
-    ∘ (fun bs1 bs2 : BB_state =>
-       st bs1 = st bs2 /\
-       Bnrm
-         (BJump_sem (jump_dest_1 BBnow.(jump_info))
-            (jump_dest_2 BBnow.(jump_info))
-            (eval_cond_expr (jump_condition BBnow.(jump_info))))
-         bs1 bs2)) as BBnow1sem. 
-  }
+  - clear H1.
+    sets_unfold. intros.
+    unfold BB_list_sem in H0. cbn[Bnrm] in H0.
+    sets_unfold in H0. specialize (H0 a a0). destruct H0 as [? | ?].
+    + unfold BB_list_sem in H1. cbn[Bnrm] in H1. admit.
+    + left. exists a0. rewrite H0. split; try tauto.
+      simpl. unfold BB_list_sem in H1. cbn[Bnrm] in H1.
+      unfold BB_sem_union in H1.
+      sets_unfold in H1. sets_unfold.
+      destruct H1. exists x.
+Admitted.
 (* ==================================================================================================================================== *)
 
 (* Some Important Property for S ========================================================================================================
