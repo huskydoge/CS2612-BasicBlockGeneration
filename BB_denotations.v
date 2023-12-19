@@ -238,11 +238,52 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 
 
 
-(* 然后如果它们BBnum之间有不交之类的性质的话，就有机会证明类似 (S1 U S2) o (S1 U S2) = S1 o S1 U S2 o S2这样的性质 *)
+(*
+分离性质：(I \cup S1) \circ (S2 \cup S3 .....)*  = 
+
+*)
+
+Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
+  BBnum_set (BB1::nil) ∩ BBjmp_dest_set (BB1::BBs) = ∅.
+
+Lemma separate_concate:
+  forall (BBnow: BasicBlock) (BBs: list BasicBlock), 
+  separate_property BBnow BBs -> (* BBnum本身不交 *)
+    (BB_list_sem (BBnow::BBs)).(Bnrm) == (Rels.id ∪ (BB_sem BBnow).(Bnrm)) ∘ (BB_list_sem BBs).(Bnrm).
+Proof.
+  intros.
+  rewrite Rels_concat_union_distr_r.
+  apply Sets_equiv_Sets_included. split.
+  - assert (Bnrm (BB_list_sem (BBnow :: BBs)) == Bnrm (BB_sem BBnow) ∘ Bnrm (BB_list_sem BBs)).
+  {
+    unfold BB_list_sem. simpl. unfold Iter_nrm_BBs_n. simpl. 
+    remember (Bnrm (BAsgn_list_sem BBnow.(cmd))
+    ∘ (fun bs1 bs2 : BB_state =>
+       st bs1 = st bs2 /\
+       Bnrm
+         (jmp_sem (jump_dest_1 BBnow.(jump_info))
+            (jump_dest_2 BBnow.(jump_info))
+            (eval_cond_expr (jump_condition BBnow.(jump_info))))
+         bs1 bs2)) as BBnow1sem.
+  }
+
+(* ==================================================================================================================================== *)
+
+(* Some Important Property for S ========================================================================================================
+  假如(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2)
+
+  缺少还有一个分离的性质
+
+  但是所有S的分项当中只有S1能够从 BBnum_start出发, 也就是说，对于i >= 2都有， (S2 U ... U Sn)  (BBnum_start, s) (_, s') -> False
+
+  那么(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2) -> exists BBnum s1', S1 (BBnum_start, s1) (BBnum s1') /\ (S2 U ... U Sn) (BBnum s1') (BBnum_end, s2)
+  
+  S1 (BBnum_start, s1) (BBnum s1') 这个就是有cjump的那一步啊
+
+*)
 
 
-
-(*#TODO *)
+(* #TODO
 Lemma serperate_concate:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock), (* 对应关系：BBnow (then/else分支）*)
   BBnum_set (BBnow::nil) ∩ BBjmp_dest_set BBs = ∅ -> (* BBnum本身不交 *)
@@ -254,9 +295,9 @@ Lemma serperate_concate:
 Proof.
   intros.
   
-  Admitted. 
+  Admitted.  *)
 
-Lemma seperate_single_step:
+Lemma separate_single_step:
   forall (BB1: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state), (*缺少前提！*)
   (* (nodes_of_BD (BB_sem_union (BBs))) ∩ nodes_of_BD (BB_sem BB1) = ∅ /\ *)
   (BB_list_sem (BB1::BBs)).(Bnrm) bs1 bs2 -> 
