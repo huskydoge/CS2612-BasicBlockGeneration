@@ -142,7 +142,6 @@ Definition eval_cond_expr (e: option expr): option EDenote :=
   end.
 
 
-(* Combine list of BAsgn and the final BJump *)
 Definition BB_jmp_sem (BB: BasicBlock): BDenote := {| 
   Bnrm := 
     let jmp_dest1 := BB.(jump_info).(jump_dest_1) in
@@ -160,6 +159,7 @@ Definition BB_cmds_sem (BB: BasicBlock): BDenote := {|
   Binf := ∅;
 |}.
 
+(* Combine list of BAsgn and the final BJump *)
 Definition BB_single_step_sem (BB: BasicBlock): BDenote := {|
   Bnrm := (BB_cmds_sem BB).(Bnrm) ∘ (BB_jmp_sem BB).(Bnrm);
   Berr := ∅;
@@ -201,6 +201,12 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
   Binf := ∅;
 |}.
 
+Definition BDenote_concate (BD1: BDenote) (BD2: BDenote): BDenote := {|
+  Bnrm := BD1.(Bnrm) ∘ BD2.(Bnrm);
+  Berr := BD1.(Berr) ∪ BD1.(Bnrm) ∘ BD2.(Berr);
+  Binf := ∅;
+|}.
+
 
 Definition BB_num_set := nat -> Prop.
 
@@ -230,11 +236,24 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
   S1 (BBnum_start, s1) (BBnum s1') 这个就是有cjump的那一步啊
 *)
 
+
+
+(* 然后如果它们BBnum之间有不交之类的性质的话，就有机会证明类似 (S1 U S2) o (S1 U S2) = S1 o S1 U S2 o S2这样的性质 *)
+
+
+
+(*#TODO *)
 Lemma serperate_concate:
-  forall (BB1: BasicBlock) (BBs: list BasicBlock), (*缺少前提！*)
-  (BB_sem_union (BB1::BBs)).(Bnrm) ∘ (BB_sem_union (BB1::BBs)).(Bnrm) = ((BB_sem BB1).(Bnrm) ∘ (BB_sem BB1).(Bnrm)) ∪ ((BB_sem_union (BBs)).(Bnrm) ∘ (BB_sem_union (BBs)).(Bnrm)) .
+  forall (BBnow: BasicBlock) (BBs: list BasicBlock), (* 对应关系：BBnow (then/else分支）*)
+  BBnum_set (BBnow::nil) ∩ BBjmp_dest_set BBs = ∅ -> (* BBnum本身不交 *)
+  BBjmp_dest_set (BBnow::nil) ∈ BBnum_set BBs -> (* BBnum本身不交 *)
+    ((BB_jmp_sem (BBnow)).(Bnrm) ∪ (BB_list_sem BBs).(Bnrm)) ∘ ((BB_jmp_sem (BBnow)).(Bnrm) ∪ (BB_list_sem BBs).(Bnrm))  (* (S1 U S2) o (S1 U S2) *)
+    = 
+    ((BB_jmp_sem (BBnow)).(Bnrm) ∘ (BB_jmp_sem (BBnow)).(Bnrm)) ∪ ((BB_list_sem BBs).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm)). (* S1 o S1 U S2 o S2 *)
+  
 Proof.
   intros.
+  
   Admitted. 
 
 Lemma seperate_single_step:
@@ -249,11 +268,9 @@ Proof.
   destruct H0.
   destruct H0. exists x. split. apply H0.
   unfold BB_list_sem in H. unfold BB_sem_union in H. simpl in H. sets_unfold in H. destruct H. unfold Iter_nrm_BBs_n in H.
-  - simpl in H. sets_unfold in H. rewrite H in H0. appl
+  - simpl in H. sets_unfold in H. admit.
 Admitted.
 
-
-(* 然后如果它们BBnum之间有不交之类的性质的话，就有机会证明类似 (S1 U S2) o (S1 U S2) = S1 o S1 U S2 o S2这样的性质 *)
 
 
 (* ==================================================================================================================================== *)
@@ -310,9 +327,9 @@ Ltac my_destruct H :=
   | _ => idtac 
   end.
 
-Definition disjoint(c: cmd): Prop :=
-    (* Q(Asgn)里面不能出现cmds, 或者说Q(c)里面你就要讲BBs等等变化前后有什么区别, 别去搞cmds，你们搞得那个反而把问题搞复杂了
-      嗯，当然你要证明的是语义的变化，所以你要说多出来的commands的语义，和那个c的语义一样 -- by cqx *)
+(* #TODO  Check Qd *)
+Definition Qd(c: cmd): Prop :=
+    (* Qd: Q disjoint, 描述的是disjoint的性质 *)
     forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd),
       let res := cmd_BB_gen c BBs BBnow BBnum in
       let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in 
@@ -354,13 +371,13 @@ Definition disjoint(c: cmd): Prop :=
 
 Lemma disjoint_c:
   forall (c: cmd),
-  disjoint c.
+  Qd c.
 Proof.
 Admitted.
  
 
-Definition Q(c: cmd): Prop :=
-  (* Q(Asgn)里面不能出现cmds, 或者说Q(c)里面你就要讲BBs等等变化前后有什么区别, 别去搞cmds，你们搞得那个反而把问题搞复杂了
+Definition Qb(c: cmd): Prop :=
+  (* Qb: Q basic, 不包含disjoint的性质。Qb(Asgn)里面不能出现cmds, 或者说Q(c)里面你就要讲BBs等等变化前后有什么区别, 别去搞cmds，你们搞得那个反而把问题搞复杂了
     嗯，当然你要证明的是语义的变化，所以你要说多出来的commands的语义，和那个c的语义一样 -- by cqx *)
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
     let res := cmd_BB_gen c BBs BBnow BBnum in
@@ -374,7 +391,7 @@ Definition Q(c: cmd): Prop :=
     (exists BBnow' BBs' BBnum', 
       res.(BasicBlocks) ++ (res.(BBn)::nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\
       res.(BBn).(block_num) = BBnum' /\
-      BCequiv (BB_list_sem BBs') (cmd_sem c) BBnum (S (S BBnum))). (* 这里的BBnum'是最后停留在BB的编号，对于If和while，都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
+      BCequiv (BDenote_concate (BB_jmp_sem BBnow)(BB_list_sem BBs')) (cmd_sem c) BBnow.(block_num) (S (S BBnum))). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
 
 
 (* c: the cmd we are currently facing
@@ -458,9 +475,9 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
 Lemma Q_asgn:
   forall (x: var_name) (e: expr),
-  Q (CAsgn x e).
+  Qb (CAsgn x e).
 Proof.
-  intros. unfold Q. left.
+  intros. unfold Qb. left.
   exists {|
     block_num := BBnow.(block_num);
     commands := BBnow.(cmd) ++ {| X:= x; E:= e|} :: nil;
@@ -554,10 +571,10 @@ Qed.
 
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
-  P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Q (CIf e c1 c2).
+  P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qb (CIf e c1 c2).
 Proof.
   intros.
-  unfold Q. intros. right. 
+  unfold Qb. intros. right. 
   (* 这里要和BBgeneration里的情况对齐
   P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
   P c1用于分配的BBnum也是如此，如下：    
@@ -596,7 +613,7 @@ Proof.
   
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
+  destruct H as [BBs_then [BB_then' [ BB_cmds_then [BB_num2 [?]]]]].
   (* Get correct BBnow for P c2 *)
   set (BB_else := {|
     block_num := BB_else_num;
@@ -608,11 +625,11 @@ Proof.
         jump_condition := None
       |}
     |}).
-  (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_now_then ++ BBs_then, 注意这里的BB_now_then和BB_then不同！它里面的commands可能由于CAsgn有填充*)
+  (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_then' ++ BBs_then, 注意这里的BB_then'和BB_then不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_else了*)
 
   unfold P in H0. 
-  specialize (H0 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
+  specialize (H0 (BBs ++ BBnow'::nil ++ BB_then'::nil ++ BBs_then) BB_else BB_num2).
 
   (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
   destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
@@ -626,7 +643,7 @@ Proof.
   commands := nil; (* 创建一个空的命令列表 *)
   jump_info := BBnow.(jump_info)
   |}).
-  set(BBs'_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
+  set(BBs'_ := BB_then'::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
   
   exists BBnow'. exists BBs'_. exists BB_next_num.
   (*========================================== *)
@@ -675,7 +692,7 @@ Proof.
                 |}
             |} with BB_else.
       + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H5. simpl. rewrite <- H1. simpl in H10. 
-        assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
+        assert (BBs ++ BBnow' :: BB_then' :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_then' :: BBs_then).
         {
           rewrite <- app_assoc. simpl. reflexivity.
         }
@@ -704,7 +721,7 @@ Proof.
          simpl. unfold BB_list_sem in H16. simpl in H16. clear H15 H11. 
 
               assert (BB_then.(cmd) = nil).  reflexivity. (*遇到if的话，BB_then里不会添加新的cmds了*)
-              rewrite H11 in H8. simpl in H8. (* BB_now_then.(cmd) = BB_cmds_then *)
+              rewrite H11 in H8. simpl in H8. (* BB_then'.(cmd) = BB_cmds_then *)
               sets_unfold. 
               my_destruct H16.
               pose proof true_or_false e a.
@@ -729,18 +746,18 @@ Proof.
                                    ∘ (fun bs3 bs4 : BB_state =>
                                       st bs3 = st bs4 /\
                                       Bnrm
-                                        (jmp_sem (jump_dest_1 BB_now_then.(jump_info)) (jump_dest_2 BB_now_then.(jump_info))
-                                           (eval_cond_expr (jump_condition BB_now_then.(jump_info)))) bs3 bs4);
+                                        (jmp_sem (jump_dest_1 BB_then'.(jump_info)) (jump_dest_2 BB_then'.(jump_info))
+                                           (eval_cond_expr (jump_condition BB_then'.(jump_info)))) bs3 bs4);
                                Berr := ∅;
                                Binf := ∅
                              |});
                       Berr := ∅;
                       Binf := ∅
-                    |} bs1 bs2 /\ st bs1 = a /\ st bs2 = a0 /\ BB_num bs1 = BB_now_then.(block_num) /\ BB_num bs2 = BB_next_num).
+                    |} bs1 bs2 /\ st bs1 = a /\ st bs2 = a0 /\ BB_num bs1 = BB_then'.(block_num) /\ BB_num bs2 = BB_next_num).
                   {
                     clear H6.
                     exists x, x0. repeat split.
-                    - simpl.x 
+                    - simpl.
                     - apply H15.
                     - apply H17.
                     - rewrite H18. rewrite H9. reflexivity.
@@ -758,7 +775,7 @@ Search (S _ = _ ).
 
 Lemma Q_while:
   forall (pre: list cmd) (e: expr) (body: list cmd),
-  P pre (cmd_BB_gen) -> P body (cmd_BB_gen) -> Q (CWhile pre e body).
+  P pre (cmd_BB_gen) -> P body (cmd_BB_gen) -> Qb (CWhile pre e body).
 Proof.
 Admitted.
 
@@ -850,7 +867,7 @@ Admitted.
 
 Lemma P_cons:
   forall (c: cmd) (cmds: list cmd) (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
-  Q c -> P cmds cmd_BB_gen -> P (c :: cmds) (cmd_BB_gen).
+  Qb c -> P cmds cmd_BB_gen -> P (c :: cmds) (cmd_BB_gen).
 Proof.
   intros.
   destruct c.
@@ -863,7 +880,7 @@ Admitted.
 Section BB_sound.
 
 Variable cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
-Variable cmd_BB_gen_sound: forall (c: cmd), Q c.
+Variable cmd_BB_gen_sound: forall (c: cmd), Qb c.
 
 Fixpoint cmd_list_BB_gen_sound (cmds: list cmd): P cmds cmd_BB_gen :=
   match cmds with
@@ -873,7 +890,7 @@ Fixpoint cmd_list_BB_gen_sound (cmds: list cmd): P cmds cmd_BB_gen :=
 
 End BB_sound.
 
-Fixpoint cmd_BB_gen_sound (c: cmd): Q c :=
+Fixpoint cmd_BB_gen_sound (c: cmd): Qb c :=
   match c with
   | CAsgn x e => Q_asgn x e
   | CIf e cmds1 cmds2 =>
