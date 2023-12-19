@@ -71,7 +71,7 @@ Definition cjmp_sem (jmp_dest1: nat) (jmp_dest2: nat) (D: EDenote) : BDenote :=
   |}.
 
 
-Definition jmp_sem (jmp_dest1: nat) (jmp_dest2: option nat)(D: option EDenote) :BDenote :=
+Definition BJump_sem (jmp_dest1: nat) (jmp_dest2: option nat)(D: option EDenote) :BDenote :=
   match D with 
   | None => ujmp_sem jmp_dest1 (* No expr *)
   | Some D => match jmp_dest2 with
@@ -80,13 +80,6 @@ Definition jmp_sem (jmp_dest1: nat) (jmp_dest2: option nat)(D: option EDenote) :
               end
   end.
 
-
-Definition BJump_sem (jmp_dest1: nat) (jmp_dest2: option nat) (D: option EDenote) : BDenote := {|
-  Bnrm := fun bs1 bs2 => 
-      bs1.(st) = bs2.(st) /\ (jmp_sem jmp_dest1 jmp_dest2 D).(Bnrm) bs1 bs2;
-  Berr := ∅;
-  Binf := ∅;
-|}.
 
 (* =================================================================================================================================================================================    *)
 
@@ -159,13 +152,6 @@ Definition BB_cmds_sem (BB: BasicBlock): BDenote := {|
   Binf := ∅;
 |}.
 
-(* Combine list of BAsgn and the final BJump *)
-Definition BB_single_step_sem (BB: BasicBlock): BDenote := {|
-  Bnrm := (BB_cmds_sem BB).(Bnrm) ∘ (BB_jmp_sem BB).(Bnrm);
-  Berr := ∅;
-  Binf := ∅;
-|}.
-
 Definition BB_sem (BB: BasicBlock): BDenote := {|
   Bnrm := (BB_cmds_sem BB).(Bnrm) ∘ (BB_jmp_sem BB).(Bnrm) ;
   Berr :=  ∅;
@@ -200,6 +186,44 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
   Berr := ∅;
   Binf := ∅;
 |}.
+
+
+(* almost done *)
+Lemma unfold_once:
+  forall (BBs: list BasicBlock),
+(BB_list_sem BBs).(Bnrm) == Rels.id ∪ (BB_sem_union BBs).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm).
+Proof.
+  intros. apply Sets_equiv_Sets_included.
+  split.
+  + 
+  intros.
+  unfold BB_list_sem.
+  simpl.
+  apply Sets_indexed_union_included.
+  destruct n.
+  -
+    left.
+    tauto.
+  -
+    right.
+    unfold BB_list_sem.
+    assert(Iter_nrm_BBs_n (BB_sem_union BBs) (S n) = Bnrm (BB_sem_union BBs) ∘ Iter_nrm_BBs_n (BB_sem_union BBs) (n)).
+    --
+      reflexivity.
+    --
+      rewrite H0 in H. 
+      admit. (*should be easy? *)
+  +
+    apply Sets_union_included.
+    - 
+      unfold BB_list_sem. simpl.
+      assert(Rels.id = Iter_nrm_BBs_n (BB_sem_union BBs) 0).
+      -- tauto.
+      -- rewrite H. admit. (*what lemma should be used?*)
+    -
+      unfold BB_list_sem. simpl.
+      admit.
+Admitted.
 
 Definition BDenote_concate (BD1: BDenote) (BD2: BDenote): BDenote := {|
   Bnrm := BD1.(Bnrm) ∘ BD2.(Bnrm);
@@ -243,6 +267,7 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 
 *)
 
+
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
   BBnum_set (BB1::nil) ∩ BBjmp_dest_set (BB1::BBs) = ∅.
 
@@ -261,12 +286,11 @@ Proof.
     ∘ (fun bs1 bs2 : BB_state =>
        st bs1 = st bs2 /\
        Bnrm
-         (jmp_sem (jump_dest_1 BBnow.(jump_info))
+         (BJump_sem (jump_dest_1 BBnow.(jump_info))
             (jump_dest_2 BBnow.(jump_info))
             (eval_cond_expr (jump_condition BBnow.(jump_info))))
-         bs1 bs2)) as BBnow1sem.
+         bs1 bs2)) as BBnow1sem. 
   }
-
 (* ==================================================================================================================================== *)
 
 (* Some Important Property for S ========================================================================================================
