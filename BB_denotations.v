@@ -196,32 +196,29 @@ Proof.
   intros. apply Sets_equiv_Sets_included.
   split.
   + intros.
-    unfold BB_list_sem.
-    simpl.
+    unfold BB_list_sem. simpl.
     apply Sets_indexed_union_included.
-    destruct n.
+    destruct n. 
     - left. tauto.
-    - right.
-      unfold BB_list_sem.
-      assert(Iter_nrm_BBs_n (BB_sem_union BBs) (S n) = Bnrm (BB_sem_union BBs) ∘ Iter_nrm_BBs_n (BB_sem_union BBs) (n)).
-      -- reflexivity.
-      -- rewrite H0 in H. 
-         admit. (*should be easy? *) 
+    - sets_unfold. intros. right.
+      unfold Iter_nrm_BBs_n in H. destruct H as [? ?]. sets_unfold in H.
+      destruct H as [? ?].
+      exists x. split; try tauto.
+      exists n. unfold Iter_nrm_BBs_n. apply H0.
+
   + apply Sets_union_included.
-    - 
-      unfold BB_list_sem. simpl.
+    - unfold BB_list_sem. simpl.
       assert(Rels.id = Iter_nrm_BBs_n (BB_sem_union BBs) 0).
       -- tauto.
       -- rewrite H. simpl. sets_unfold. intros. exists O. rewrite H0. rewrite <- H. sets_unfold. tauto.
     - unfold BB_list_sem. simpl.
       sets_unfold. intros.
       destruct H as [? [? [? ?]]].
-      exists  (S x0). unfold Iter_nrm_BBs_n. sets_unfold.
+      exists (S x0). unfold Iter_nrm_BBs_n. sets_unfold.
       exists x.
       split. apply H.
       unfold Iter_nrm_BBs_n in H0. apply H0.
-      
-Admitted.
+Qed.
 
 Definition BDenote_concate (BD1: BDenote) (BD2: BDenote): BDenote := {|
   Bnrm := BD1.(Bnrm) ∘ BD2.(Bnrm);
