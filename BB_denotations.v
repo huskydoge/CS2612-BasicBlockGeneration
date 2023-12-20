@@ -326,7 +326,7 @@ Admitted.
 
 (*
 你需要由 (start, s1), (end, s2) \in (I U (R1 U R234)) o (R1 U R234)* 
-推出  (start, s1), (end, s2) \in (I U R1 o (R234)
+推出  (start, s1), (end, s2) \in (I U R1 o (R234)*
 **)
 
 Check unfold_once.
@@ -337,10 +337,10 @@ Lemma serperate_step:
   separate_property BBnow BBs -> (* BBnow 不在 (BBnow::BBs)的跳转目标里 *)
 
   BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)-> (* BBnow的num是bs1.(BB_num), BBs的跳转目标中有bs2.(BBnum)*)
-  
+
   ((( Rels.id ∪ (BB_sem_union (BBnow::nil ++ BBs)).(Bnrm) ) ∘ (BB_list_sem (BBnow::nil ++ BBs)).(Bnrm)) bs1 bs2 :Prop)
   ->
-    ( Rels.id ∪ (BB_sem BBnow).(Bnrm) ∘ (BB_sem_union (BBs)).(Bnrm) ) bs1 bs2 :Prop.
+    ( Rels.id ∪ (BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm) ) bs1 bs2 :Prop.
 Proof.
   intros.
   pose proof (unfold_once (BBnow::nil ++ BBs)) as H2.
@@ -357,8 +357,10 @@ Proof.
   }
   specialize (H3 bs1 bs2). (*这里不能直接用apply，否则会炸，*)
   apply H3 in H1.
+  rename H1 into key.
   remember  (Bnrm (BB_list_sem (BBnow :: nil ++ BBs))) as S_star.
   remember (Bnrm (BB_sem_union (BBnow :: nil ++ BBs))) as S.
+  rewrite <- Rels_concat_union_distr_l in H1.
 
 
 
