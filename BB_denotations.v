@@ -264,10 +264,20 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 
 *)
 Lemma start_bb:
-  forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
-BBnow.(block_num)=bs1.(BB_num)-> (BB_list_sem (BBnow :: BBs)).(Bnrm) bs1 bs2->Rels.id bs1 bs2 \/ ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBnow::BBs)).(Bnrm)) bs1 bs2.
+  forall (bs1 bs2: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
+BBnow.(block_num) = bs1.(BB_num) -> (BB_list_sem (BBnow :: BBs)).(Bnrm) bs1 bs2 -> Rels.id bs1 bs2 \/ ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBnow::BBs)).(Bnrm)) bs1 bs2.
 Proof.
+  intros.
+  pose proof classic (bs1 = bs2).
+  destruct H1.
+  - left. sets_unfold. tauto.
+  - right. unfold BB_list_sem. cbn[Bnrm].
+    unfold BB_list_sem in H0. cbn[Bnrm] in H0.
+    sets_unfold. sets_unfold in H0. destruct H0.
+
+    (* remember (Bnrm (BB_sem BBnow)) as S1. *)
 Admitted.
+
 
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
   BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) = ∅.
@@ -334,7 +344,7 @@ Proof.
 Admitted. *)
 
 Lemma try:
-  forall (bs_start bs_end: BB_state)(BBnow: BasicBlock) (BB_then: BasicBlock)(BB_then_ss: list BasicBlock) (BB_else: BasicBlock) (BB_else_ss: list BasicBlock) (e: expr),
+  forall (bs_start bs_end: BB_state) (BBnow: BasicBlock) (BB_then: BasicBlock) (BB_then_ss: list BasicBlock) (BB_else: BasicBlock) (BB_else_ss: list BasicBlock) (e: expr),
   (BBnow.(jump_info) = 
   {|
   jump_kind := CJump; 
