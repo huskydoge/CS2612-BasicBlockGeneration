@@ -263,7 +263,11 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 分离性质：(I \cup S1) \circ (S2 \cup S3 .....)*  = 
 
 *)
-
+Lemma start_bb:
+  forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
+BBnow.(block_num)=bs1.(BB_num)-> (BB_list_sem (BBnow :: BBs)).(Bnrm) bs1 bs2->Rels.id bs1 bs2 \/ ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBnow::BBs)).(Bnrm)) bs1 bs2.
+Proof.
+Admitted.
 
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
   BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) = ∅.
@@ -277,12 +281,12 @@ Lemma separate_concat:
   BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)->
     (BB_list_sem (BBnow :: BBs)).(Bnrm) bs1 bs2 -> Rels.id bs1 bs2 \/ ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm)) bs1 bs2.
 Proof.
-  intros.
-  apply unfold_once in H1.
+  intros. unfold BB_restrict in H0. destruct H0.
+  apply start_bb in H1.
   destruct H1.
   - left. tauto.
-  -
-    right.
+  - right. admit.
+  - rewrite H0. reflexivity.
 Admitted.
 (* ==================================================================================================================================== *)
 
