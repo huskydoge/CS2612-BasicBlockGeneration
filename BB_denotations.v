@@ -263,6 +263,17 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 分离性质：(I \cup S1) \circ (S2 \cup S3 .....)*  = 
 
 *)
+
+
+Check remove.
+
+Lemma disjoint_BB_num:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (c: cmd) (BBnum: nat),
+  let res := cmd_BB_gen c BBs BBnow BBnum in
+  let BBs_delta := res.(BasicBlocks) ++ (res.(BBn) :: nil) in
+  forall BB1, forall BB2, In BB1 BBs_delta -> In BB2 BBs_delta -> (BB1.(block_num) <> BB2.(block_num) \/ BB1 = BB2).
+Admitted.
+
 Lemma start_bb:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
 BBnow.(block_num)=bs1.(BB_num)-> (BB_list_sem (BBnow :: BBs)).(Bnrm) bs1 bs2->Rels.id bs1 bs2 \/ ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBnow::BBs)).(Bnrm)) bs1 bs2.
@@ -556,7 +567,7 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
     BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\
 
-    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) (jump_dest_1 BBnow.(jump_info)) (*总是从当前所在的BB开始*)
+    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) (S (S BBnum)) (*总是从当前所在的BB开始*)
 
     /\ res.(BBn).(jump_info) = BBnow.(jump_info).
 
