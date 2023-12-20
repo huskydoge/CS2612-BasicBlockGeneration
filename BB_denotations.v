@@ -324,6 +324,46 @@ Admitted.
 
 *)
 
+(*
+你需要由 (start, s1), (end, s2) \in (I U (R1 U R234)) o (R1 U R234)* 
+推出  (start, s1), (end, s2) \in (I U R1 o (R234)
+**)
+
+Check unfold_once.
+
+Lemma serperate_step:
+  forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
+
+  separate_property BBnow BBs -> (* BBnow 不在 (BBnow::BBs)的跳转目标里 *)
+
+  BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)-> (* BBnow的num是bs1.(BB_num), BBs的跳转目标中有bs2.(BBnum)*)
+  
+  ((( Rels.id ∪ (BB_sem_union (BBnow::nil ++ BBs)).(Bnrm) ) ∘ (BB_list_sem (BBnow::nil ++ BBs)).(Bnrm)) bs1 bs2 :Prop)
+  ->
+    ( Rels.id ∪ (BB_sem BBnow).(Bnrm) ∘ (BB_sem_union (BBs)).(Bnrm) ) bs1 bs2 :Prop.
+Proof.
+  intros.
+  pose proof (unfold_once (BBnow::nil ++ BBs)) as H2.
+  assert
+  (
+    (((Rels.id ∪ Bnrm (BB_sem_union (BBnow :: nil ++ BBs))) ∘ Bnrm (BB_list_sem (BBnow :: nil ++ BBs))))
+    ==
+    (((Rels.id ∪ Bnrm (BB_sem_union (BBnow :: nil ++ BBs))) ∘ (Rels.id
+    ∪ Bnrm (BB_sem_union (BBnow :: nil ++ BBs))
+      ∘ Bnrm (BB_list_sem (BBnow :: nil ++ BBs)))))
+  ). {
+    rewrite <- H2.
+    reflexivity.
+  }
+  specialize (H3 bs1 bs2). (*这里不能直接用apply，否则会炸，*)
+  apply H3 in H1.
+  remember  (Bnrm (BB_list_sem (BBnow :: nil ++ BBs))) as S_star.
+  remember (Bnrm (BB_sem_union (BBnow :: nil ++ BBs))) as S.
+
+
+
+  
+
 
 (* #TODO
 Lemma serperate_concate:
@@ -514,7 +554,7 @@ Definition Qb(c: cmd): Prop :=
 }.*)
 
 Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results): Prop :=
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd) BBnum',
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd) BBnum' BBendnum,
     let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in (* 这里已经加入了生成完后，最后停留在的那个BB了，从而BBs'里有这个BB*)
 
@@ -533,10 +573,9 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
       |}
     in
 
-
     (* 根据BBs' 的情况分配JumpInfo*)
     match BBs' with
-    | nil => BBnow'.(jump_info) = BBnow.(jump_info)
+    | nil => BBnow'.(jump_info) = BBnow.(jump_info) /\ BBendnum = BBnow.(block_num)
     | next_BB :: _  => 
         (match cmds with
         | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
@@ -577,7 +616,7 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
     BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\
 
-    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) (S (S BBnum)) (*总是从当前所在的BB开始*)
+    BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) BBnow.(jump_info).(jmp_dest1) (*也就是endinfo*)
 
     /\ res.(BBn).(jump_info) = BBnow.(jump_info).
 
