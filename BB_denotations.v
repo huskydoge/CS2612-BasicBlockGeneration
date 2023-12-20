@@ -845,6 +845,7 @@ Proof.
                  exists {| st := a; BB_num := BB_then'.(block_num) |}.
                  exists {| st := a0; BB_num := S (S BB_num1) |}.
                  repeat split; simpl.
+                 sets_unfold in H16. destruct H16 as [? [? [? ?]]].
           ** intros. (* cmds推BB *) admit.
       ++ admit. (*err*)
       ++ admit. (*inf*)
