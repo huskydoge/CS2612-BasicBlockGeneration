@@ -841,38 +841,10 @@ Proof.
             clear H14.
             exists a. split. 
             ++++ pose proof BB_true_jmp_iff_test_true_jmp e a. apply H14. apply H22.
-            ++++ assert (exists bs1 bs2 : BB_state,
-            Bnrm
-              {|
-                Bnrm :=
-                  ⋃ (Iter_nrm_BBs_n
-                        {|
-                          Bnrm :=
-                            Bnrm (BB_sem_union BBs_then)
-                            ∪ Bnrm (BAsgn_list_sem BB_cmds_then)
-                              ∘ (fun bs3 bs4 : BB_state =>
-                                st bs3 = st bs4 /\
-                                Bnrm
-                                  (jmp_sem (jump_dest_1 BB_then'.(jump_info)) (jump_dest_2 BB_then'.(jump_info))
-                                      (eval_cond_expr (jump_condition BB_then'.(jump_info)))) bs3 bs4);
-                          Berr := ∅;
-                          Binf := ∅
-                        |});
-                Berr := ∅;
-                Binf := ∅
-              |} bs1 bs2 /\ st bs1 = a /\ st bs2 = a0 /\ BB_num bs1 = BB_then'.(block_num) /\ BB_num bs2 = BB_next_num).
-            {
-              clear H6.
-              exists x, x0. repeat split.
-              - simpl.
-              - apply H15.
-              - apply H17.
-              - rewrite H18. rewrite H9. reflexivity.
-              - rewrite H19.
-            }
-            pose proof H6 H14. apply H21.
-              ---  right. 
-                  admit.
+            ++++ apply H6.
+                 exists {| st := a; BB_num := BB_then'.(block_num) |}.
+                 exists {| st := a0; BB_num := S (S BB_num1) |}.
+                 repeat split; simpl.
           ** intros. (* cmds推BB *) admit.
       ++ admit. (*err*)
       ++ admit. (*inf*)
