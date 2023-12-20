@@ -360,7 +360,25 @@ Proof.
   rename H1 into key.
   remember  (Bnrm (BB_list_sem (BBnow :: nil ++ BBs))) as S_star.
   remember (Bnrm (BB_sem_union (BBnow :: nil ++ BBs))) as S.
-  rewrite <- Rels_concat_union_distr_l in H1.
+  pose proof Rels_concat_union_distr_l (Rels.id ∪ S) (Rels.id)  (S ∘ S_star). rewrite Rels_concat_id_r in H1.
+  assert ((Rels.id ∪ S) ∘ S ∘ S_star == S ∘ S_star ∪ S ∘ S ∘ S_star). {
+    rewrite Rels_concat_union_distr_r.
+    rewrite Rels_concat_id_l.
+    reflexivity.
+  }
+  rewrite H4 in H1.
+
+  specialize (H1 bs1 bs2).
+  rewrite H1 in key.
+  assert ((Rels.id ∪ S ∪ (S ∘ S_star ∪ S ∘ S ∘ S_star)) bs1 bs2 = (Rels.id ∪ Bnrm (BB_sem BBnow) ∘ Bnrm (BB_list_sem BBs)) bs1 bs2).
+  {
+  simpl. sets_unfold. 
+  }
+  specialize (H5 bs1 bs2).
+  apply H5.
+  apply key.
+Admitted.
+
 
 
 
