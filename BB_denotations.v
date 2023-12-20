@@ -265,28 +265,21 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
   BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) = ∅.
 
+Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(end_BB: nat): Prop :=
+  start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB.
 
 Lemma separate_concat:
-  forall (BBnow: BasicBlock) (BBs: list BasicBlock), 
+  forall (BBnow: BasicBlock) (BBs: list BasicBlock)(bs1: BB_state)(bs2: BB_state), 
   separate_property BBnow BBs -> (* BBnum本身不交 *)
-    (BB_list_sem (BBnow :: BBs)).(Bnrm) == (Rels.id ∪ (BB_sem BBnow).(Bnrm)) ∘ (BB_list_sem BBs).(Bnrm).
+  BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)->
+    (BB_list_sem (BBnow :: BBs)).(Bnrm) bs1 bs2 -> Rels.id bs1 bs2 \/ ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm)) bs1 bs2.
 Proof.
   intros.
-  rewrite Rels_concat_union_distr_r.
-  pose proof unfold_once (BBnow :: BBs).
-  apply Sets_equiv_Sets_included in H0. destruct H0 as [? ?].
-  apply Sets_equiv_Sets_included. split.
-  unfold separate_property in H.
-  - clear H1.
-    sets_unfold. intros.
-    unfold BB_list_sem in H0. cbn[Bnrm] in H0.
-    sets_unfold in H0. specialize (H0 a a0). destruct H0 as [? | ?].
-    + unfold BB_list_sem in H1. cbn[Bnrm] in H1. admit.
-    + left. exists a0. rewrite H0. split; try tauto.
-      simpl. unfold BB_list_sem in H1. cbn[Bnrm] in H1.
-      unfold BB_sem_union in H1.
-      sets_unfold in H1. sets_unfold.
-      destruct H1. exists x.
+  apply unfold_once in H1.
+  destruct H1.
+  - left. tauto.
+  -
+    right.
 Admitted.
 (* ==================================================================================================================================== *)
 
