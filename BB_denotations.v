@@ -53,17 +53,20 @@ Definition test_false_jmp (D: EDenote):
   state -> Prop :=
     (fun s => D.(nrm) s (Int64.repr 0)).
 
-Definition ujmp_sem (jum_dest: nat): BDenote :=
+Definition ujmp_sem (BBnum : nat) (jum_dest: nat): BDenote :=
   {|
     Bnrm := fun (bs1: BB_state) (bs2 :BB_state) =>
-      bs1.(st) = bs2.(st) /\ bs2.(BB_num) = jum_dest /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
+      bs1.(st) = bs2.(st) /\ bs1.(BB_num) = BBnum 
+      /\ bs2.(BB_num) = jum_dest
+      /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
     Berr := ∅;
     Binf := ∅;
   |}.
 
-Definition cjmp_sem (jmp_dest1: nat) (jmp_dest2: nat) (D: EDenote) : BDenote :=
+Definition cjmp_sem (BBnum : nat) (jmp_dest1: nat) (jmp_dest2: nat) (D: EDenote) : BDenote :=
   {|
-    Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\ 
+    Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\
+            (bs1.(BB_num) = BBnum) /\ 
             ((bs2.(BB_num) = jmp_dest1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dest2) 
             /\ (test_false_jmp D bs1.(st))))) /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
     Berr := ∅; (* Ignore err cases now *)
@@ -71,12 +74,12 @@ Definition cjmp_sem (jmp_dest1: nat) (jmp_dest2: nat) (D: EDenote) : BDenote :=
   |}.
 
 
-Definition BJump_sem (jmp_dest1: nat) (jmp_dest2: option nat)(D: option EDenote) :BDenote :=
+Definition BJump_sem (BBnum : nat) (jmp_dest1: nat) (jmp_dest2: option nat)(D: option EDenote) :BDenote :=
   match D with 
-  | None => ujmp_sem jmp_dest1 (* No expr *)
+  | None => ujmp_sem BBnum jmp_dest1 (* No expr *)
   | Some D => match jmp_dest2 with
-              | None => ujmp_sem jmp_dest1
-              | Some jmp_dest2 => cjmp_sem jmp_dest1 jmp_dest2 D
+              | None => ujmp_sem BBnum jmp_dest1
+              | Some jmp_dest2 => cjmp_sem BBnum jmp_dest1 jmp_dest2 D
               end
   end.
 
@@ -140,7 +143,7 @@ Definition BB_jmp_sem (BB: BasicBlock): BDenote := {|
     let jmp_dest1 := BB.(jump_info).(jump_dest_1) in
     let jmp_dest2 := BB.(jump_info).(jump_dest_2) in
     let jmp_cond := BB.(jump_info).(jump_condition) in
-    (BJump_sem jmp_dest1 jmp_dest2 (eval_cond_expr jmp_cond)).(Bnrm); 
+    (BJump_sem BB.(block_num) jmp_dest1 jmp_dest2 (eval_cond_expr jmp_cond)).(Bnrm); 
   Berr := ∅;
   Binf := ∅;
 |}.
