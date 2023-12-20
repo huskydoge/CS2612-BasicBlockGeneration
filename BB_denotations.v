@@ -821,60 +821,59 @@ Proof.
       rewrite H13 in H6.
       split; sets_unfold.
       ++ intros. destruct H6. destruct H11. clear err_cequiv0 inf_cequiv0 err_cequiv1 inf_cequiv1.
-          specialize (nrm_cequiv1 a a0). destruct nrm_cequiv1.
-          specialize (nrm_cequiv0 a a0). destruct nrm_cequiv0.
+         specialize (nrm_cequiv1 a a0). destruct nrm_cequiv1.
+         specialize (nrm_cequiv0 a a0). destruct nrm_cequiv0.
          repeat split.
          +++ intros. (*BB推cmds*)
          (*OK 到这一步就已经是分两部分走了, 开始看上面的命题，在jmp还是不jmp之间找共通，bs1，bs2的a和a0*)
          simpl. unfold BB_list_sem in H16. simpl in H16. clear H15 H11. 
-
-              assert (BB_then.(cmd) = nil).  reflexivity. (*遇到if的话，BB_then里不会添加新的cmds了*)
-              rewrite H11 in H8. simpl in H8. (* BB_then'.(cmd) = BB_cmds_then *)
-              sets_unfold. 
-              my_destruct H16.
-              pose proof true_or_false e a.
-              assert (exists i : int64, EDenote.nrm (eval_expr e) a i). {
-                admit. (* 不考虑出错或无穷的情况 *)
-              }
-              pose proof H20 H21.
-              destruct H22.
-              --- left. (*如果test true*)
-                  clear H14.
-                  exists a. split. 
-                  ++++ pose proof BB_true_jmp_iff_test_true_jmp e a. apply H14. apply H22.
-                  ++++ assert (exists bs1 bs2 : BB_state,
-                  Bnrm
-                    {|
-                      Bnrm :=
-                        ⋃ (Iter_nrm_BBs_n
-                             {|
-                               Bnrm :=
-                                 Bnrm (BB_sem_union BBs_then)
-                                 ∪ Bnrm (BAsgn_list_sem BB_cmds_then)
-                                   ∘ (fun bs3 bs4 : BB_state =>
-                                      st bs3 = st bs4 /\
-                                      Bnrm
-                                        (jmp_sem (jump_dest_1 BB_then'.(jump_info)) (jump_dest_2 BB_then'.(jump_info))
-                                           (eval_cond_expr (jump_condition BB_then'.(jump_info)))) bs3 bs4);
-                               Berr := ∅;
-                               Binf := ∅
-                             |});
-                      Berr := ∅;
-                      Binf := ∅
-                    |} bs1 bs2 /\ st bs1 = a /\ st bs2 = a0 /\ BB_num bs1 = BB_then'.(block_num) /\ BB_num bs2 = BB_next_num).
-                  {
-                    clear H6.
-                    exists x, x0. repeat split.
-                    - simpl.
-                    - apply H15.
-                    - apply H17.
-                    - rewrite H18. rewrite H9. reflexivity.
-                    - rewrite H19.
-                  }
-                  pose proof H6 H14. apply H21.
+         assert (BB_then.(cmd) = nil).  reflexivity. (*遇到if的话，BB_then里不会添加新的cmds了*)
+         rewrite H11 in H8. simpl in H8. (* BB_then'.(cmd) = BB_cmds_then *)
+         sets_unfold. 
+         my_destruct H16.
+         pose proof true_or_false e a.
+         assert (exists i : int64, EDenote.nrm (eval_expr e) a i). {
+          admit. (* 不考虑出错或无穷的情况 *)
+         }
+         pose proof H20 H21.
+         destruct H22.
+         ** left. (*如果test true*)
+            clear H14.
+            exists a. split. 
+            ++++ pose proof BB_true_jmp_iff_test_true_jmp e a. apply H14. apply H22.
+            ++++ assert (exists bs1 bs2 : BB_state,
+            Bnrm
+              {|
+                Bnrm :=
+                  ⋃ (Iter_nrm_BBs_n
+                        {|
+                          Bnrm :=
+                            Bnrm (BB_sem_union BBs_then)
+                            ∪ Bnrm (BAsgn_list_sem BB_cmds_then)
+                              ∘ (fun bs3 bs4 : BB_state =>
+                                st bs3 = st bs4 /\
+                                Bnrm
+                                  (jmp_sem (jump_dest_1 BB_then'.(jump_info)) (jump_dest_2 BB_then'.(jump_info))
+                                      (eval_cond_expr (jump_condition BB_then'.(jump_info)))) bs3 bs4);
+                          Berr := ∅;
+                          Binf := ∅
+                        |});
+                Berr := ∅;
+                Binf := ∅
+              |} bs1 bs2 /\ st bs1 = a /\ st bs2 = a0 /\ BB_num bs1 = BB_then'.(block_num) /\ BB_num bs2 = BB_next_num).
+            {
+              clear H6.
+              exists x, x0. repeat split.
+              - simpl.
+              - apply H15.
+              - apply H17.
+              - rewrite H18. rewrite H9. reflexivity.
+              - rewrite H19.
+            }
+            pose proof H6 H14. apply H21.
               ---  right. 
                   admit.
-          +++ intros. (* cmds推BB *) admit.
+          ** intros. (* cmds推BB *) admit.
       ++ admit. (*err*)
       ++ admit. (*inf*)
 Admitted. 
