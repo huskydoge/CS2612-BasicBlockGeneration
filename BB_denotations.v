@@ -329,9 +329,36 @@ Admitted.
 推出  (start, s1), (end, s2) \in (I U R1 o (R234)*
 **)
 
-(* Lemma serperate_step_aux2:
-  forall (bs1 bs2: BB_state) (sem1: BB_state -> BBstate -> Prop) (sem2: BB_state -> BBstate -> Prop),
-   *)
+Definition sem_start_with (sem: BB_state -> BB_state -> Prop) (bs: BB_state): Prop :=
+  exists bs', sem bs bs'.
+
+Definition sem_end_with (sem: BB_state -> BB_state -> Prop) (bs: BB_state): Prop :=
+  exists bs', sem bs' bs.
+  
+Lemma sem_start_end_with:
+  forall (sem: BB_state -> BB_state -> Prop) (bs1 bs2: BB_state),
+  sem bs1 bs2 -> sem_start_with sem bs1 /\ sem_end_with sem bs2.
+Proof.
+  intros.
+  split.
+  - unfold sem_start_with. exists bs2. apply H.
+  - unfold sem_end_with. exists bs1. apply H.
+Qed.
+
+Lemma sem_start_end_with2:
+  forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
+  ((sem1 ∘ sem2) bs1 bs2 :Prop) -> sem_start_with sem1 bs1 /\ sem_end_with sem2 bs2.
+Proof.
+  intros.
+  split.
+  - unfold sem_start_with. sets_unfold in H.
+    destruct H.
+    exists x. apply H.
+  - unfold sem_end_with. sets_unfold in H.
+    destruct H.
+    exists x. apply H.
+Qed.
+
 
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
@@ -348,6 +375,8 @@ Proof.
   unfold BB_list_sem. cbn [Bnrm].
   unfold BB_list_sem in H1. cbn [Bnrm] in H1.
   cbn [BB_sem_union] in H1. cbn [Bnrm] in H1.
+  unfold separate_property in H.
+  unfold BB_restrict in H0.
   assert ((((Rels.id ∪ (Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow)))
       ∘ ⋃ (Iter_nrm_BBs_n
              {|
