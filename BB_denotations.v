@@ -359,6 +359,11 @@ Proof.
     exists x. apply H.
 Qed.
 
+Lemma sem_union_start_end_with:
+  forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
+  ((sem1 ∪ sem2) bs1 bs2 :Prop) -> sem1 bs1 bs2 \/ sem2 bs1 bs2.
+Proof.
+Admitted.
 
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
@@ -377,43 +382,11 @@ Proof.
   cbn [BB_sem_union] in H1. cbn [Bnrm] in H1.
   unfold separate_property in H.
   unfold BB_restrict in H0.
-  assert ((((Rels.id ∪ (Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow)))
-      ∘ ⋃ (Iter_nrm_BBs_n
-             {|
-               Bnrm := Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow);
-               Berr := ∅;
-               Binf := ∅
-             |})) bs1 bs2 :Prop) <-> (
-             
-             (((Rels.id ∪  Bnrm (BB_sem BBnow))
-      ∘ ⋃ (Iter_nrm_BBs_n
-             {|
-               Bnrm := Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow);
-               Berr := ∅;
-               Binf := ∅
-             |})) bs1 bs2 :Prop)
-             )).
-             {
-             
-              split.
-              - admit. (*Hardest*)
-              - assert (((Rels.id ∪ Bnrm (BB_sem BBnow))
-              ∘ ⋃ (Iter_nrm_BBs_n
-                     {|
-                       Bnrm := Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow);
-                       Berr := ∅;
-                       Binf := ∅
-                     |})) ⊆ ((Rels.id ∪ (Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow)))
-                     ∘ ⋃ (Iter_nrm_BBs_n
-                            {|
-                              Bnrm := Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow);
-                              Berr := ∅;
-                              Binf := ∅
-                            |}))).
-                            {
-                            destruct.
-                            }
-             }
+  apply sem_start_end_with2 in H1.
+  destruct H1.
+  unfold sem_start_with in H1.
+  unfold sem_end_with in H2.
+  
 Admitted.
 
 
