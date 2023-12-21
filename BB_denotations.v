@@ -363,13 +363,15 @@ Lemma sem_union_start_end_with:
   forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
   ((sem1 ∪ sem2) bs1 bs2 :Prop) -> sem1 bs1 bs2 \/ sem2 bs1 bs2.
 Proof.
-  (* #TODO *)
-Admitted.
+  intros.
+  sets_unfold in H.
+  tauto.
+Qed.
 
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
 
-  separate_property BBnow BBs -> (* BBnow 不在 (BBnow::BBs)的跳转目标里 *)
+  separate_property BBnow BBs -> (* BBnow 不在 (BBnow :: BBs) 的跳转目标里 *)
 
   BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)-> (* BBnow的num是bs1.(BB_num), BBs的跳转目标中有bs2.(BBnum)*)
 
@@ -390,7 +392,15 @@ Proof.
   destruct H1.
   assert ((Rels.id ∪ (Bnrm (BB_sem BBnow) ∪ Bnrm (BB_sem_union (nil ++ BBs)))) == ((Rels.id ∪ Bnrm (BB_sem BBnow)) ∪ Bnrm (BB_sem_union (nil ++ BBs)))).
   {
-    admit. (* TODO *)
+    sets_unfold. intros. split.
+    - intros. destruct H3 as [? | [? | ?]].
+      left. left. apply H3.
+      left. right. apply H3.
+      right. apply H3.
+    - intros. destruct H3 as [[? | ?] | ?].
+      left. apply H3.
+      right. left. apply H3.
+      right. right. apply H3.
   }
   specialize (H3 bs1 x).
   rewrite H3 in H1.
