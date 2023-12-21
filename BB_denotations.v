@@ -407,9 +407,18 @@ Proof.
     + right. exists x. sets_unfold in H2. destruct H2.
       split.
       ++ rewrite H1. admit.
-      ++ exists O. simpl.
-    + right. exists x. split. apply H1.
+      ++ exists O. simpl. admit.
+    + right. exists x. split. apply H1. destruct H2.
+      exists x0. induction x0.
+      simpl in H2. simpl. apply H2.
+      unfold Iter_nrm_BBs_n in H2. cbn[Bnrm] in H2.
+      sets_unfold in H2. destruct H2 as [? [? ?]].
+      destruct H2 as [? | ?]. 
+      ++ admit. (** 这种情况应该不可能，x不会从BBnow出发 *)
+      ++ unfold Iter_nrm_BBs_n. sets_unfold. 
+         exists x1. split. apply H2. 
       
+         
 
 
     admit. (*这是我们要证明的情况*)
