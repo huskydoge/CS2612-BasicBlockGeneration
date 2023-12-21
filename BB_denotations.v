@@ -368,6 +368,12 @@ Proof.
   tauto.
 Qed.
 
+Definition predecessor (n : nat) : nat :=
+  match n with
+  | O => O  (* 当 n 为 0 时，前一个数也为 0 *)
+  | S p => p  (* 当 n 为 S p（后继数）时，前一个数为 p *)
+  end.
+
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
 
@@ -377,7 +383,7 @@ Lemma serperate_step_aux1:
 
   ((( Rels.id ∪ (BB_sem_union (BBnow::nil ++ BBs)).(Bnrm) ) ∘ (BB_list_sem (BBnow::nil ++ BBs)).(Bnrm)) bs1 bs2 :Prop)
   ->
-    ( Rels.id ∪ (BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm) ) bs1 bs2 :Prop.
+    ( Rels.id ∪ (BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm) ) bs1 bs2 : Prop.
 Proof.
   intros.
   unfold BB_list_sem. cbn [Bnrm].
@@ -406,7 +412,19 @@ Proof.
   rewrite H3 in H1.
   apply sem_union_start_end_with in H1. (* 观察H1，其中有一种情况是不可能的*)
   destruct H1.
-  - admit. (*这是我们要证明的情况*)
+  - destruct H2 as [? [? ?]].
+    sets_unfold.
+    sets_unfold in H1.
+    destruct H1 as [? | ?].
+    + right. exists x. split.
+      ++ rewrite H1. admit.
+      ++ exists O. simpl. admit.
+    + right. exists x. split. apply H1.
+      exists (predecessor x1). destruct x1.
+      ++
+
+
+    admit. (*这是我们要证明的情况*)
   - admit. (* 这种情况是不可能的 #TODO *)
     
 Admitted.
