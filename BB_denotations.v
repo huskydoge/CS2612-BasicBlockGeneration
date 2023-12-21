@@ -389,8 +389,6 @@ Proof.
   unfold BB_restrict in H0.
   apply sem_start_end_with2 in H1.
   destruct H1.
-  unfold sem_start_with in H1.
-  unfold sem_end_with in H2.
   destruct H1.
   assert ((Rels.id ∪ (Bnrm (BB_sem BBnow) ∪ Bnrm (BB_sem_union (nil ++ BBs)))) == ((Rels.id ∪ Bnrm (BB_sem BBnow)) ∪ Bnrm (BB_sem_union (nil ++ BBs)))).
   {
