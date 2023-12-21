@@ -164,7 +164,7 @@ Definition BB_sem (BB: BasicBlock): BDenote := {|
 Fixpoint BB_sem_union (BBs: list BasicBlock): BDenote :=  {|
   Bnrm := 
     match BBs with 
-    | BB :: tl => (BB_sem_union tl).(Bnrm) ∪ (BB_sem BB).(Bnrm)
+    | BB :: tl => (BB_sem BB).(Bnrm) ∪ (BB_sem_union tl).(Bnrm)
     | _ => ∅
     end;
   Berr := ∅;
@@ -363,6 +363,7 @@ Lemma sem_union_start_end_with:
   forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
   ((sem1 ∪ sem2) bs1 bs2 :Prop) -> sem1 bs1 bs2 \/ sem2 bs1 bs2.
 Proof.
+  (* #TODO *)
 Admitted.
 
 Lemma serperate_step_aux1:
@@ -386,6 +387,12 @@ Proof.
   destruct H1.
   unfold sem_start_with in H1.
   unfold sem_end_with in H2.
+  destruct H1.
+  rewrite Sets_union_assoc in H1.
+  apply sem_union_start_end_with in H1.
+
+  apply sem_union_start_end_with in H1.
+  
   
 Admitted.
 
