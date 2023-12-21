@@ -406,13 +406,13 @@ Proof.
   rewrite H3 in H1.
   apply sem_union_start_end_with in H1. (* 观察H1，其中有一种情况是不可能的*)
   destruct H1.
-  - destruct H2 as [? [? ?]].
-    sets_unfold.
+  - sets_unfold.
     sets_unfold in H1.
     destruct H1 as [? | ?].
-    + right. exists x. split.
+    + right. exists x. sets_unfold in H2. destruct H2.
+      split.
       ++ rewrite H1. admit.
-      ++ exists O. simpl. admit.
+      ++ exists O. simpl.
     + right. exists x. split. apply H1.
       exists (predecessor x1). destruct x1.
       ++
