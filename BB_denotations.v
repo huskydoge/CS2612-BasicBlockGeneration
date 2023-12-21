@@ -388,9 +388,12 @@ Proof.
   unfold sem_start_with in H1.
   unfold sem_end_with in H2.
   destruct H1.
-  rewrite Sets_union_assoc in H1.
-  apply sem_union_start_end_with in H1.
-
+  assert ((Rels.id ∪ (Bnrm (BB_sem BBnow) ∪ Bnrm (BB_sem_union (nil ++ BBs)))) == ((Rels.id ∪ Bnrm (BB_sem BBnow)) ∪ Bnrm (BB_sem_union (nil ++ BBs)))).
+  {
+    admit. (* TODO *)
+  }
+  specialize (H3 bs1 x).
+  rewrite H3 in H1.
   apply sem_union_start_end_with in H1.
   
   
