@@ -329,9 +329,11 @@ Admitted.
 推出  (start, s1), (end, s2) \in (I U R1 o (R234)*
 **)
 
-Check unfold_once.
+(* Lemma serperate_step_aux2:
+  forall (bs1 bs2: BB_state) (sem1: BB_state -> BBstate -> Prop) (sem2: BB_state -> BBstate -> Prop),
+   *)
 
-Lemma serperate_step:
+Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
 
   separate_property BBnow BBs -> (* BBnow 不在 (BBnow::BBs)的跳转目标里 *)
@@ -343,40 +345,46 @@ Lemma serperate_step:
     ( Rels.id ∪ (BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm) ) bs1 bs2 :Prop.
 Proof.
   intros.
-  pose proof (unfold_once (BBnow::nil ++ BBs)) as H2.
-  assert
-  (
-    (((Rels.id ∪ Bnrm (BB_sem_union (BBnow :: nil ++ BBs))) ∘ Bnrm (BB_list_sem (BBnow :: nil ++ BBs))))
-    ==
-    (((Rels.id ∪ Bnrm (BB_sem_union (BBnow :: nil ++ BBs))) ∘ (Rels.id
-    ∪ Bnrm (BB_sem_union (BBnow :: nil ++ BBs))
-      ∘ Bnrm (BB_list_sem (BBnow :: nil ++ BBs)))))
-  ). {
-    rewrite <- H2.
-    reflexivity.
-  }
-  specialize (H3 bs1 bs2). (*这里不能直接用apply，否则会炸，*)
-  apply H3 in H1.
-  rename H1 into key.
-  remember  (Bnrm (BB_list_sem (BBnow :: nil ++ BBs))) as S_star.
-  remember (Bnrm (BB_sem_union (BBnow :: nil ++ BBs))) as S.
-  pose proof Rels_concat_union_distr_l (Rels.id ∪ S) (Rels.id)  (S ∘ S_star). rewrite Rels_concat_id_r in H1.
-  assert ((Rels.id ∪ S) ∘ S ∘ S_star == S ∘ S_star ∪ S ∘ S ∘ S_star). {
-    rewrite Rels_concat_union_distr_r.
-    rewrite Rels_concat_id_l.
-    reflexivity.
-  }
-  rewrite H4 in H1.
-
-  specialize (H1 bs1 bs2).
-  rewrite H1 in key.
-  assert ((Rels.id ∪ S ∪ (S ∘ S_star ∪ S ∘ S ∘ S_star)) bs1 bs2 = (Rels.id ∪ Bnrm (BB_sem BBnow) ∘ Bnrm (BB_list_sem BBs)) bs1 bs2).
-  {
-  simpl. sets_unfold. 
-  }
-  specialize (H5 bs1 bs2).
-  apply H5.
-  apply key.
+  unfold BB_list_sem. cbn [Bnrm].
+  unfold BB_list_sem in H1. cbn [Bnrm] in H1.
+  cbn [BB_sem_union] in H1. cbn [Bnrm] in H1.
+  assert ((((Rels.id ∪ (Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow)))
+      ∘ ⋃ (Iter_nrm_BBs_n
+             {|
+               Bnrm := Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow);
+               Berr := ∅;
+               Binf := ∅
+             |})) bs1 bs2 :Prop) <-> (
+             
+             (((Rels.id ∪  Bnrm (BB_sem BBnow))
+      ∘ ⋃ (Iter_nrm_BBs_n
+             {|
+               Bnrm := Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow);
+               Berr := ∅;
+               Binf := ∅
+             |})) bs1 bs2 :Prop)
+             )).
+             {
+             
+              split.
+              - admit. (*Hardest*)
+              - assert (((Rels.id ∪ Bnrm (BB_sem BBnow))
+              ∘ ⋃ (Iter_nrm_BBs_n
+                     {|
+                       Bnrm := Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow);
+                       Berr := ∅;
+                       Binf := ∅
+                     |})) ⊆ ((Rels.id ∪ (Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow)))
+                     ∘ ⋃ (Iter_nrm_BBs_n
+                            {|
+                              Bnrm := Bnrm (BB_sem_union (nil ++ BBs)) ∪ Bnrm (BB_sem BBnow);
+                              Berr := ∅;
+                              Binf := ∅
+                            |}))).
+                            {
+                            destruct.
+                            }
+             }
 Admitted.
 
 
