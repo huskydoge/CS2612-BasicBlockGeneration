@@ -364,11 +364,6 @@ Proof.
   tauto.
 Qed.
 
-Definition predecessor (n : nat) : nat :=
-  match n with
-  | O => O  (* 当 n 为 0 时，前一个数也为 0 *)
-  | S p => p  (* 当 n 为 S p（后继数）时，前一个数为 p *)
-  end.
 
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
@@ -414,8 +409,7 @@ Proof.
       ++ rewrite H1. admit.
       ++ exists O. simpl.
     + right. exists x. split. apply H1.
-      exists (predecessor x1). destruct x1.
-      ++
+      
 
 
     admit. (*这是我们要证明的情况*)
