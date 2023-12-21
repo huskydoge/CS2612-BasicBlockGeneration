@@ -406,7 +406,7 @@ Proof.
   rewrite H3 in H1.
   apply sem_union_start_end_with in H1. (* 观察H1，其中有一种情况是不可能的*)
   destruct H1.
-  - admit. (*这是我们要证明的情况*)
+  - sets_unfold. (*这是我们要证明的情况*)
   - admit. (* 这种情况是不可能的 #TODO *)
     
 Admitted.
