@@ -347,16 +347,12 @@ Qed.
 
 Lemma sem_start_end_with2:
   forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
-  ((sem1 ∘ sem2) bs1 bs2 :Prop) -> sem_start_with sem1 bs1 /\ sem_end_with sem2 bs2.
+  ((sem1 ∘ sem2) bs1 bs2 :Prop) -> exists bs', (sem1 bs1 bs') /\ (sem2 bs' bs2).
 Proof.
   intros.
-  split.
-  - unfold sem_start_with. sets_unfold in H.
-    destruct H.
-    exists x. apply H.
-  - unfold sem_end_with. sets_unfold in H.
-    destruct H.
-    exists x. apply H.
+  sets_unfold in H.
+  destruct H.
+  exists x. apply H.
 Qed.
 
 Lemma sem_union_start_end_with:
