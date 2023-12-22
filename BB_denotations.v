@@ -426,7 +426,8 @@ Proof.
       assert (BB_num x <> BB_num bs1). admit. unfold BB_restrict in H0. destruct H0. clear H4 H1.
       revert x H2 H3. induction n; intros.
       * simpl in H2. simpl. apply H2.
-      * induction n.
+      * 
+        induction n.
         ** admit.
         ** assert ((Iter_nrm_BBs_n (BB_sem_union BBs) (S n) ∘ (BB_sem_union BBs)) x bs2: Prop).
 
