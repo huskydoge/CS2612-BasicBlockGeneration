@@ -325,25 +325,10 @@ Admitted.
 *)
 
 (*
-你需要由 (start, s1), (end, s2) \in (I U (R1 U R234)) o (R1 U R234)* 
+你需要由 (start, s1), (end, s2) \in (I U ((R1 U R234) o (R1 U R234))* 
 推出  (start, s1), (end, s2) \in (I U R1 o (R234)*
 **)
 
-Definition sem_start_with (sem: BB_state -> BB_state -> Prop) (bs: BB_state): Prop :=
-  exists bs', sem bs bs'.
-
-Definition sem_end_with (sem: BB_state -> BB_state -> Prop) (bs: BB_state): Prop :=
-  exists bs', sem bs' bs.
-  
-Lemma sem_start_end_with:
-  forall (sem: BB_state -> BB_state -> Prop) (bs1 bs2: BB_state),
-  sem bs1 bs2 -> sem_start_with sem bs1 /\ sem_end_with sem bs2.
-Proof.
-  intros.
-  split.
-  - unfold sem_start_with. exists bs2. apply H.
-  - unfold sem_end_with. exists bs1. apply H.
-Qed.
 
 Lemma sem_start_end_with2:
   forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
@@ -364,6 +349,32 @@ Proof.
   tauto.
 Qed.
 
+(*处理完BB中的cmds之后，不会改变BBnum*)
+Lemma BB_cmds_sem_no_change_num:
+  forall (BB: BasicBlock)(bs1 bs2: BB_state),
+  (BB_cmds_sem BB).(Bnrm) bs1 bs2 -> bs1.(BB_num) = bs2.(BB_num).
+Proof.
+(* #TODO*)
+Admitted.
+
+(* 处理完BBnow的jmp后，跳转到的BB的num在jmpdest BBnow 中 *)
+Lemma BB_jmp_sem_num_in_BBjmp_dest_set:
+  forall (BB: BasicBlock)(bs1 bs2: BB_state),
+  (BB_jmp_sem BB).(Bnrm) bs1 bs2 -> bs2.(BB_num) ∈ BBjmp_dest_set (BB :: nil).
+Proof.
+  (* #TODO*)
+Admitted.
+
+
+Lemma iter_concate:
+  forall (BBs: list BasicBlock)(n: nat)(bs1 bs2: BB_state),
+  Iter_nrm_BBs_n (BB_sem_union BBs) (S n) == (BB_sem_union BBs).(Bnrm) ∘ (Iter_nrm_BBs_n (BB_sem_union BBs) n).
+Proof.
+  intros.
+  induction n.
+  - simpl. reflexivity.
+  - simpl. reflexivity.
+Qed.
 
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
@@ -372,7 +383,7 @@ Lemma serperate_step_aux1:
 
   BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)-> (* BBnow的num是bs1.(BB_num), BBs的跳转目标中有bs2.(BBnum)*)
 
-  ((( Rels.id ∪ (BB_sem_union (BBnow::nil ++ BBs)).(Bnrm) ) ∘ (BB_list_sem (BBnow::nil ++ BBs)).(Bnrm)) bs1 bs2 :Prop)
+  (( Rels.id ∪ (BB_sem_union (BBnow::nil ++ BBs)).(Bnrm) ∘ (BB_list_sem (BBnow::nil ++ BBs)).(Bnrm)) bs1 bs2 :Prop)
   ->
     ( Rels.id ∪ (BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm) ) bs1 bs2 : Prop.
 Proof.
@@ -381,44 +392,33 @@ Proof.
   unfold BB_list_sem in H1. cbn [Bnrm] in H1.
   cbn [BB_sem_union] in H1. cbn [Bnrm] in H1.
   unfold separate_property in H.
-  unfold BB_restrict in H0.
-  apply sem_start_end_with2 in H1.
   destruct H1.
-  destruct H1.
-  assert ((Rels.id ∪ (Bnrm (BB_sem BBnow) ∪ Bnrm (BB_sem_union (nil ++ BBs)))) == ((Rels.id ∪ Bnrm (BB_sem BBnow)) ∪ Bnrm (BB_sem_union (nil ++ BBs)))).
-  {
-    sets_unfold. intros. split.
-    - intros. destruct H3 as [? | [? | ?]].
-      left. left. apply H3.
-      left. right. apply H3.
-      right. apply H3.
-    - intros. destruct H3 as [[? | ?] | ?].
-      left. apply H3.
-      right. left. apply H3.
-      right. right. apply H3.
-  }
-  specialize (H3 bs1 x).
-  rewrite H3 in H1.
-  apply sem_union_start_end_with in H1. (* 观察H1，其中有一种情况是不可能的*)
-  destruct H1.
-  - sets_unfold.
-    sets_unfold in H1.
-    destruct H1 as [? | ?].
-    + right. exists x. sets_unfold in H2. destruct H2.
-      split.
-      ++ rewrite H1. admit.
-      ++ exists O. simpl. admit.
-    + right. exists x. split. apply H1. destruct H2.
-      exists x0. induction x0.
-      simpl in H2. simpl. apply H2.
-      unfold Iter_nrm_BBs_n in H2. cbn[Bnrm] in H2.
-      sets_unfold in H2. destruct H2 as [? [? ?]].
-      destruct H2 as [? | ?]. 
-      ++ admit. (** 这种情况应该不可能，x不会从BBnow出发 *)
-      ++ unfold Iter_nrm_BBs_n. sets_unfold. 
-         exists x1. split. apply H2. 
+  - left. apply H1.
+  - apply sem_start_end_with2 in H1. destruct H1 as [? [? ?]].
+    destruct H1.
+    (*你先处理H1，然后由此可以得到x的性质，然后归纳证明，从x出发n步到达的不能是起始BBnum，这样就可以把BBnow给排除了*)
+    + sets_unfold. right. exists x. split. apply H1.
+      assert (
+        forall (n: nat) (x': BB_state), (Iter_nrm_BBs_n (BB_sem_union (BBnow :: nil ++ BBs)) n x x') -> x'.(BB_num) <> bs1.(BB_num)
+      ). {
+      induction n.
+      - unfold Iter_nrm_BBs_n. intros. sets_unfold in H3. rewrite <- H3.
+        unfold BB_sem in H1. cbn [Bnrm] in H1. sets_unfold in H1. destruct H1.
+        destruct H1.
+        apply BB_cmds_sem_no_change_num in H1.  apply BB_jmp_sem_num_in_BBjmp_dest_set in H4. 
+        sets_unfold in H4.
+        assert ( (BB_num x) ∈ BBjmp_dest_set (BBnow :: BBs)). {
+          admit. (* #TODO*)
+        }
+        assert ((BB_num bs1) ∈ BBnum_set (BBnow :: nil)). {
+          admit. (* #TODO*)
+        }
+        assert (BB_num x <> BB_num bs1). admit. apply H7.
+      - intros. rewrite <- iter_concate in H3.
+      } 
+
       
-         
+ 
 
 
     admit. (*这是我们要证明的情况*)
