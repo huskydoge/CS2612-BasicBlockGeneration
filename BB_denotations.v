@@ -423,7 +423,7 @@ Proof.
     + sets_unfold. exists bs'. split. apply H1.
       destruct H2 as [n H2]. exists n.
       assert (BB_num bs' <> BB_num bs1).
-      ** admit.
+      ** admit. (* 利用num性质 #TODO*)
       ** unfold BB_restrict in H0. destruct H0. clear H4 H1.
       revert bs' H2 H3. induction n; intros.
       * intros. simpl in H2. simpl. apply H2.
