@@ -165,7 +165,7 @@ Fixpoint BB_sem_union (BBs: list BasicBlock): BDenote :=  {|
   Bnrm := 
     match BBs with 
     | BB :: tl => (BB_sem BB).(Bnrm) ∪ (BB_sem_union tl).(Bnrm)
-    | _ => Rels.id
+    | nil => ∅
     end;
   Berr := ∅;
   Binf := ∅;
@@ -294,7 +294,7 @@ Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop :=
   BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) == ∅.
 
 Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(end_BB: nat): Prop :=
-  start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB.
+  start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB /\ ((BBnum_set (BB1::nil) ∩ BBnum_set (BBs)) == ∅).
 
 Lemma separate_concat:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock)(bs1: BB_state)(bs2: BB_state), 
@@ -575,7 +575,6 @@ Proof.
         ++ apply H7.
   }
 
-  unfold BB_restrict in H0.
   pose proof Sets_complement_fact (BBnum_set (BBnow :: nil)) (BBjmp_dest_set (BBnow :: BBs)). destruct H5. clear H5.
   intros contra.
   rewrite contra in H3.
@@ -589,6 +588,156 @@ Proof.
 
 Qed.
 
+(*从一个bs出发，经过任意一个block的语义，得到的新的bs都不和原来的相等*)
+Lemma different_bs_after_single_BBsem:
+  forall (a: BasicBlock) (bs: BB_state), Bnrm (BB_sem a) bs bs -> False.
+Proof.
+  intros.
+  unfold BB_sem in H. cbn [Bnrm] in H.
+  sets_unfold in H.
+  destruct H as [? [? ?]].
+  pose proof (BB_cmds_sem_no_change_num a x bs H).
+  unfold BB_jmp_sem in H0. cbn [Bnrm] in H0.
+  unfold BJump_sem in H0. destruct (eval_cond_expr (jump_condition a.(jump_info))).
+  + destruct (jump_dest_2 a.(jump_info)).
+    - unfold cjmp_sem in H0. cbn [Bnrm] in H0. destruct H0 as [[? [? ?]] ?].
+      unfold not in H4. rewrite H1 in H4. apply H4. reflexivity.
+    - unfold ujmp_sem in H0. cbn [Bnrm] in H0. destruct H0 as [? [? [? ?]]]. 
+      rewrite H1 in H4.
+      unfold not in H4. apply H4. reflexivity.
+  + unfold ujmp_sem in H0. cbn [Bnrm] in H0. destruct H0 as [? [? [? ?]]].
+    rewrite H1 in H4. tauto.
+Qed.
+
+(*从一个bs出发，经过任意一一串block的并的语义，得到的新的bs都不和原来的相等*)
+Lemma different_bs_after_BBsem_union:
+  forall (a: BasicBlock) (tl: list BasicBlock) (bs: BB_state), Bnrm (BB_sem_union (a::tl)) bs bs -> False.
+Proof.
+  intros.
+  unfold BB_sem_union in H. cbn [Bnrm] in H.
+  sets_unfold in H.
+  destruct H as [?|?].
+  - apply different_bs_after_single_BBsem in H. tauto.
+  - unfold BB_sem_union in H. cbn [Bnrm] in H.
+    induction tl.
+    ++ cbn [Bnrm] in H. tauto.
+    ++ destruct H.
+      * apply different_bs_after_single_BBsem in H. tauto.
+      * apply IHtl in H. tauto.
+Qed.
+
+(*应该证明这个*)
+Lemma BBs_sem_num_not_BB_sem_num2:
+forall (bs1 bs2 bs3: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
+  (BBs <> nil) -> separate_property BBnow BBs -> BB_num bs1 = BBnow.(block_num) -> Bnrm (BB_sem_union (nil ++ BBs)) bs2 bs3 -> (bs2 <> bs3) -> BB_num bs3 <> BB_num bs1.
+Proof.
+  intros.
+  unfold separate_property in H. 
+
+  assert ((BB_num bs1) ∈ BBnum_set (BBnow :: nil)). {
+    unfold BBnum_set. sets_unfold.
+    unfold BB_restrict in H0.
+    exists BBnow.
+    split.
+    + unfold In. left. tauto. 
+    + rewrite H1. tauto.
+  }
+
+  assert ((BB_num bs3) ∈ BBjmp_dest_set (BBnow :: BBs)). {
+    sets_unfold. unfold BBjmp_dest_set.
+    unfold BB_sem_union in H2.
+    induction BBs.
+    - tauto.
+    - unfold separate_property in H0. 
+    assert (BBnum_set (BBnow :: nil) ∩ BBjmp_dest_set (BBnow :: BBs) == ∅).
+    { 
+    pose proof Sets_complement_fact (BBnum_set (BBnow :: nil)) (BBjmp_dest_set (BBnow :: a :: BBs)).
+    destruct H5. pose proof (H6 H0). clear H6.
+    pose proof Sets_complement_fact (BBnum_set (BBnow :: nil)) (BBjmp_dest_set (BBnow :: BBs)).
+    destruct H6. clear H8. 
+    assert (Sets.complement (BBjmp_dest_set (BBnow :: a :: BBs)) ⊆ Sets.complement (BBjmp_dest_set (BBnow :: BBs))).
+    {
+      unfold BBjmp_dest_set. simpl. sets_unfold. intros. 
+      assert (
+      ((exists BB : BasicBlock,
+      (BBnow = BB \/ In BB BBs) /\
+      (jump_dest_1 BB.(jump_info) = a0 \/ jump_dest_2 BB.(jump_info) = Some a0)))
+      ->
+      (     
+      (exists BB : BasicBlock,
+      (BBnow = BB \/ a = BB \/ In BB BBs) /\
+      (jump_dest_1 BB.(jump_info) = a0 \/ jump_dest_2 BB.(jump_info) = Some a0)))
+      ).
+      {
+        intros. destruct H9 as [? [? ?]]. exists x. split.
+        - destruct H9.
+          + left. tauto.
+          + right. right. tauto.
+        - tauto.
+      }
+      pose proof (
+      sets_reverse 
+      ((exists BB : BasicBlock,
+      (BBnow = BB \/ In BB BBs) /\
+      (jump_dest_1 BB.(jump_info) = a0 \/ jump_dest_2 BB.(jump_info) = Some a0))) 
+         
+      (exists BB : BasicBlock,
+      (BBnow = BB \/ a = BB \/ In BB BBs) /\
+      (jump_dest_1 BB.(jump_info) = a0 \/ jump_dest_2 BB.(jump_info) = Some a0))
+      
+      ).
+      pose proof (H10 H9). pose proof (H11 H8). apply H12.
+    }
+    assert (BBnum_set (BBnow :: nil) ⊆ Sets.complement (BBjmp_dest_set (BBnow :: BBs))). {
+      transitivity (Sets.complement (BBjmp_dest_set (BBnow :: a :: BBs))). 
+      - apply H7.
+      - apply H8.
+    }
+    pose proof (H6 H9).
+    apply H10.
+    }
+    destruct H2.
+    -- exists a.
+        split.
+        ++ unfold In. right. tauto.
+        ++ apply single_step_jmp_property in H2. tauto.
+    -- destruct BBs.
+      + simpl in H2. sets_unfold in H2. tauto.
+      + assert (b :: BBs <> nil). {
+          unfold not. intros. discriminate.
+        }
+        unfold separate_property in IHBBs.
+        pose proof (IHBBs H6 H5 H2). destruct H7. exists x. destruct H7. split.
+        --- unfold In. unfold In in H7. destruct H7.  
+          +++ left. tauto.
+          +++ destruct H7.
+            * right. right. left. tauto.
+            * right. right. tauto.
+        --- apply H8.
+  }
+  unfold separate_property in H0.
+  intros contra.
+  rewrite <- contra in H4.
+  assert (BB_num bs3 ∈ BBnum_set (BBnow :: nil) ∩ BBjmp_dest_set (BBnow :: BBs)). {
+    sets_unfold. split.
+    sets_unfold in H3. sets_unfold in H4.
+    - apply H4.
+    - apply H5.
+  }
+  sets_unfold in H5. sets_unfold in H4. sets_unfold in H0.
+  specialize (H0 (BB_num bs3)). 
+  assert (BBnum_set (BBnow :: nil) (BB_num bs3) /\ BBjmp_dest_set (BBnow :: BBs) (BB_num bs3)). {
+    split. apply H4. apply H5.
+  }
+  apply H0 in H6. tauto.
+Qed.
+
+Lemma cannot_start_with:
+  forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
+  ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
+Proof.
+  (*TODO*)
+Admitted.
 
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
@@ -614,6 +763,7 @@ Proof.
       unfold BBnum_set. split. exists BBnow. split.
       unfold In. left. tauto. rewrite <- H0. tauto.
       rewrite H1. unfold BBjmp_dest_set. unfold BBjmp_dest_set in H2.
+      (* # TODO : FIX*)
       destruct H2 as [? [? [? | ?]]].
       + exists x. split.
         * unfold In. right. tauto.
@@ -644,16 +794,32 @@ Proof.
         --- pose proof BB_sem_start_BB_num bs' bs'' BBnow. 
             rewrite H0 in H3. apply H4 in H1. rewrite H1 in H3. unfold not in H3. assert (BBnow.(block_num) = BBnow.(block_num)). tauto. apply H3 in H5. tauto.
         --- assert (BB_num bs'' <> BB_num bs1). {
-              pose proof BBs_sem_num_not_BB_sem_num bs1 bs' bs'' BBnow BBs.
-              unfold separate_property in H4.
-              
-              (* 没法用这个东西，因为没有Bnrm (BB_sem BBnow) bs1 bs'  *)
+              induction BBs.
+              - simpl in H1. sets_unfold in H1. tauto.
+              - assert (a::BBs <> nil). {
+                  unfold not. intros. discriminate.
+                }
+                assert (bs' <> bs''). {
+                  unfold not. intros. rewrite H5 in H1. simpl in H1.
+                  apply different_bs_after_BBsem_union in H1. tauto.
+                  
+                }
+                pose proof BBs_sem_num_not_BB_sem_num2 bs1 bs' bs'' BBnow (a::BBs).
+                unfold separate_property in H6.
+                pose proof (H6 H4 H H0 H1 H5).
+                apply H7.
             }
             pose proof IHn bs'' H2 H4.
             pose proof iter_concate.
             specialize (H6 (Bnrm (BB_sem_union (nil ++ BBs))) (Iter_nrm_BBs_n (BB_sem_union BBs) n) bs' bs'' bs2).
             pose proof (H6 H1 H5). simpl in H7. apply H7.
-    + admit. (*这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest*)
+    + unfold BB_restrict in H0.
+      pose proof cannot_start_with. specialize (H3 bs1 bs' (nil ++ BBs)).
+      assert (~ BBnum_set (nil ++ BBs) (BB_num bs1)). {
+        unfold not. intros. destruct H0 as [? [? ?]].
+        (* #TODO*)        
+      }
+      pose proof (H3 H4 H1). tauto. (*这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest*)
             
 Admitted.
 
