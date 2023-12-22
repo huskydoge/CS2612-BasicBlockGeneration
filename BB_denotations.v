@@ -425,7 +425,10 @@ Proof.
       destruct H2 as [n H2]. exists n.
       assert (BB_num x <> BB_num bs1). admit. unfold BB_restrict in H0. destruct H0. clear H4 H1.
       revert x H2 H3. induction n; intros.
-      * simpl in 
+      * simpl in H2. simpl. apply H2.
+      *  
+      
+      
       assert (
         forall (n: nat) (x': BB_state), (Iter_nrm_BBs_n (BB_sem_union (BBnow :: nil ++ BBs)) n x x') -> x'.(BB_num) <> bs1.(BB_num)
       ). {
