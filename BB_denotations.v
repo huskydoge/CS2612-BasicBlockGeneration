@@ -165,7 +165,7 @@ Fixpoint BB_sem_union (BBs: list BasicBlock): BDenote :=  {|
   Bnrm := 
     match BBs with 
     | BB :: tl => (BB_sem BB).(Bnrm) ∪ (BB_sem_union tl).(Bnrm)
-    | _ => ∅
+    | _ => Rels.id
     end;
   Berr := ∅;
   Binf := ∅;
@@ -243,7 +243,7 @@ Definition BBnum_set (BBs: list BasicBlock): BB_num_set :=
   fun BBnum => exists BB, (In BB BBs) /\ BB.(block_num) = BBnum.
 
 Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
-  fun BBnum => exists BB, (In BB BBs) /\ BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum.
+  fun BBnum => exists BB, (In BB BBs) /\ (BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum).
 
 (* Some Important Property for S ========================================================================================================
   假如(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2)
@@ -442,6 +442,12 @@ Proof.
 Qed.
 
 
+Lemma single_step_jmp_property:
+  forall (BBnow: BasicBlock) (bs1 bs2: BB_state),
+  Bnrm (BB_sem BBnow) bs1 bs2 -> (jump_dest_1 BBnow.(jump_info) = BB_num bs2 \/
+  jump_dest_2 BBnow.(jump_info) = Some (BB_num bs2)).
+Proof.
+Admitted.
 
 Lemma BBs_sem_num_not_BB_sem_num:
 forall (bs1 bs2 bs3: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
@@ -458,12 +464,22 @@ Proof.
     + unfold In. left. tauto. 
     + destruct H0. tauto.
   }
-  
+          (* TODO 证明bs1 -> bs2 -> bs3中bs3是在跳转集合中 *)
   assert ((BB_num bs3) ∈ BBjmp_dest_set (BBnow :: BBs)). {
     sets_unfold. unfold BBjmp_dest_set.
     unfold BB_sem_union in H2.
-    (* TODO 证明bs1 -> bs2 -> bs3中bs3是在跳转集合中 *)
-    admit.
+    induction BBs.
+    - simpl in H2. sets_unfold in H2. exists BBnow. split.
+      + unfold In. left. tauto.
+      + rewrite <- H2. pose proof single_step_jmp_property. specialize (H4 BBnow bs1 bs2). pose proof (H4 H1). tauto.
+    - simpl in H2. sets_unfold in H2. destruct H2 as [? [? | ?]].
+      + exists a. split.
+        * unfold In. right. unfold In in H2. apply H2.
+        * rewrite <- H3. pose proof single_step_jmp_property. specialize (H4 BBnow bs1 bs2). pose proof (H4 H1). tauto.
+      + specialize (IHBs H2). destruct IHBs as [? [? ?]].
+        exists x. split.
+        * unfold In. right. unfold In in H4. apply H4.
+        * apply H5.
   }
 
   unfold BB_restrict in H0.
@@ -478,7 +494,7 @@ Proof.
   sets_unfold in H5. sets_unfold in H.
   specialize (H (BB_num bs3)). destruct H. apply H in H5. tauto.
 
-  Admitted.
+Admitted.
 
 
 Lemma serperate_step_aux1:
