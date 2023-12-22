@@ -399,6 +399,32 @@ Proof.
 Qed.
 
 
+Lemma BB_sem_num_change:
+  forall (bs1 bs2: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
+  separate_property BBnow BBs -> BB_num bs1 = BBnow.(block_num) -> Bnrm (BB_sem BBnow) bs1 bs2 -> bs1.(BB_num) <> bs2.(BB_num).
+Proof.
+  intros ? ? ? ? H H0 H1.
+  unfold BB_sem in H1. simpl in H1.
+  sets_unfold in H1.
+  destruct H1 as [? [H1 H3]].
+  (* ! x bs1 表示 bs1 -> x *)
+  pose proof BB_cmds_sem_no_change_num BBnow x bs1 as H4.
+  unfold BB_cmds_sem in H4. simpl in H4. apply H4 in H1.
+  unfold separate_property in H.
+  unfold BBnum_set in H. sets_unfold in H.
+  specialize (H x.(BB_num)). destruct H as [? ?]. clear H2.
+  unfold BJump_sem in H3. 
+  destruct eval_cond_expr in H3. destruct jump_dest_2 in H3.
+  - unfold cjmp_sem in H3. simpl in H3. destruct H3 as [[? [? ?]] ?].
+    destruct H5 as [[? ?] | [? ?]]. 
+    + rewrite H1. apply H6.
+    + rewrite <- H0 in H3. rewrite H3 in H6. apply H6.
+  - unfold ujmp_sem in H3. simpl in H3. destruct H3 as [? [? [? ?]]].
+    rewrite <- H0 in H3. rewrite H3 in H6. apply H6.
+  - unfold ujmp_sem in H3. simpl in H3. destruct H3 as [? [? [? ?]]]. rewrite <- H0 in H3. rewrite H3 in H6. apply H6. 
+Qed.
+
+
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
 
@@ -435,24 +461,11 @@ Proof.
     + sets_unfold. exists bs'. split. apply H1.
       destruct H2 as [n H2]. exists n.
       assert (BB_num bs' <> BB_num bs1). {
-        (* intros contra. *)
-        unfold BB_restrict in H0.
-        unfold BB_sem in H1. simpl in H1.
-        sets_unfold in H1.
-        destruct H1 as [? [? ?]].
-        (* ! x bs1 表示 bs1 -> x *)
-        pose proof BB_cmds_sem_no_change_num BBnow x bs1.
-        unfold BB_cmds_sem in H4. simpl in H4. apply H4 in H1.
-        unfold BBnum_set in H. sets_unfold in H.
-        specialize (H x.(BB_num)). destruct H as [? ?]. clear H5.
-        unfold BJump_sem in H3. 
-        destruct eval_cond_expr in H3. destruct jump_dest_2 in H3.
-        - unfold cjmp_sem in H3. simpl in H3. destruct H3 as [[? [? ?]] ?].
-          destruct H6 as [[? ?] | [? ?]]. 
-          + rewrite H1. admit.
-          + destruct H0 as [? ?]. rewrite <- H0 in H5. rewrite <- H5. admit.
-        - unfold ujmp_sem in H3. simpl in H3. destruct H3 as [? [? [? ?]]].
-          destruct H0 as [? ?]. rewrite <- H0 in H5. rewrite <- H5. admit.
+        pose proof BB_sem_num_change bs1 bs' BBnow BBs.
+        unfold not. intros.
+        apply H3. unfold separate_property. apply H. 
+        destruct H0 as [? ?].
+        apply H0. apply H1. rewrite H4. tauto.
       }
       unfold BB_restrict in H0. destruct H0. clear H4 H1.
       revert bs' H2 H3. induction n; intros.
@@ -460,7 +473,9 @@ Proof.
       * (*拆出H2，从bs'走一步到bs'',再从bs''到bs2*) 
         unfold Iter_nrm_BBs_n in H2. apply sem_start_end_with2 in H2.
         destruct H2 as [bs'' [? ?]]. destruct H1.
-        --- 
+        --- unfold BB_sem in H1. simpl in H1.
+            sets_unfold in H1.
+            destruct H1 as [[? ?] ?].
         --- assert (BB_num bs'' <> BB_num bs1). {admit. (*# TODO*)}
             pose proof IHn bs'' H2 H4.
             pose proof iter_concate.
