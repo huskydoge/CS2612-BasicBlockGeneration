@@ -422,15 +422,33 @@ Proof.
     (*你先处理H1，然后由此可以得到x的性质，然后归纳证明，从x出发n步到达的不能是起始BBnum，这样就可以把BBnow给排除了*)
     + sets_unfold. exists bs'. split. apply H1.
       destruct H2 as [n H2]. exists n.
-      assert (BB_num bs' <> BB_num bs1).
-      ** admit. (* 利用num性质 #TODO*)
-      ** unfold BB_restrict in H0. destruct H0. clear H4 H1.
+      assert (BB_num bs' <> BB_num bs1). {
+        (* intros contra. *)
+        unfold BB_restrict in H0.
+        unfold BB_sem in H1. simpl in H1.
+        sets_unfold in H1.
+        destruct H1 as [? [? ?]].
+        (* ! x bs1 表示 bs1 -> x *)
+        pose proof BB_cmds_sem_no_change_num BBnow x bs1.
+        unfold BB_cmds_sem in H4. simpl in H4. apply H4 in H1.
+        unfold BBnum_set in H. sets_unfold in H.
+        specialize (H x.(BB_num)). destruct H as [? ?]. clear H5.
+        unfold BJump_sem in H3. 
+        destruct eval_cond_expr in H3. destruct jump_dest_2 in H3.
+        - unfold cjmp_sem in H3. simpl in H3. destruct H3 as [[? [? ?]] ?].
+          destruct H6 as [[? ?] | [? ?]]. 
+          + rewrite H1. admit.
+          + destruct H0 as [? ?]. rewrite <- H0 in H5. rewrite <- H5. admit.
+        - unfold ujmp_sem in H3. simpl in H3. destruct H3 as [? [? [? ?]]].
+          destruct H0 as [? ?]. rewrite <- H0 in H5. rewrite <- H5. admit.
+      }
+      unfold BB_restrict in H0. destruct H0. clear H4 H1.
       revert bs' H2 H3. induction n; intros.
       * intros. simpl in H2. simpl. apply H2.
       * (*拆出H2，从bs'走一步到bs'',再从bs''到bs2*) 
         unfold Iter_nrm_BBs_n in H2. apply sem_start_end_with2 in H2.
         destruct H2 as [bs'' [? ?]]. destruct H1.
-        --- admit. (*H1中有矛盾，利用num性质 #TODO*)
+        ---  
         --- assert (BB_num bs'' <> BB_num bs1). {admit. (*# TODO*)}
             pose proof IHn bs'' H2 H4.
             pose proof iter_concate.
