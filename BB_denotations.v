@@ -391,14 +391,13 @@ Admitted.
 
 
 Lemma iter_concate:
-  forall (BBs: list BasicBlock)(n: nat)(bs1 bs2: BB_state),
-  Iter_nrm_BBs_n (BB_sem_union BBs) (S n) == (BB_sem_union BBs).(Bnrm) ∘ (Iter_nrm_BBs_n (BB_sem_union BBs) n).
+  forall (sem1 sem2: BB_state -> BB_state -> Prop) (bs1 bs2 bs3 :BB_state),
+  ((sem1) bs1 bs2 :Prop) -> ((sem2) bs2 bs3 :Prop) -> ((sem1 ∘ sem2) bs1 bs3 :Prop).
 Proof.
   intros.
-  induction n.
-  - simpl. reflexivity.
-  - simpl. reflexivity.
+  sets_unfold. exists bs2. split. apply H. apply H0.
 Qed.
+
 
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
@@ -417,85 +416,28 @@ Proof.
   cbn [BB_sem_union] in H1. cbn [Bnrm] in H1.
   unfold separate_property in H.
   destruct H1.
-  - sets_unfold in H1. rewrite H1. simpl. admit.
-  - apply sem_start_end_with2 in H1. destruct H1 as [? [? ?]].
+  - admit.
+  - apply sem_start_end_with2 in H1. destruct H1 as [bs' [? ?]].
     destruct H1.
     (*你先处理H1，然后由此可以得到x的性质，然后归纳证明，从x出发n步到达的不能是起始BBnum，这样就可以把BBnow给排除了*)
-    + sets_unfold. exists x. split. apply H1.
+    + sets_unfold. exists bs'. split. apply H1.
       destruct H2 as [n H2]. exists n.
-      assert (BB_num x <> BB_num bs1). admit. unfold BB_restrict in H0. destruct H0. clear H4 H1.
-      revert x H2 H3. induction n; intros.
-      * simpl in H2. simpl. apply H2.
-      * 
-        induction n.
-        ** admit.
-        ** assert ((Iter_nrm_BBs_n (BB_sem_union BBs) (S n) ∘ (BB_sem_union BBs)) x bs2: Prop).
-
-      
-      
-        unfold Iter_nrm_BBs_n. sets_unfold. exists x.   
-        split. admit.
-        ** unfold Iter_nrm_BBs_n in H2. sets_unfold in H2. destruct H2 as [? [? ?]].
-           pose proof IHn x0.
-        ** apply H3. 
-
-      
-      
-      assert (
-        forall (n: nat) (x': BB_state), (Iter_nrm_BBs_n (BB_sem_union (BBnow :: nil ++ BBs)) n x x') -> x'.(BB_num) <> bs1.(BB_num)
-      ). {
-        induction n.
-        (* n = 0 *)
-        - unfold Iter_nrm_BBs_n. intros. sets_unfold in H3. rewrite <- H3.
-          unfold BB_sem in H1. cbn [Bnrm] in H1. sets_unfold in H1. destruct H1.
-          destruct H1.
-          apply BB_cmds_sem_no_change_num in H1.  apply BB_jmp_sem_num_in_BBjmp_dest_set in H4. 
-          sets_unfold in H4.
-
-          assert ( (BB_num x) ∈ BBjmp_dest_set (BBnow :: BBs)). {
-            sets_unfold. unfold BBjmp_dest_set.
-            unfold BBjmp_dest_set in H4.
-            destruct H4 as [? [? | ?]].
-            + unfold In in H4. exists x1. unfold In.
-              left. destruct H4 as [[? | ?] ?]. split. 
-              left. apply H4. tauto. tauto.
-            + exists x1. right. apply H4.
-          }
-
-          assert ((BB_num bs1) ∈ BBnum_set (BBnow :: nil)). {
-            unfold BBnum_set. sets_unfold.
-            unfold BB_restrict in H0.
-            exists BBnow.
-            split.
-            + unfold In. left. tauto. 
-            + destruct H0. rewrite H0. tauto.
-          }
-
-          unfold BB_restrict in H0.
-          pose proof Sets_complement_fact (BBnum_set (BBnow :: nil)) (BBjmp_dest_set (BBnow :: BBs)). destruct H7. clear H7.
-          intros contra.
-          rewrite contra in H5.
-          assert (BB_num bs1 ∈ BBnum_set (BBnow :: nil) ∩ BBjmp_dest_set (BBnow :: BBs)). {
-            sets_unfold. split.
-            sets_unfold in H5. sets_unfold in H6.
-            apply H6. apply H5.
-          }
-          sets_unfold in H7. sets_unfold in H.
-          specialize (H (BB_num bs1)). destruct H. apply H in H7. tauto.
-        (* n = S n *)
-        - intros. unfold Iter_nrm_BBs_n in H3.
-          sets_unfold in H3.
-          destruct H3 as [? [? ?]].
-          admit.
-      } 
-
-      
- 
-
-
-    admit. (*这是我们要证明的情况*)
-  - admit. (* 这种情况是不可能的 #TODO *)
-    
+      assert (BB_num bs' <> BB_num bs1).
+      ** admit.
+      ** unfold BB_restrict in H0. destruct H0. clear H4 H1.
+      revert bs' H2 H3. induction n; intros.
+      * intros. simpl in H2. simpl. apply H2.
+      * (*拆出H2，从bs'走一步到bs'',再从bs''到bs2*) 
+        unfold Iter_nrm_BBs_n in H2. apply sem_start_end_with2 in H2.
+        destruct H2 as [bs'' [? ?]]. destruct H1.
+        --- admit. (*H1中有矛盾，利用num性质 #TODO*)
+        --- assert (BB_num bs'' <> BB_num bs1). {admit. (*# TODO*)}
+            pose proof IHn bs'' H2 H4.
+            pose proof iter_concate.
+            specialize (H6 (Bnrm (BB_sem_union (nil ++ BBs))) (Iter_nrm_BBs_n (BB_sem_union BBs) n) bs' bs'' bs2).
+            pose proof (H6 H1 H5). simpl in H7. apply H7.
+    + admit. (*这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest*)
+            
 Admitted.
 
 
