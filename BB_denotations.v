@@ -354,8 +354,14 @@ Lemma BB_cmds_sem_no_change_num:
   forall (BB: BasicBlock)(bs1 bs2: BB_state),
   (BB_cmds_sem BB).(Bnrm) bs1 bs2 -> bs1.(BB_num) = bs2.(BB_num).
 Proof.
-(* #TODO*)
-Admitted.
+  intros.
+  unfold BB_cmds_sem in H. simpl in H.
+  induction BB.(cmd).
+  - simpl in H. sets_unfold in H. destruct bs1, bs2.
+    simpl. injection H. intros. apply H1.
+  - unfold BAsgn_list_sem in H. cbn[Bnrm] in H.
+    sets_unfold in H. destruct H as [? [? ?]].
+    sets_unfold in IHl. 
 
 (* 处理完BBnow的jmp后，跳转到的BB的num在jmpdest BBnow 中 *)
 Lemma BB_jmp_sem_num_in_BBjmp_dest_set:
