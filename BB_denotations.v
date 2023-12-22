@@ -462,7 +462,10 @@ Proof.
           }
           sets_unfold in H7. sets_unfold in H.
           specialize (H (BB_num bs1)). destruct H. apply H in H7. tauto.
-        - intros. rewrite <- iter_concate in H3.
+
+        - intros. unfold Iter_nrm_BBs_n in H3.
+          sets_unfold in H3.
+          destruct H3 as [? [? ?]].
       } 
 
       
