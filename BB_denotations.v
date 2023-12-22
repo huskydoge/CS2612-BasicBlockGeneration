@@ -409,7 +409,7 @@ Lemma serperate_step_aux1:
 
   (( Rels.id ∪ (BB_sem_union (BBnow::nil ++ BBs)).(Bnrm) ∘ (BB_list_sem (BBnow::nil ++ BBs)).(Bnrm)) bs1 bs2 :Prop)
   ->
-    ( Rels.id ∪ (BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm) ) bs1 bs2 : Prop.
+    ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm)) bs1 bs2 : Prop.
 Proof.
   intros.
   unfold BB_list_sem. cbn [Bnrm].
@@ -417,16 +417,27 @@ Proof.
   cbn [BB_sem_union] in H1. cbn [Bnrm] in H1.
   unfold separate_property in H.
   destruct H1.
-  - left. apply H1. (*bs1 = bs2*)
+  - sets_unfold in H1. rewrite H1. simpl. admit.
   - apply sem_start_end_with2 in H1. destruct H1 as [? [? ?]].
     destruct H1.
     (*你先处理H1，然后由此可以得到x的性质，然后归纳证明，从x出发n步到达的不能是起始BBnum，这样就可以把BBnow给排除了*)
-    + sets_unfold. right. exists x. split. apply H1.
+    + sets_unfold. exists x. split. apply H1.
       destruct H2 as [n H2]. exists n.
       assert (BB_num x <> BB_num bs1). admit. unfold BB_restrict in H0. destruct H0. clear H4 H1.
       revert x H2 H3. induction n; intros.
       * simpl in H2. simpl. apply H2.
-      *  
+      * induction n.
+        ** admit.
+        ** assert ((Iter_nrm_BBs_n (BB_sem_union BBs) (S n) ∘ (BB_sem_union BBs)) x bs2: Prop).
+
+      
+      
+        unfold Iter_nrm_BBs_n. sets_unfold. exists x.   
+        split. admit.
+        ** unfold Iter_nrm_BBs_n in H2. sets_unfold in H2. destruct H2 as [? [? ?]].
+           pose proof IHn x0.
+        ** apply H3. 
+
       
       
       assert (
