@@ -243,7 +243,7 @@ Definition BBnum_set (BBs: list BasicBlock): BB_num_set :=
   fun BBnum => exists BB, (In BB BBs) /\ BB.(block_num) = BBnum.
 
 Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
-  fun BBnum => exists BB,(In BB BBs) /\ BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum.
+  fun BBnum => exists BB, (In BB BBs) /\ BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum.
 
 (* Some Important Property for S ========================================================================================================
   假如(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2)
@@ -350,19 +350,23 @@ Proof.
 Qed.
 
 (*处理完BB中的cmds之后，不会改变BBnum*)
+(* ! bs2 bs1的顺序是反的 *)
 Lemma BB_cmds_sem_no_change_num:
-  forall (BB: BasicBlock)(bs1 bs2: BB_state),
+  forall (BB: BasicBlock) (bs2 bs1: BB_state),
   (BB_cmds_sem BB).(Bnrm) bs1 bs2 -> bs1.(BB_num) = bs2.(BB_num).
 Proof.
-  intros.
-  unfold BB_cmds_sem in H. simpl in H.
-  induction BB.(cmd).
-  (* unfold BAsgn_list_sem in H. *)
+  intros BB bs2.
+  unfold BB_cmds_sem. simpl.
+  induction BB.(cmd); intros.
   - simpl in H. sets_unfold in H. destruct bs1, bs2.
     simpl. injection H. intros. apply H1.
   - unfold BAsgn_list_sem in H. cbn[Bnrm] in H.
     sets_unfold in H. destruct H as [? [? ?]].
-Admitted.
+    pose proof IHl x. unfold BAsgn_list_sem in H1. apply H1 in H0.
+    unfold BAsgn_denote in H. simpl in H.
+    destruct H as [[? [? [? ?]]] ?].
+    rewrite H4. apply H0.
+Qed.
     (* sets_unfold in IHl.  *)
 
 (* 处理完BBnow的jmp后，跳转到的BB的num在jmpdest BBnow 中 *)
