@@ -291,7 +291,7 @@ Admitted.
 
 
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
-  BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) = ∅.
+  BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) == ∅.
 
 Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(end_BB: nat): Prop :=
   start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB.
@@ -425,20 +425,44 @@ Proof.
       assert (
         forall (n: nat) (x': BB_state), (Iter_nrm_BBs_n (BB_sem_union (BBnow :: nil ++ BBs)) n x x') -> x'.(BB_num) <> bs1.(BB_num)
       ). {
-      induction n.
-      - unfold Iter_nrm_BBs_n. intros. sets_unfold in H3. rewrite <- H3.
-        unfold BB_sem in H1. cbn [Bnrm] in H1. sets_unfold in H1. destruct H1.
-        destruct H1.
-        apply BB_cmds_sem_no_change_num in H1.  apply BB_jmp_sem_num_in_BBjmp_dest_set in H4. 
-        sets_unfold in H4.
-        assert ( (BB_num x) ∈ BBjmp_dest_set (BBnow :: BBs)). {
-          admit. (* #TODO*)
-        }
-        assert ((BB_num bs1) ∈ BBnum_set (BBnow :: nil)). {
-          admit. (* #TODO*)
-        }
-        assert (BB_num x <> BB_num bs1). admit. apply H7.
-      - intros. rewrite <- iter_concate in H3.
+        induction n.
+        - unfold Iter_nrm_BBs_n. intros. sets_unfold in H3. rewrite <- H3.
+          unfold BB_sem in H1. cbn [Bnrm] in H1. sets_unfold in H1. destruct H1.
+          destruct H1.
+          apply BB_cmds_sem_no_change_num in H1.  apply BB_jmp_sem_num_in_BBjmp_dest_set in H4. 
+          sets_unfold in H4.
+
+          assert ( (BB_num x) ∈ BBjmp_dest_set (BBnow :: BBs)). {
+            sets_unfold. unfold BBjmp_dest_set.
+            unfold BBjmp_dest_set in H4.
+            destruct H4 as [? [? | ?]].
+            + unfold In in H4. exists x1. unfold In.
+              left. destruct H4 as [[? | ?] ?]. split. 
+              left. apply H4. tauto. tauto.
+            + exists x1. right. apply H4.
+          }
+
+          assert ((BB_num bs1) ∈ BBnum_set (BBnow :: nil)). {
+            unfold BBnum_set. sets_unfold.
+            unfold BB_restrict in H0.
+            exists BBnow.
+            split.
+            + unfold In. left. tauto. 
+            + destruct H0. rewrite H0. tauto.
+          }
+
+          unfold BB_restrict in H0.
+          pose proof Sets_complement_fact (BBnum_set (BBnow :: nil)) (BBjmp_dest_set (BBnow :: BBs)). destruct H7. clear H7.
+          intros contra.
+          rewrite contra in H5.
+          assert (BB_num bs1 ∈ BBnum_set (BBnow :: nil) ∩ BBjmp_dest_set (BBnow :: BBs)). {
+            sets_unfold. split.
+            sets_unfold in H5. sets_unfold in H6.
+            apply H6. apply H5.
+          }
+          sets_unfold in H7. sets_unfold in H.
+          specialize (H (BB_num bs1)). destruct H. apply H in H7. tauto.
+        - intros. rewrite <- iter_concate in H3.
       } 
 
       
