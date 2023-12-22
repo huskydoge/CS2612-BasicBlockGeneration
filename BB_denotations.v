@@ -417,15 +417,20 @@ Proof.
   cbn [BB_sem_union] in H1. cbn [Bnrm] in H1.
   unfold separate_property in H.
   destruct H1.
-  - left. apply H1.
+  - left. apply H1. (*bs1 = bs2*)
   - apply sem_start_end_with2 in H1. destruct H1 as [? [? ?]].
     destruct H1.
     (*你先处理H1，然后由此可以得到x的性质，然后归纳证明，从x出发n步到达的不能是起始BBnum，这样就可以把BBnow给排除了*)
     + sets_unfold. right. exists x. split. apply H1.
+      destruct H2 as [n H2]. exists n.
+      assert (BB_num x <> BB_num bs1). admit. unfold BB_restrict in H0. destruct H0. clear H4 H1.
+      revert x H2 H3. induction n; intros.
+      * simpl in 
       assert (
         forall (n: nat) (x': BB_state), (Iter_nrm_BBs_n (BB_sem_union (BBnow :: nil ++ BBs)) n x x') -> x'.(BB_num) <> bs1.(BB_num)
       ). {
         induction n.
+        (* n = 0 *)
         - unfold Iter_nrm_BBs_n. intros. sets_unfold in H3. rewrite <- H3.
           unfold BB_sem in H1. cbn [Bnrm] in H1. sets_unfold in H1. destruct H1.
           destruct H1.
@@ -462,10 +467,11 @@ Proof.
           }
           sets_unfold in H7. sets_unfold in H.
           specialize (H (BB_num bs1)). destruct H. apply H in H7. tauto.
-
+        (* n = S n *)
         - intros. unfold Iter_nrm_BBs_n in H3.
           sets_unfold in H3.
           destruct H3 as [? [? ?]].
+          admit.
       } 
 
       
