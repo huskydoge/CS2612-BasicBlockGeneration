@@ -324,10 +324,7 @@ Admitted.
 
 *)
 
-(*
-你需要由 (start, s1), (end, s2) \in (I U ((R1 U R234) o (R1 U R234))* 
-推出  (start, s1), (end, s2) \in (I U R1 o (R234)*
-**)
+
 
 
 Lemma sem_start_end_with2:
@@ -702,6 +699,11 @@ Proof.
           +++ rewrite H1. tauto.
 Qed.
 
+(*
+如果满足几条分离性质，那么有
+  (start, s1), (end, s2) \in (I U ((R1 U R234) o (R1 U R234))*  -> (start, s1), (end, s2) \in (I U R1 o (R234)*
+**)
+*)
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
 
