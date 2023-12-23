@@ -467,10 +467,41 @@ Proof.
   apply H0. apply H. apply H1.
 Qed.
 
+(*证明，如果能正确执行跳转语义，那么bs1的num一定要是BBnow的blocknum*)
+Lemma BB_jmp_sem_property_for_bs1:
+  forall (BBnow: BasicBlock) (bs1 bs2: BB_state),
+  Bnrm (BB_jmp_sem BBnow) bs1 bs2 -> BBnow.(block_num) = BB_num bs1.
+Proof.
+  intros.
+  unfold BB_jmp_sem in H. cbn [Bnrm] in H.
+  unfold BJump_sem in H. destruct eval_cond_expr.
+  + destruct jump_dest_2.
+    - unfold cjmp_sem in H. cbn [Bnrm] in H. destruct H as [[? [? ?]] ?].
+      rewrite H0. reflexivity.
+    - unfold ujmp_sem in H. cbn [Bnrm] in H. destruct H as [? [? [? ?]]].
+      rewrite H0. reflexivity. 
+  + unfold ujmp_sem in H. cbn [Bnrm] in H. destruct H as [? [? [? ?]]].
+    rewrite H0. reflexivity.
+Qed.
 
+(*BBsem一步，bs1 bs2，bs1满足的性质*)
+Lemma single_step_jmp_property_for_bs1:
+  forall (BBnow: BasicBlock) (bs1 bs2: BB_state),
+  Bnrm (BB_sem BBnow) bs1 bs2 -> BBnow.(block_num) = BB_num bs1.
+Proof.
+  intros.
+  unfold BB_sem in H. cbn [Bnrm] in H.
+  sets_unfold in H.
+  destruct H as [? [? ?]].
+  pose proof BB_cmds_sem_no_change_num BBnow x bs1.
+  pose proof BB_jmp_sem_property_for_bs1 BBnow x bs2.
+  pose proof (H2 H0).
+  pose proof (H1 H).
+  rewrite H3. rewrite H4. reflexivity.
+Qed.
 
 (*BBsem一步，bs1 bs2，bs2满足的性质*)
-Lemma single_step_jmp_property:
+Lemma single_step_jmp_property_for_bs2:
   forall (BBnow: BasicBlock) (bs1 bs2: BB_state),
   Bnrm (BB_sem BBnow) bs1 bs2 -> (jump_dest_1 BBnow.(jump_info) = BB_num bs2 \/
   jump_dest_2 BBnow.(jump_info) = Some (BB_num bs2)).
@@ -605,7 +636,7 @@ Proof.
     -- exists a.
         split.
         ++ unfold In. right. tauto.
-        ++ apply single_step_jmp_property in H2. tauto.
+        ++ apply single_step_jmp_property_for_bs2 in H2. tauto.
     -- destruct BBs.
       + simpl in H2. sets_unfold in H2. tauto.
       + assert (b :: BBs <> nil). {
@@ -645,6 +676,7 @@ Definition head (BBs : list BasicBlock): BasicBlock :=
   end.
 
 
+  (*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
 Lemma cannot_start_with:
   forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
   ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
@@ -657,11 +689,18 @@ Proof.
   - clear H. simpl. cbn[Bnrm] in H0. destruct H0.
     pose proof BB_sem_start_BB_num bs1 bs2 b H. 
     + exists b. split. left. tauto. rewrite H0. tauto.
-    + 
-  sets_unfold in H1.
-
-
-Admitted.
+    + induction BBs.
+      * simpl in H.  tauto.
+      * destruct H.
+        -- exists a. split.
+          +++ right. unfold In. left. tauto.
+          +++ pose proof single_step_jmp_property_for_bs1 a bs1 bs2 H. rewrite H0. tauto.
+        -- pose proof (IHBBs H). destruct H0. exists x. destruct H0. split ;destruct H0.
+          +++ left. tauto.
+          +++ right. unfold In. right. tauto.
+          +++ rewrite H1. tauto.
+          +++ rewrite H1. tauto.
+Qed.
 
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
