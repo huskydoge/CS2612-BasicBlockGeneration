@@ -779,11 +779,26 @@ Proof.
       pose proof cannot_start_with. specialize (H3 bs1 bs' (nil ++ BBs)).
       assert (~ BBnum_set (nil ++ BBs) (BB_num bs1)). {
         unfold not. intros. destruct H0 as [? [? ?]].
-        (* #TODO*)        
+        assert (BB_num bs1 ∈ BBnum_set (nil ++ BBs)). {
+          sets_unfold. apply H4.
+        }
+
+        assert (BB_num bs1 ∈ BBnum_set (BBnow :: nil)). {
+          rewrite H0. unfold BBnum_set. sets_unfold.
+          exists BBnow. unfold In. split. left. tauto. tauto.
+        }
+        
+        assert (BB_num bs1 ∈ BBnum_set (BBnow :: nil) ∩ BBnum_set (BBs)). {
+          split. sets_unfold in H8. apply H8. apply H4.
+        }
+        
+        sets_unfold in H6. sets_unfold in H9.
+        specialize (H6 bs1.(BB_num)). destruct H6 as [? ?]. clear H10.
+        apply H6. apply H9. 
       }
       pose proof (H3 H4 H1). tauto. (*这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest*)
             
-Admitted.
+Qed.
 
 
 
