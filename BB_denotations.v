@@ -759,7 +759,7 @@ Proof.
       }
       pose proof (H3 H4 H1). tauto. (*这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest*)
             
-Admitted.
+Qed.
 
 
 
