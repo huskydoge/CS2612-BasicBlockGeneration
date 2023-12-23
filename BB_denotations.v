@@ -376,14 +376,13 @@ Proof.
   unfold BBjmp_dest_set. sets_unfold. unfold In.
   exists BB. unfold BJump_sem in H.
   destruct eval_cond_expr.
-  + right. destruct jump_dest_2. 
+  + split. left. tauto. right. destruct jump_dest_2. 
     - unfold cjmp_sem in H. simpl in H.
       destruct H as [[? [? [?| ?]]] ].
       ++ admit. (* 这是说If语句走Then分支的情况，没有用到dest2，缺条件 *)
       ++ destruct H1 as [? ?]. rewrite H1. tauto.
     - admit. (* 这里是Condition有的，但是却选择了UJmp的情况，应该是None，但是缺条件 *) 
-  + left. unfold ujmp_sem in H. simpl in H. destruct H as [? [? [? ?]]].
-    split. left. tauto. rewrite H1. tauto. 
+  + split. left. tauto. left. unfold ujmp_sem in H. simpl in H. destruct H as [? [? [? ?]]]. rewrite H1. tauto. 
 Admitted.
 
 
@@ -666,13 +665,6 @@ Proof.
 Qed.
 
 
-Definition head (BBs : list BasicBlock): BasicBlock := 
-  match BBs with 
-  | BB :: tl => BB
-  | _ => EmptyBlock
-  end.
-
-
   (*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
 Lemma cannot_start_with:
   forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
@@ -703,7 +695,6 @@ Qed.
 如果满足几条分离性质，那么有
   (start, s1), (end, s2) \in (I U ((R1 U R234) o (R1 U R234))*  -> (start, s1), (end, s2) \in (R1 o (R234)*
 **)
-*)
 Lemma serperate_step_aux1:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
 
@@ -1226,7 +1217,7 @@ Proof.
   split.
   - cbn [cmd_BB_gen]. simpl. 
     subst BB_then_num. subst BB_next_num. subst BB_else_num.
-    my_destruct H1. my_destruct H2.
+    my_destruct H. my_destruct H0.
     replace (S (S (S BBnum))) with (BB_num1).
     replace ({|
     block_num := BBnum;
@@ -1266,7 +1257,7 @@ Proof.
                   jump_condition := None
                 |}
             |} with BB_else.
-      + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H5. simpl. rewrite <- H1. simpl in H10. 
+      + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
         assert (BBs ++ BBnow' :: BB_then' :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_then' :: BBs_then).
         {
           rewrite <- app_assoc. simpl. reflexivity.
@@ -1279,15 +1270,15 @@ Proof.
       + reflexivity.
   - split.
     * cbn [cmd_BB_gen]. simpl. reflexivity.
-    * my_destruct H2. my_destruct H1.
-      simpl in H11. simpl in H6.
+    * my_destruct H0. my_destruct H.
+      simpl in H11. simpl in H5.
       assert (BB_now_else.(block_num) = BB_else_num).
       {
-        rewrite H4. reflexivity.
+        rewrite H3. reflexivity.
       }
-      rewrite H13 in H6.
+      rewrite H13 in H5.
       split; sets_unfold.
-      ++ intros. destruct H6. destruct H11. clear err_cequiv0 inf_cequiv0 err_cequiv1 inf_cequiv1.
+      ++ intros. destruct H5. destruct H11. clear err_cequiv0 inf_cequiv0 err_cequiv1 inf_cequiv1.
          specialize (nrm_cequiv1 a a0). destruct nrm_cequiv1.
          specialize (nrm_cequiv0 a a0). destruct nrm_cequiv0.
          repeat split.
@@ -1308,12 +1299,14 @@ Proof.
             clear H14.
             exists a. split. 
             ++++ pose proof BB_true_jmp_iff_test_true_jmp e a. apply H14. apply H22.
-            ++++ apply H6.
+            ++++ apply H5.
                  exists {| st := a; BB_num := BB_then'.(block_num) |}.
                  exists {| st := a0; BB_num := S (S BB_num1) |}.
                  repeat split; simpl.
                  sets_unfold in H16. destruct H16 as [? [? [? ?]]].
-          ** intros. (* cmds推BB *) admit.
+                 admit. admit.
+          ** admit. 
+        +++ admit. (* cmds推BB *)
       ++ admit. (*err*)
       ++ admit. (*inf*)
 Admitted. 
