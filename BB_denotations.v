@@ -732,11 +732,24 @@ Proof.
   apply H0 in H6. tauto.
 Qed.
 
+
+Definition head (BBs : list BasicBlock): BasicBlock := 
+  match BBs with 
+  | BB :: tl => BB
+  | _ => EmptyBlock
+  end.
+
+
 Lemma cannot_start_with:
   forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
-  ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
+  BBs <> nil -> ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
 Proof.
-  (*TODO*)
+  intros.
+  unfold BBnum_set, not in H0. apply H0.
+  unfold BB_sem_union in H1. 
+  sets_unfold in H1.
+
+
 Admitted.
 
 Lemma serperate_step_aux1:
@@ -763,8 +776,7 @@ Proof.
       unfold BBnum_set. split. exists BBnow. split.
       unfold In. left. tauto. rewrite <- H0. tauto.
       rewrite H1. unfold BBjmp_dest_set. unfold BBjmp_dest_set in H2.
-      (* # TODO : FIX*)
-      destruct H2 as [? [? [? | ?]]].
+      destruct H2 as [[? [? [? | ?]]] ?].
       + exists x. split.
         * unfold In. right. tauto.
         * left. apply H3.
