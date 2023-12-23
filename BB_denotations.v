@@ -491,102 +491,7 @@ Proof.
   - left. unfold ujmp_sem in H0. cbn [Bnrm] in H0. destruct H0 as [? [? [? ?]]]. rewrite H1. reflexivity.
 Qed.
 
-Lemma BBs_sem_num_not_BB_sem_num:
-forall (bs1 bs2 bs3: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
-  separate_property BBnow BBs -> BB_num bs1 = BBnow.(block_num) -> Bnrm (BB_sem BBnow) bs1 bs2 -> Bnrm (BB_sem_union (nil ++ BBs)) bs2 bs3 -> bs1.(BB_num) <> bs3.(BB_num).
-Proof.
-  intros.
-  unfold separate_property in H. 
 
-  assert ((BB_num bs1) ∈ BBnum_set (BBnow :: nil)). {
-    unfold BBnum_set. sets_unfold.
-    unfold BB_restrict in H0.
-    exists BBnow.
-    split.
-    + unfold In. left. tauto. 
-    + destruct H0. tauto.
-  }
-  (* 证明bs1 -> bs2 -> bs3中bs3是在跳转集合中 *)
-  assert ((BB_num bs3) ∈ BBjmp_dest_set (BBnow :: BBs)). {
-    sets_unfold. unfold BBjmp_dest_set.
-    unfold BB_sem_union in H2.
-    induction BBs.
-    - simpl in H2. sets_unfold in H2. exists BBnow. split.
-      + unfold In. left. tauto.
-      + rewrite <- H2. pose proof single_step_jmp_property. specialize (H4 BBnow bs1 bs2). pose proof (H4 H1). tauto.
-    - 
-    assert (BBnum_set (BBnow :: nil) ∩ BBjmp_dest_set (BBnow :: BBs) == ∅).
-    { 
-    pose proof Sets_complement_fact (BBnum_set (BBnow :: nil)) (BBjmp_dest_set (BBnow :: a :: BBs)).
-    destruct H4. pose proof (H5 H). clear H4 H5.
-    pose proof Sets_complement_fact (BBnum_set (BBnow :: nil)) (BBjmp_dest_set (BBnow :: BBs)).
-    destruct H4. clear H5. 
-    assert (Sets.complement (BBjmp_dest_set (BBnow :: a :: BBs)) ⊆ Sets.complement (BBjmp_dest_set (BBnow :: BBs))).
-    {
-      unfold BBjmp_dest_set. simpl. sets_unfold. intros. 
-      assert (
-      ((exists BB : BasicBlock,
-      (BBnow = BB \/ In BB BBs) /\
-      (jump_dest_1 BB.(jump_info) = a0 \/ jump_dest_2 BB.(jump_info) = Some a0)))
-      ->
-      (     
-      (exists BB : BasicBlock,
-      (BBnow = BB \/ a = BB \/ In BB BBs) /\
-      (jump_dest_1 BB.(jump_info) = a0 \/ jump_dest_2 BB.(jump_info) = Some a0)))
-      ).
-      {
-        intros. destruct H7 as [? [? ?]]. exists x. split.
-        - destruct H7.
-          + left. tauto.
-          + right. right. tauto.
-        - tauto.
-      }
-      pose proof (
-      sets_reverse 
-      ((exists BB : BasicBlock,
-      (BBnow = BB \/ In BB BBs) /\
-      (jump_dest_1 BB.(jump_info) = a0 \/ jump_dest_2 BB.(jump_info) = Some a0))) 
-         
-      (exists BB : BasicBlock,
-      (BBnow = BB \/ a = BB \/ In BB BBs) /\
-      (jump_dest_1 BB.(jump_info) = a0 \/ jump_dest_2 BB.(jump_info) = Some a0))
-      
-      ).
-      pose proof (H8 H7). clear H8 H7. pose proof (H9 H5). apply H7.
-    }
-    assert (BBnum_set (BBnow :: nil) ⊆ Sets.complement (BBjmp_dest_set (BBnow :: BBs))). {
-      transitivity (Sets.complement (BBjmp_dest_set (BBnow :: a :: BBs))). 
-      - apply H6.
-      - apply H5.
-    }
-    pose proof (H4 H7).
-    apply H8.
-    }
-    pose proof (IHBBs H4). (*分情况，如果bs2 bs3在a的语义里，那么；如果不在，则归纳假设*)
-    destruct H2.
-    -- exists a.
-        split.
-        ++ unfold In. right. tauto.
-        ++ apply single_step_jmp_property in H2. tauto.
-    -- pose proof (H5 H2). destruct H6. exists x. destruct H6. split.
-        ++ unfold In in H6. destruct H6.  
-          +++ left. tauto.
-          +++ right. right. tauto.
-        ++ apply H7.
-  }
-
-  pose proof Sets_complement_fact (BBnum_set (BBnow :: nil)) (BBjmp_dest_set (BBnow :: BBs)). destruct H5. clear H5.
-  intros contra.
-  rewrite contra in H3.
-  assert (BB_num bs3 ∈ BBnum_set (BBnow :: nil) ∩ BBjmp_dest_set (BBnow :: BBs)). {
-    sets_unfold. split.
-    sets_unfold in H3. sets_unfold in H4.
-    apply H3. apply H4.
-  }
-  sets_unfold in H5. sets_unfold in H.
-  specialize (H (BB_num bs3)). destruct H. apply H in H5. tauto.
-
-Qed.
 
 (*从一个bs出发，经过任意一个block的语义，得到的新的bs都不和原来的相等*)
 Lemma different_bs_after_single_BBsem:
@@ -742,11 +647,17 @@ Definition head (BBs : list BasicBlock): BasicBlock :=
 
 Lemma cannot_start_with:
   forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
-  BBs <> nil -> ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
+  ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
 Proof.
   intros.
-  unfold BBnum_set, not in H0. apply H0.
-  unfold BB_sem_union in H1. 
+  unfold BBnum_set, not in H. apply H.
+  unfold BB_sem_union in H0.
+  destruct BBs.
+  - simpl in H0. sets_unfold in H0. tauto.
+  - clear H. simpl. cbn[Bnrm] in H0. destruct H0.
+    pose proof BB_sem_start_BB_num bs1 bs2 b H. 
+    + exists b. split. left. tauto. rewrite H0. tauto.
+    + 
   sets_unfold in H1.
 
 
