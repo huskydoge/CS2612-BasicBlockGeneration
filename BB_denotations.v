@@ -701,7 +701,7 @@ Qed.
 
 (*
 如果满足几条分离性质，那么有
-  (start, s1), (end, s2) \in (I U ((R1 U R234) o (R1 U R234))*  -> (start, s1), (end, s2) \in (I U R1 o (R234)*
+  (start, s1), (end, s2) \in (I U ((R1 U R234) o (R1 U R234))*  -> (start, s1), (end, s2) \in (R1 o (R234)*
 **)
 *)
 Lemma serperate_step_aux1:
