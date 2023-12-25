@@ -35,7 +35,7 @@ Proof.
 Qed.
 
 
-Lemma P_nil_aux1:
+(* Lemma P_nil_aux1:
   forall (BBnow : BasicBlock) (a0 : state),
   Bnrm
     (jmp_sem (jump_dest_1 BBnow.(jump_info))
@@ -51,7 +51,7 @@ Proof.
   + simpl. 
     split. tauto.
     admit.    
-Admitted.
+Admitted. *)
 
 
 
@@ -59,53 +59,29 @@ Admitted.
 Lemma P_nil: forall cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results,
   P nil (cmd_BB_gen).
 Proof.
-  unfold P. 
-  simpl.
-  intros.
-  exists nil. exists BBnow. exists nil. exists BBnum.
-  split. tauto.
-  split. reflexivity.
-  split. admit. 
-  split. reflexivity.
-  split. split. split.
-  - intros. simpl.
-    split.
-    + sets_unfold. intros.
-      split. 
-      ++ intros.
-         my_destruct H. simpl in H. my_destruct H.
-         simpl.
-         induction x1.
-         -- simpl in H. destruct H. rewrite H0 in H1. apply H1. 
-         -- unfold Iter_nrm_BBs_n in H. simpl in H.
-            sets_unfold in H.
-            destruct H as [[? | ?]| ?].
-            * tauto.
-            * my_destruct H.
-              rewrite <- H0. rewrite <- H1.
-              rewrite <- H4. rewrite H. tauto.
-            * my_destruct H. destruct H as [? | ?]. tauto.
-              my_destruct H.
-              assert (x2 = x). {
-                (* 只需要证明x2, x3 block_num相同；需要从已知条件中推一下 *)
-                repeat rewrite <- H5.
-                admit.
-              }
-              rewrite H7 in H4.
-              apply IHx1 in H4.
-              apply H4.
-      ++ intros.
-         exists {| st := a; BB_num := BBnow.(block_num) |}.
-         exists {| st := a0; BB_num := BBnow.(block_num) |}.
-         repeat split; simpl.
-         exists (S O).
-         simpl. right. sets_unfold.
-         exists {| st := a; BB_num := BBnow.(block_num) |}.
-         admit.
-    + admit.
-    + admit. 
-  - reflexivity.
+  unfold P. intros.
+  exists nil. exists BBnow. exists nil. exists BBnum. exists BBnow.(block_num).
+  repeat split; try tauto.
+  - rewrite append_nil_r. tauto.
+  - intros. simpl. my_destruct H. simpl in H. sets_unfold.
+    destruct H. revert x H H0 H2. induction x1; intros.
+    + simpl in H. sets_unfold in H. rewrite H in H0. rewrite <- H0. rewrite <- H1. reflexivity.
+    + unfold Iter_nrm_BBs_n in H. sets_unfold in H. my_destruct H. 
+      simpl in H. destruct H as [[? [? ?]] | ?]. rewrite <- H in H5.
+      specialize (IHx1 x2). apply IHx1. apply H4. 
+      admit.
+      admit.
+      tauto.
+  - intros. exists {| st := a ; BB_num := BBnow.(block_num) |}.
+    exists {| st := a0 ; BB_num := BBnow.(block_num) |}.
+    repeat split; simpl; try tauto.
+    simpl in H. sets_unfold in H. rewrite <- H. admit. admit.
+  - admit. (* err case *)
+  - admit.  (* err case *)
+  - admit. (* inf case *)
+  - admit. (* inf case *) 
 Admitted.
+
 
 
 Lemma P_cons:
