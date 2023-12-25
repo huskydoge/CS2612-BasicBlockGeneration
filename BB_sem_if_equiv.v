@@ -143,11 +143,6 @@ Proof.
 Qed.
 
 
-
-
-
-
-
 Lemma BB_true_jmp_iff_test_true_jmp:
   forall (e: expr) (a: state),
   (test_true_jmp (eval_expr e)) a <-> (test_true (eval_expr e)) a a.
