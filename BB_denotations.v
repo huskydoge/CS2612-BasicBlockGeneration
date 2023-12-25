@@ -189,5 +189,41 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
   Binf := ∅;
 |}.
 
+
+Section cmd_list_sem.
+
+Variable cmd_sem : cmd -> CDenote.
+
+Fixpoint cmd_list_sem (cmd_list: list cmd): CDenote := {|
+  nrm := 
+    match cmd_list with
+    | cmd :: tl => (cmd_sem cmd).(nrm) ∘ (cmd_list_sem tl).(nrm)
+    | _ => Rels.id
+    end;
+  err := ∅;
+  inf := ∅;
+|}.
+
+End cmd_list_sem.
+
+Fixpoint cmd_sem (cmd: cmd): CDenote := {|
+  nrm := 
+    match cmd with 
+    | CAsgn x e => (asgn_sem x (eval_expr e)).(nrm)
+    | CIf e c1 c2 => (if_sem (eval_expr e) (cmd_list_sem cmd_sem c1) (cmd_list_sem cmd_sem c2)).(nrm)
+    | CWhile pre e body => (while_sem (eval_expr e) (cmd_list_sem cmd_sem body) (cmd_list_sem cmd_sem pre)).(nrm)
+    end;
+  err := ∅;
+  inf := ∅;
+|}.
+
+
+Record BCequiv (B: BDenote) (C: CDenote) (startBB endBB: nat): Prop := {
+  nrm_cequiv: (fun s1 s2 => exists bs1 bs2, B.(Bnrm) bs1 bs2 /\ bs1.(st) = s1 /\ bs2.(st) = s2 /\ bs1.(BB_num) = startBB /\ bs2.(BB_num) = endBB) == C.(nrm);
+  err_cequiv: (fun s => exists bs, B.(Berr) bs /\ bs.(st) = s) == C.(err); 
+  inf_cequiv: (fun s => exists bs, B.(Binf) bs /\ bs.(st) = s) == C.(inf);
+}.
+
+
 (* End of Denotations *)
 
