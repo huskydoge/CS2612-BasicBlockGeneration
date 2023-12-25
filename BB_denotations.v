@@ -57,8 +57,7 @@ Definition ujmp_sem (BBnum : nat) (jum_dest: nat): BDenote :=
   {|
     Bnrm := fun (bs1: BB_state) (bs2 :BB_state) =>
       bs1.(st) = bs2.(st) /\ bs1.(BB_num) = BBnum 
-      /\ bs2.(BB_num) = jum_dest
-      /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
+      /\ bs2.(BB_num) = jum_dest;
     Berr := ∅;
     Binf := ∅;
   |}.
@@ -68,7 +67,7 @@ Definition cjmp_sem (BBnum : nat) (jump_dest_1: nat) (jmp_dest2: nat) (D: EDenot
     Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\
             (bs1.(BB_num) = BBnum) /\ 
             ((bs2.(BB_num) = jump_dest_1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dest2) 
-            /\ (test_false_jmp D bs1.(st))))) /\ bs1.(BB_num) <> bs2.(BB_num); (*用于证明不相交*)
+            /\ (test_false_jmp D bs1.(st))))) ;
     Berr := ∅; (* Ignore err cases now *)
     Binf := ∅;
   |}.
@@ -267,11 +266,13 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 
 Check remove.
 
+(* Lemma disjoint_BB_num，它压根就不对，因为没有规定BBs里面的num是什么样的，这个生成必然得是一个连贯的过程 *)
 Lemma disjoint_BB_num:
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (c: cmd) (BBnum: nat),
   let res := cmd_BB_gen c BBs BBnow BBnum in
   let BBs_delta := res.(BasicBlocks) ++ (res.(BBn) :: nil) in
   forall BB1, forall BB2, In BB1 BBs_delta -> In BB2 BBs_delta -> (BB1.(block_num) <> BB2.(block_num) \/ BB1 = BB2).
+Proof.
 Admitted.
 
 Lemma start_bb:
@@ -285,8 +286,7 @@ Proof.
   - right. unfold BB_list_sem. cbn[Bnrm].
     unfold BB_list_sem in H0. cbn[Bnrm] in H0.
     sets_unfold. sets_unfold in H0. destruct H0.
-
-    (* remember (Bnrm (BB_sem BBnow)) as S1. *)
+    (* remember (Bnrm (BB_sem BBnow)) as S1. *) 
 Admitted.
 
 
@@ -294,7 +294,7 @@ Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop :=
   BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) == ∅.
 
 Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(end_BB: nat): Prop :=
-  start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB /\ ((BBnum_set (BB1::nil) ∩ BBnum_set (BBs)) == ∅).
+  start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB.
 
 Lemma separate_concat:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock)(bs1: BB_state)(bs2: BB_state), 
@@ -366,6 +366,7 @@ Proof.
 Qed.
     (* sets_unfold in IHl.  *)
 
+
 (* 处理完BBnow的jmp后，跳转到的BB的num在jmpdest BBnow 中 *)
 Lemma BB_jmp_sem_num_in_BBjmp_dest_set:
   forall (BB: BasicBlock) (bs1 bs2: BB_state),
@@ -373,17 +374,21 @@ Lemma BB_jmp_sem_num_in_BBjmp_dest_set:
 Proof.
   intros.
   unfold BB_jmp_sem in H. simpl in H.
-  unfold BBjmp_dest_set. sets_unfold. unfold In.
-  exists BB. unfold BJump_sem in H.
-  destruct eval_cond_expr.
-  + split. left. tauto. right. destruct jump_dest_2. 
-    - unfold cjmp_sem in H. simpl in H.
-      destruct H as [[? [? [?| ?]]] ].
-      ++ admit. (* 这是说If语句走Then分支的情况，没有用到dest2，缺条件 *)
-      ++ destruct H1 as [? ?]. rewrite H1. tauto.
-    - admit. (* 这里是Condition有的，但是却选择了UJmp的情况，应该是None，但是缺条件 *) 
-  + split. left. tauto. left. unfold ujmp_sem in H. simpl in H. destruct H as [? [? [? ?]]]. rewrite H1. tauto. 
-Admitted.
+  unfold BBjmp_dest_set. exists BB. split.
+  + unfold In. left. reflexivity.
+  + unfold BJump_sem in H.
+      destruct eval_cond_expr.
+    - destruct jump_dest_2.
+    -- unfold cjmp_sem in H. simpl in H. destruct H as [? [? ?]].
+      destruct H1.
+      ++ left. destruct H1. rewrite H1. reflexivity.
+      ++ right. destruct H1. rewrite H1. reflexivity.
+    -- unfold ujmp_sem in H. simpl in H.
+      left. destruct H as [? [? ?]]. rewrite H1. reflexivity.
+    - unfold ujmp_sem in H. simpl in H.
+      destruct H as [? [? ?]]. left. rewrite H1. reflexivity.
+Qed.
+
 
 
 Lemma iter_concate:
