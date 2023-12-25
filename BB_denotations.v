@@ -1283,7 +1283,34 @@ Proof.
       ++ admit. (*inf*)
 Admitted. 
 
-Search (S _ = _ ).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Lemma Q_while:
   forall (pre: list cmd) (e: expr) (body: list cmd),
