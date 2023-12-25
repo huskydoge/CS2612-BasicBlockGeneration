@@ -57,7 +57,7 @@ Definition ujmp_sem (BBnum : nat) (jum_dest: nat): BDenote :=
   {|
     Bnrm := fun (bs1: BB_state) (bs2 :BB_state) =>
       bs1.(st) = bs2.(st) /\ bs1.(BB_num) = BBnum 
-      /\ bs2.(BB_num) = jum_dest;
+      /\ bs2.(BB_num) = jum_dest /\ (bs1.(BB_num) <> bs2.(BB_num));
     Berr := ∅;
     Binf := ∅;
   |}.
@@ -67,7 +67,7 @@ Definition cjmp_sem (BBnum : nat) (jump_dest_1: nat) (jmp_dest2: nat) (D: EDenot
     Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\
             (bs1.(BB_num) = BBnum) /\ 
             ((bs2.(BB_num) = jump_dest_1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dest2) 
-            /\ (test_false_jmp D bs1.(st))))) ;
+            /\ (test_false_jmp D bs1.(st))))) /\ (bs1.(BB_num) <> bs2.(BB_num));
     Berr := ∅; (* Ignore err cases now *)
     Binf := ∅;
   |}.
@@ -189,7 +189,13 @@ Definition BB_list_sem (BBs: list BasicBlock): BDenote := {|
   Binf := ∅;
 |}.
 
+(*End of Denotations*)
+(*====================================================================================================================================================================================================*)
 
+
+(* 
+S^* = (I ∪ S * S^*) 
+*)
 Lemma unfold_once:
   forall (BBs: list BasicBlock),
 (BB_list_sem BBs).(Bnrm) == Rels.id ∪ (BB_sem_union BBs).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm).
@@ -263,52 +269,12 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
 
 *)
 
-
-Check remove.
-
-(* Lemma disjoint_BB_num，它压根就不对，因为没有规定BBs里面的num是什么样的，这个生成必然得是一个连贯的过程 *)
-Lemma disjoint_BB_num:
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (c: cmd) (BBnum: nat),
-  let res := cmd_BB_gen c BBs BBnow BBnum in
-  let BBs_delta := res.(BasicBlocks) ++ (res.(BBn) :: nil) in
-  forall BB1, forall BB2, In BB1 BBs_delta -> In BB2 BBs_delta -> (BB1.(block_num) <> BB2.(block_num) \/ BB1 = BB2).
-Proof.
-Admitted.
-
-Lemma start_bb:
-  forall (bs1 bs2: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
-BBnow.(block_num) = bs1.(BB_num) -> (BB_list_sem (BBnow :: BBs)).(Bnrm) bs1 bs2 -> Rels.id bs1 bs2 \/ ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBnow::BBs)).(Bnrm)) bs1 bs2.
-Proof.
-  intros.
-  pose proof classic (bs1 = bs2).
-  destruct H1.
-  - left. sets_unfold. tauto.
-  - right. unfold BB_list_sem. cbn[Bnrm].
-    unfold BB_list_sem in H0. cbn[Bnrm] in H0.
-    sets_unfold. sets_unfold in H0. destruct H0.
-    (* remember (Bnrm (BB_sem BBnow)) as S1. *) 
-Admitted.
-
-
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
   BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) == ∅.
 
 Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(end_BB: nat): Prop :=
   start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB.
 
-Lemma separate_concat:
-  forall (BBnow: BasicBlock) (BBs: list BasicBlock)(bs1: BB_state)(bs2: BB_state), 
-  separate_property BBnow BBs -> (* BBnum本身不交 *)
-  BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)->
-    (BB_list_sem (BBnow :: BBs)).(Bnrm) bs1 bs2 -> Rels.id bs1 bs2 \/ ((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm)) bs1 bs2.
-Proof.
-  intros. unfold BB_restrict in H0. destruct H0.
-  apply start_bb in H1.
-  destruct H1.
-  - left. tauto.
-  - right. admit.
-  - rewrite H0. reflexivity.
-Admitted.
 (* ==================================================================================================================================== *)
 
 (* Some Important Property for S ========================================================================================================
@@ -327,7 +293,7 @@ Admitted.
 
 
 
-Lemma sem_start_end_with2:
+Lemma sem_start_end_with:
   forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
   ((sem1 ∘ sem2) bs1 bs2 :Prop) -> exists bs', (sem1 bs1 bs') /\ (sem2 bs' bs2).
 Proof.
@@ -337,14 +303,6 @@ Proof.
   exists x. apply H.
 Qed.
 
-Lemma sem_union_start_end_with:
-  forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
-  ((sem1 ∪ sem2) bs1 bs2 :Prop) -> sem1 bs1 bs2 \/ sem2 bs1 bs2.
-Proof.
-  intros.
-  sets_unfold in H.
-  tauto.
-Qed.
 
 (*处理完BB中的cmds之后，不会改变BBnum*)
 (* ! bs2 bs1的顺序是反的 *)
@@ -670,7 +628,7 @@ Proof.
 Qed.
 
 
-  (*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
+(*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
 Lemma cannot_start_with:
   forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
   ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
@@ -733,7 +691,7 @@ Proof.
         * right. apply H3.
     }
     apply H in H3. tauto.
-  - apply sem_start_end_with2 in H1. destruct H1 as [bs' [? ?]].
+  - apply sem_start_end_with in H1. destruct H1 as [bs' [? ?]].
     destruct H1.
     (*你先处理H1，然后由此可以得到x的性质，然后归纳证明，从x出发n步到达的不能是起始BBnum，这样就可以把BBnow给排除了*)
     + sets_unfold. exists bs'. split. apply H1.
@@ -749,7 +707,7 @@ Proof.
       revert bs' H2 H3. induction n; intros.
       * intros. simpl in H2. simpl. apply H2.
       * (*拆出H2，从bs'走一步到bs'',再从bs''到bs2*) 
-        unfold Iter_nrm_BBs_n in H2. apply sem_start_end_with2 in H2.
+        unfold Iter_nrm_BBs_n in H2. apply sem_start_end_with in H2.
         destruct H2 as [bs'' [? ?]]. destruct H1.
         --- pose proof BB_sem_start_BB_num bs' bs'' BBnow. 
             rewrite H0 in H3. apply H4 in H1. rewrite H1 in H3. unfold not in H3. assert (BBnow.(block_num) = BBnow.(block_num)). tauto. apply H3 in H5. tauto.
@@ -798,64 +756,6 @@ Proof.
             
 Qed.
 
-
-
-
-  
-
-
-(* #TODO
-Lemma serperate_concate:
-  forall (BBnow: BasicBlock) (BBs: list BasicBlock), (* 对应关系：BBnow (then/else分支）*)
-  BBnum_set (BBnow::nil) ∩ BBjmp_dest_set BBs = ∅ -> (* BBnum本身不交 *)
-  BBjmp_dest_set (BBnow::nil) ∈ BBnum_set BBs -> (* BBnum本身不交 *)
-    ((BB_jmp_sem (BBnow)).(Bnrm) ∪ (BB_list_sem BBs).(Bnrm)) ∘ ((BB_jmp_sem (BBnow)).(Bnrm) ∪ (BB_list_sem BBs).(Bnrm))  (* (S1 U S2) o (S1 U S2) *)
-    = 
-    ((BB_jmp_sem (BBnow)).(Bnrm) ∘ (BB_jmp_sem (BBnow)).(Bnrm)) ∪ ((BB_list_sem BBs).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm)). (* S1 o S1 U S2 o S2 *)
-  
-Proof.
-  intros.
-  
-  Admitted.  *)
-
-(* Lemma separate_single_step:
-  forall (BB1: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state), (*缺少前提！*)
-  (* (nodes_of_BD (BB_sem_union (BBs))) ∩ nodes_of_BD (BB_sem BB1) = ∅ /\ *)
-  (BB_list_sem (BB1::BBs)).(Bnrm) bs1 bs2 -> 
-  (*这里这一条好像就不需要了*)
-  (exists (bs' : BB_state), (BB_sem BB1).(Bnrm) bs1 bs') /\ (forall (bs'':BB_state), ((BB_sem_union BBs)).(Bnrm) bs1 bs'' = False) ->
-  (exists s1', (BB_sem BB1).(Bnrm) bs1 s1' /\ ((BB_list_sem  BBs)).(Bnrm) s1' bs2).
-Proof.
-  intros.
-  destruct H0.
-  destruct H0. exists x. split. apply H0.
-  unfold BB_list_sem in H. unfold BB_sem_union in H. simpl in H. sets_unfold in H. destruct H. unfold Iter_nrm_BBs_n in H.
-  - simpl in H. sets_unfold in H. admit.
-Admitted. *)
-
-Lemma try:
-  forall (bs_start bs_end: BB_state) (BBnow: BasicBlock) (BB_then: BasicBlock) (BB_then_ss: list BasicBlock) (BB_else: BasicBlock) (BB_else_ss: list BasicBlock) (e: expr),
-  (BBnow.(jump_info) = 
-  {|
-  jump_kind := CJump; 
-  jump_dest_1 := (BB_then).(block_num); 
-  jump_dest_2 := Some ((BB_else).(block_num)); 
-  jump_condition := Some e
-  |})
-  
-  ->
-
-  test_true_jmp(eval_expr e) (bs_start.(st))
-  /\ (BB_jmp_sem BBnow).(Bnrm) ∘ (BB_list_sem (BB_then::nil ++ BB_then_ss)).(Bnrm)
-      =
-      (BB_jmp_sem BBnow).(Bnrm) ∘ (BB_list_sem (BB_then::nil ++ BB_then_ss ++ BB_else::nil ++ BB_else_ss)).(Bnrm)
-  \/
-  test_false_jmp(eval_expr e) (bs_start.(st))
-  /\ (BB_jmp_sem BBnow).(Bnrm) ∘ (BB_list_sem (BB_else::nil ++ BB_else_ss)).(Bnrm)
-      =
-      (BB_jmp_sem BBnow).(Bnrm) ∘ (BB_list_sem (BB_then::nil ++ BB_then_ss ++ BB_else::nil ++ BB_else_ss)).(Bnrm).
-
-Admitted.
 
 
 
@@ -1391,6 +1291,9 @@ Lemma Q_while:
 Proof.
 Admitted.
 
+
+
+(* ========================================================================  *)
 
 Lemma append_nil_r : forall A (l : list A),
   l ++ nil = l.
