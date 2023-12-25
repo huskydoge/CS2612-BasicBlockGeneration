@@ -117,15 +117,27 @@ Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(en
 
 
 
-
+(* Important !*)
 Lemma sem_start_end_with:
   forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
-  ((sem1 ∘ sem2) bs1 bs2 :Prop) -> exists bs', (sem1 bs1 bs') /\ (sem2 bs' bs2).
+  ((sem1 ∘ sem2) bs1 bs2 :Prop) -> (exists bs', (sem1 bs1 bs') /\ (sem2 bs' bs2)).
 Proof.
   intros.
   sets_unfold in H.
+  destruct H as [? [? ?]]. 
+  exists x.
+  split. apply H. apply H0.
+  Qed.
+
+Lemma sem_start_end_with_2:
+  forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
+  (exists bs', (sem1 bs1 bs') /\ (sem2 bs' bs2)) -> ((sem1 ∘ sem2) bs1 bs2 :Prop).
+Proof.
+  intros.
+  sets_unfold.
   destruct H.
-  exists x. apply H.
+  exists x.
+  apply H.
 Qed.
 
 (*处理完BB中的cmds之后，不会改变BBnum*)
@@ -523,11 +535,11 @@ Definition Qb(c: cmd): Prop :=
       BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num)) (*还在当下的BBnow里，BBnum则是下一个BB的编号，不能用*)
     \/
     (*CIf / CWhile*)
-    (exists BBnow' BBs' BBnum', 
-      res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\
+    (exists BBnow' BBs' BBnum' BBs_wo_last, 
+      res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\
       res.(BBn).(block_num) = BBnum' /\
-      BCequiv (BDenote_concate (BB_jmp_sem BBnow')(BB_list_sem BBs')) (cmd_sem c) BBnow.(block_num) (S (S BBnum))). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
-
+      BCequiv (BDenote_concate (BB_jmp_sem BBnow')(BB_list_sem BBs_wo_last)) (cmd_sem c) BBnow.(block_num) (S (S BBnum))). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
+(* # BUG BCequiv里不应该有最后的BBnext！*)
 
 (* c: the cmd we are currently facing
   BBs: list of Basic Blocks which have been already generated

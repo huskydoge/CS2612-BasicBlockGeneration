@@ -142,6 +142,29 @@ Proof.
             
 Qed.
 
+Lemma serperate_step_aux2:
+  forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
+  (((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm)) bs1 bs2 : Prop)
+  ->
+  (( Rels.id ∪ (BB_sem_union (BBnow::nil ++ BBs)).(Bnrm) ∘ (BB_list_sem (BBnow::nil ++ BBs)).(Bnrm)) bs1 bs2 :Prop).
+Proof.
+(*#TODO, 显然，这是子集包含关系*) 
+Admitted.
+
+
+(* #TODO 切第二刀，把then和else切开来*)
+Lemma serperate_step_aux3:
+  forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
+  (BBnum_set BBs1) ∩ (BBnum_set BBs2) = ∅ ->
+  (BB_num bs1) ∈ (BBnum_set BBs1) ->
+  (BBjmp_dest_set BBs1) ∩ (BBnum_set BBs2) = ∅ ->
+  (BB_num bs2) ∈ (BBjmp_dest_set BBs1) ->
+  Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2 ->
+  Bnrm (BB_list_sem (BBs1)) bs1 bs2.
+Proof.
+Admitted.
+
+
 
 Lemma BB_true_jmp_iff_test_true_jmp:
   forall (e: expr) (a: state),
@@ -185,6 +208,8 @@ Lemma BDenote_concat_equiv_BB_list_sem:
 Proof.
   intros.
 Admitted.
+
+
 
 
 Lemma Q_if:
@@ -262,11 +287,10 @@ Proof.
   jump_info := BBnow.(jump_info)
   |}).
   set(BBs'_ := BB_then'::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
-  
-  exists BBnow'. exists BBs'_. exists BB_next_num.
-  (*========================================== *)
+  set(BBs_wo_last_ := BB_then'::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else). 
+  exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
   (* MAIN ========================================== *)
-  split.
+  repeat split.
   - cbn [cmd_BB_gen]. simpl. 
     subst BB_then_num. subst BB_next_num. subst BB_else_num.
     my_destruct H. my_destruct H0.
@@ -320,99 +344,91 @@ Proof.
       + reflexivity.
       + reflexivity.
       + reflexivity.
-  - split.
-    * cbn [cmd_BB_gen]. simpl. reflexivity.
-    * my_destruct H0. my_destruct H.
-      simpl in H11. simpl in H5.
+  - cbn [cmd_BB_gen]. simpl. admit. (*模仿上面的即可*)
+  - my_destruct H0. my_destruct H.
       assert (BB_now_else.(block_num) = BB_else_num).
       {
         rewrite H3. reflexivity.
       }
       rewrite H13 in H5.
-      split; sets_unfold.
-      ++ intros. destruct H5. destruct H11. clear err_cequiv0 inf_cequiv0 err_cequiv inf_cequiv.
-         specialize (nrm_cequiv a a0). destruct nrm_cequiv.
-         specialize (nrm_cequiv0 a a0). destruct nrm_cequiv0.
-         repeat split.
-         +++ intros. (*BB推cmds*)
-         (*OK 到这一步就已经是分两部分走了, 开始看上面的命题，在jmp还是不jmp之间找共通，bs1，bs2的a和a0*)
-         simpl. clear H15 H11. 
-         assert (BB_then.(cmd) = nil).  reflexivity. (*遇到if的话，BB_then里不会添加新的cmds了*)
-         rewrite H11 in H8. simpl in H8. (* BB_then'.(cmd) = BB_cmds_then *)
-         sets_unfold. 
-         my_destruct H16.
+      intros. destruct H5. destruct H11. clear err_cequiv0 inf_cequiv0 err_cequiv inf_cequiv.
+      specialize (nrm_cequiv a a0). destruct nrm_cequiv.
+      specialize (nrm_cequiv0 a a0). destruct nrm_cequiv0.
+      (*OK 到这一步就已经是分两部分走了, 开始看上面的命题，在jmp还是不jmp之间找共通，bs1，bs2的a和a0*)
+       clear H16 H11.
+      assert (BB_then.(cmd) = nil).  reflexivity. (*遇到if的话，BB_then里不会添加新的cmds了*)
+      rewrite H11 in H8. (* BB_then'.(cmd) = BB_cmds_then *)
+      sets_unfold.
+
+
+
+      pose proof BDenote_concat_equiv_BB_list_sem BBnow' BBs_wo_last_.
+      rewrite H16 in H14.
+      remember ({|
+      block_num := BBnow'.(block_num);
+      commands := nil;
+      jump_info := BBnow'.(jump_info)
+    |}) as BB_jmp.
+         my_destruct H14.
+         pose proof (unfold_once (BB_jmp :: nil ++ BBs_wo_last_)).
+         pose proof serperate_step_aux1.
+         specialize (H22 x1 x2 BB_jmp BBs_wo_last_).
+         assert (separate_property BB_jmp BBs_wo_last_). admit. (*分离性质1*)
+         assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). admit. (*分离性质2*)
+         assert (((Rels.id
+         ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_))
+           ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2
+        :
+        Prop)). admit.
+        specialize (H22 H23 H24 H25).
+        rename H15 into key1.  
+        clear H23 H24 H25 H21 H16.
+
+
          pose proof true_or_false e a.
          assert (exists i : int64, EDenote.nrm (eval_expr e) a i). {
           admit. (* 不考虑出错或无穷的情况 *)
          }
-         pose proof H20 H21.
-         destruct H22.
+         pose proof H15 H16.
+         destruct H21. 
          ** left. (*如果test true*)
-            clear H14.
             exists a. split. 
-            -- pose proof BB_true_jmp_iff_test_true_jmp e a. apply H14. apply H22.
-            -- apply H5.
-                (* then这个block的情况 *)
-               exists {| st := a; BB_num := BB_then'.(block_num) |}.
-               exists {| st := a0; BB_num := BB_next_num |}.
-               repeat split; simpl.
-                (* BB_then'就是BB_then最终形态，相比于BB_then添加了正确的跳转信息 *)
-                (* 注意观察H16，本质上是包含两部分，BBnow的跳转和后续的then/else block；我们的第一刀应该可以切掉BBnow *)
-               clear H. clear H5. clear H0. clear H20. clear H21.
-               (* 观察这里的条件，发现H16中的x1和这里的第一个state只差了一个bb_num *)
-               unfold BDenote_concate in H16. cbn[Bnrm] in H16.
-               sets_unfold in H16. destruct H16 as [? [? ?]].
-               (* 这里的x3其实就是要证明的第一个st *)
-               assert ({| BB_num := BB_then'.(block_num); st := a |} = x3). {
-                  (* TODO *)
-                  admit.
-               }
-               rewrite H5.
-              (* 而这里的x2显然是要证明的第二个st *)
-               assert ({| BB_num := BB_next_num; st := a0 |} = x2). {
-                  (*TODO *)
-                  admit.
-               }
-               rewrite H14.
-
-               (* ! =============不知道有没有用===================== *)
-               (* 初始状态是x1? 中止状态是x2
-                  对应一开始的BBnow = BBnow'
-                  后续的列表为BBs'_
-                  这个引理本身是希望能够把BBnow'的语义拆出来   
-               *)
-               pose proof serperate_step_aux1 x1 x2 BBnow' BBs'_.
-               (* 为了达到这个引理的前提，我们要使用unfold_once *)
-               pose proof unfold_once (BBnow' :: BBs'_).
-               assert ((Bnrm (BB_sem BBnow') ∘ Bnrm (BB_list_sem BBs'_)) x1 x2 : Prop).
-               {
-                apply H16.
-                (* separate_property和BB_restrict理论上都应该成立，但不在前提中 *)
-                - admit. 
-                - admit.
-                - specialize (H20 x1 x2). destruct H20 as [? ?]. 
-                  clear H21. apply H20. 
-                  pose proof BDenote_concat_equiv_BB_list_sem BBnow' BBs'_. simpl in H21.
-                  assert ({|
-                    block_num := BBnow.(block_num);
-                    commands := nil;
-                    jump_info := {|
-                                 jump_kind := CJump;
-                                 jump_dest_1 := BB_then_num;
-                                 jump_dest_2 := Some BB_else_num;
-                                 jump_condition := Some e |} |} = BBnow').
-                    {
-                      (* TODO *)
-                      admit.
-                    }
-                  rewrite H23 in H21. rewrite <- H21. unfold BDenote_concate. sets_unfold. exists x3. split.
-                  apply H. apply H0.
-               }
-               clear H16.
-               sets_unfold in H16. destruct H16 as [? [? [? ?]]].
-               sets_unfold.
+            -- pose proof BB_true_jmp_iff_test_true_jmp e a. apply H23. apply H21.
+            -- clear H5. apply key1. rename H22 into key2.
+               set(bs1_ := {|
+               BB_num := BB_then_num;
+               st := a ;  
+               |}).
+               exists bs1_. exists x2. cbn [Bnrm]. repeat split.
+               *** apply sem_start_end_with in key2.
+                    destruct key2 as [bs' [step1 step2]].
+                    clear H14.
+                    apply unfold_once in step2. apply serperate_step_aux1 in step2.
+                    apply sem_start_end_with in step2. destruct step2 as [bs'' [step2 step3]].  
+                    ++++ apply unfold_once. apply serperate_step_aux2. apply sem_start_end_with_2.
+                      exists bs''. split. 
+                      assert (bs1_ = bs'). admit. rewrite H5. 
+                      assert (BB_then' = {|
+                      block_num := BB_then'.(block_num);
+                      commands := BB_cmds_then;
+                      jump_info := BB_then'.(jump_info)
+                      |}). admit.
+                      rewrite H14 in step2. apply step2.
+                    +++ (*第二刀*)
+                      apply serperate_step_aux3 in step3.
+                      apply step3.
+                      admit. admit. admit. admit.
+                    ++++ admit. (*只要是从一个Block开始，新生成的block，那它就满足分离性质*)
+                    ++++ admit. (*只要是从一个Block开始，新生成的block，那它就满足分离性质*)
+                    
+               *** apply H18.
+               *** rewrite H9. reflexivity.
+               *** apply H20.
+               (* BB_then_num的语义 *)
           ** admit. (*test false的情况*)
-        +++ admit. (* cmds推BB *)
-      ++ admit. (*err*)
-      ++ admit. (*inf*)
-Admitted. 
+        - admit. 
+        - admit. 
+        - admit. 
+        - admit. 
+        - admit.
+Admitted.
