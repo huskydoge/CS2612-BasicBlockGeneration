@@ -23,7 +23,7 @@ Import BDenote.
 
 
 
-(* S^* = (I ∪ S * S^*) 
+
 Lemma unfold_once:
   forall (BBs: list BasicBlock),
 (BB_list_sem BBs).(Bnrm) == Rels.id ∪ (BB_sem_union BBs).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm).
@@ -90,19 +90,11 @@ Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
   S1 (BBnum_start, s1) (BBnum s1') 这个就是有cjump的那一步啊
 *)
 
-
-
-(*
-分离性质：(I \cup S1) \circ (S2 \cup S3 .....)*  = 
-
-*)
-
 Definition separate_property (BB1: BasicBlock) (BBs: list BasicBlock) : Prop := 
   BBnum_set (BB1 :: nil) ∩ BBjmp_dest_set (BB1 :: BBs) == ∅.
 
 Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(end_BB: nat): Prop :=
-  start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB.
-
+  start_BB = BB1.(block_num) /\ BBjmp_dest_set BBs end_BB /\ ((BBnum_set (BB1::nil) ∩ BBnum_set (BBs)) == ∅).
 (* ==================================================================================================================================== *)
 
 (* Some Important Property for S ========================================================================================================
@@ -131,7 +123,6 @@ Proof.
   exists x. apply H.
 Qed.
 
-
 (*处理完BB中的cmds之后，不会改变BBnum*)
 (* ! bs2 bs1的顺序是反的 *)
 Lemma BB_cmds_sem_no_change_num:
@@ -152,7 +143,6 @@ Proof.
 Qed.
     (* sets_unfold in IHl.  *)
 
-
 (* 处理完BBnow的jmp后，跳转到的BB的num在jmpdest BBnow 中 *)
 Lemma BB_jmp_sem_num_in_BBjmp_dest_set:
   forall (BB: BasicBlock) (bs1 bs2: BB_state),
@@ -160,21 +150,17 @@ Lemma BB_jmp_sem_num_in_BBjmp_dest_set:
 Proof.
   intros.
   unfold BB_jmp_sem in H. simpl in H.
-  unfold BBjmp_dest_set. exists BB. split.
-  + unfold In. left. reflexivity.
-  + unfold BJump_sem in H.
-      destruct eval_cond_expr.
-    - destruct jump_dest_2.
-    -- unfold cjmp_sem in H. simpl in H. destruct H as [[? [? [? | ?]]] ?].
-      destruct H1.
-      ++ left. destruct H1. reflexivity.
-      ++ right. destruct H1. rewrite H1. reflexivity.
-    -- unfold ujmp_sem in H. simpl in H.
-      left. destruct H as [? [? [? ?]]]. rewrite H1. reflexivity.
-    - unfold ujmp_sem in H. simpl in H.
-      destruct H as [? [? [? ?]]]. left. rewrite H1. reflexivity.
-Qed.
-
+  unfold BBjmp_dest_set. sets_unfold. unfold In.
+  exists BB. unfold BJump_sem in H.
+  destruct eval_cond_expr.
+  + split. left. tauto. right. destruct jump_dest_2. 
+    - unfold cjmp_sem in H. simpl in H.
+      destruct H as [[? [? [?| ?]]] ].
+      ++ admit. (* 这是说If语句走Then分支的情况，没有用到dest2，缺条件 *)
+      ++ destruct H1 as [? ?]. rewrite H1. tauto.
+    - admit. (* 这里是Condition有的，但是却选择了UJmp的情况，应该是None，但是缺条件 *) 
+  + split. left. tauto. left. unfold ujmp_sem in H. simpl in H. destruct H as [? [? [? ?]]]. rewrite H1. tauto. 
+Admitted.
 
 
 Lemma iter_concate:
@@ -350,7 +336,7 @@ Proof.
 Qed.
 
 (*应该证明这个*)
-Lemma BBs_sem_num_not_BB_sem_num2:
+Lemma BBs_sem_num_not_BB_sem_num:
 forall (bs1 bs2 bs3: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
   (BBs <> nil) -> separate_property BBnow BBs -> BB_num bs1 = BBnow.(block_num) -> Bnrm (BB_sem_union (nil ++ BBs)) bs2 bs3 -> (bs2 <> bs3) -> BB_num bs3 <> BB_num bs1.
 Proof.
@@ -456,7 +442,7 @@ Proof.
 Qed.
 
 
-(*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
+  (*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
 Lemma cannot_start_with:
   forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
   ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
@@ -510,7 +496,7 @@ Proof.
       unfold BBnum_set. split. exists BBnow. split.
       unfold In. left. tauto. rewrite <- H0. tauto.
       rewrite H1. unfold BBjmp_dest_set. unfold BBjmp_dest_set in H2.
-      destruct H2 as [? [? [? | ?]]].
+      destruct H2 as [[? [? [? | ?]]] ?].
       + exists x. split.
         * unfold In. right. tauto.
         * left. apply H3.
@@ -550,7 +536,7 @@ Proof.
                   apply different_bs_after_BBsem_union in H1. tauto.
                   
                 }
-                pose proof BBs_sem_num_not_BB_sem_num2 bs1 bs' bs'' BBnow (a::BBs).
+                pose proof BBs_sem_num_not_BB_sem_num bs1 bs' bs'' BBnow (a::BBs).
                 unfold separate_property in H6.
                 pose proof (H6 H4 H H0 H1 H5).
                 apply H7.
@@ -573,16 +559,16 @@ Proof.
         }
         
         assert (BB_num bs1 ∈ BBnum_set (BBnow :: nil) ∩ BBnum_set (BBs)). {
-          split. sets_unfold in H7. apply H7. apply H4.
+          split. sets_unfold in H8. apply H8. apply H4.
         }
-        admit.
-        (* sets_unfold in H6. 
-        specialize (H bs1.(BB_num)). destruct H as [? ?]. clear H9.
-        apply H8. apply H9.  *)
+        
+        sets_unfold in H6. sets_unfold in H9.
+        specialize (H6 bs1.(BB_num)). destruct H6 as [? ?]. clear H10.
+        apply H6. apply H9. 
       }
-      (* pose proof (H3 H4 H1). tauto. 这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest *)
-Admitted.          
-(* Qed. *)
+      pose proof (H3 H4 H1). tauto. (*这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest*)
+            
+Qed.
 
 
 
@@ -1111,7 +1097,7 @@ Proof.
       ++ admit. (*inf*)
 Admitted. 
 
-
+Search (S _ = _ ).
 
 Lemma Q_while:
   forall (pre: list cmd) (e: expr) (body: list cmd),
@@ -1119,9 +1105,6 @@ Lemma Q_while:
 Proof.
 Admitted.
 
-
-
-(* ========================================================================  *)
 
 Lemma append_nil_r : forall A (l : list A),
   l ++ nil = l.

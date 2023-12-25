@@ -67,7 +67,7 @@ Definition cjmp_sem (BBnum : nat) (jump_dest_1: nat) (jmp_dest2: nat) (D: EDenot
     Bnrm := fun bs1 bs2 => ((bs1.(st) = bs2.(st)) /\
             (bs1.(BB_num) = BBnum) /\ 
             ((bs2.(BB_num) = jump_dest_1) /\ (test_true_jmp D bs1.(st)) \/ ((bs2.(BB_num) = jmp_dest2) 
-            /\ (test_false_jmp D bs1.(st))))) /\ (bs1.(BB_num) <> bs2.(BB_num));
+            /\ (test_false_jmp D bs1.(st))))) /\ bs1.(BB_num) <> bs2.(BB_num);
     Berr := ∅; (* Ignore err cases now *)
     Binf := ∅;
   |}.
