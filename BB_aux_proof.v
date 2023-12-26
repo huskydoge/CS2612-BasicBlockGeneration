@@ -340,7 +340,7 @@ Proof.
 Qed.
 
 
-(*应该证明这个*)
+
 Lemma BBs_sem_num_not_BB_sem_num:
 forall (bs1 bs2 bs3: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
   (BBs <> nil) -> separate_property BBnow BBs -> BB_num bs1 = BBnow.(block_num) -> Bnrm (BB_sem_union (nil ++ BBs)) bs2 bs3 -> (bs2 <> bs3) -> BB_num bs3 <> BB_num bs1.

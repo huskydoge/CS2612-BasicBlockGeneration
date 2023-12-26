@@ -166,7 +166,7 @@ Proof.
 Qed.
 
 
-Lemma serperate_step_aux2:
+Lemma separate_step_aux2:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
   (((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm)) bs1 bs2 : Prop)
   ->
@@ -646,7 +646,7 @@ Proof.
       sets_unfold.
 
       pose proof BDenote_concat_equiv_BB_list_sem BBnow' BBs_wo_last_.
-      rewrite H16 in H14.
+
       remember ({|
       block_num := BBnow'.(block_num);
       commands := nil;
@@ -688,7 +688,7 @@ Proof.
                     clear H14.
                     apply unfold_once in step2. apply serperate_step_aux1 in step2.
                     apply sem_start_end_with in step2. destruct step2 as [bs'' [step2 step3]].  
-                    ++++ apply unfold_once. apply serperate_step_aux2. apply sem_start_end_with_2.
+                    ++++ apply unfold_once. apply separate_step_aux2. apply sem_start_end_with_2.
                       exists bs''. split. 
                       assert (bs1_ = bs'). admit. rewrite H5. 
                       assert (BB_then' = {|
