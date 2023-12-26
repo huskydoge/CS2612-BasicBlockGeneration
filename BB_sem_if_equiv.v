@@ -197,8 +197,8 @@ Proof.
   sets_unfold in H3.
   sets_unfold.
   destruct H3.
-  exists x.
-  induction x.
+  exists x. revert bs1 H0 H3.
+  induction x; intros.
   - tauto.
   - assert (forall (BBs: list BasicBlock), Iter_nrm_BBs_n (BB_sem_union (BBs)) (S x) =(Bnrm (BB_sem_union (BBs))   ∘ Iter_nrm_BBs_n (BB_sem_union (BBs)) (x))).
   {
@@ -210,11 +210,14 @@ Proof.
   pose proof sem_start_end_with_2 (Bnrm (BB_sem_union BBs1)) (Iter_nrm_BBs_n (BB_sem_union BBs1) x) bs1 bs2.
   apply H6.
   clear H6 H3 H4.
-  destruct H5.
+  destruct H5. destruct H3 as [? ?].
   exists x0.
   split.
-  ++ admit. (* use some properties in nu, *)
-  ++ admit. (* use inductive hypothesis *)
+  ++ admit.
+  ++ specialize (IHx x0). 
+     apply IHx.
+     -- admit.    
+     -- apply H4. 
 Admitted.
 
 
