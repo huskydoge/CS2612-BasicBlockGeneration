@@ -237,7 +237,7 @@ Proof.
   destruct H5. destruct H3 as [? ?].
   exists x0.
   split.
-  ++ admit
+  ++ admit.
   ++ specialize (IHx x0). 
      apply IHx.
      -- pose proof BB_then_num_not_in_BB_else BBs1 BBs2 bs1 x0.
