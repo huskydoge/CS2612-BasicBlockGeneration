@@ -29,6 +29,29 @@ Ltac my_destruct H :=
   | _ => idtac 
   end.
 
+(*比较两个BBstate相等*)
+Lemma compare_two_BB_state:
+  forall (bs1 bs2: BB_state),
+  bs1 = bs2 <-> 
+  bs1.(BB_num) = bs2.(BB_num) /\ bs1.(st) = bs2.(st) .
+Proof.
+  intros.
+  split.
+  - intros. rewrite H. split; reflexivity.
+  - intros. destruct H. destruct bs1, bs2. simpl in *.
+    subst. reflexivity.
+Qed.
+
+Lemma compare_two_BasicBlock:
+  forall (BB1 BB2: BasicBlock),
+  BB1 = BB2 <-> 
+  BB1.(block_num) = BB2.(block_num) /\ BB1.(commands) = BB2.(commands) /\ BB1.(jump_info) = BB2.(jump_info).
+Proof.
+  intros.
+  split.
+  - intros. 
+Admitted. (*#TODO, ?????*)
+
 Lemma unfold_once:
   forall (BBs: list BasicBlock),
 (BB_list_sem BBs).(Bnrm) == Rels.id ∪ (BB_sem_union BBs).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm).
@@ -446,6 +469,11 @@ Proof.
   apply H0 in H6. tauto.
 Qed.
 
+(*不考虑出错和inf的情况*)
+Lemma No_err_and_inf_for_expr:
+  forall (e: expr) (bs: BB_state),
+  (exists i : int64, EDenote.nrm (eval_expr e) (st bs) i).
+Admitted.
 
   (*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
 Lemma cannot_start_with:
@@ -485,11 +513,15 @@ Definition Qd(c: cmd): Prop :=
       res.(BBn) = BBnow' /\
       BBnow'.(commands) = BBnow.(commands) ++ (BBcmd :: nil))
     \/
-    (*CIf / CWhile*)
+    (*CIf*)
     (exists BBnow' BBs' BBnum' BBs_wo_last, 
       res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\
-      res.(BBn).(block_num) = BBnum' /\
-      (separate_property BBnow' BBs_wo_last)). x
+      res.(BBn).(block_num) = BBnum' 
+      /\ (separate_property BBnow' BBs_wo_last)) (*分离性质1*).
+      (***分离性质TODO, 应该是要和Qb里的那些变量统一，用let ...:= .... in的形式*) 
+      (* BUG 思考一下是否把while和if也分开！！！！！两者可能有不同的分离性质！*)
+
+      
 
 Lemma disjoint_c:
   forall (c: cmd),
@@ -593,3 +625,5 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
     BBres = BBs ++ (BBnow' :: nil) ++ BBs' /\ BCequiv (ConcateBDenote) (cmd_list_sem cmd_sem cmds) BBnow'.(block_num) BBnow.(jump_info).(jump_dest_1) (*也就是endinfo*)
 
     /\ res.(BBn).(jump_info) = BBnow.(jump_info).
+
+

@@ -74,6 +74,7 @@ Definition cjmp_sem (BBnum : nat) (jump_dest_1: nat) (jmp_dest2: nat) (D: EDenot
 
 
 Definition BJump_sem (BBnum : nat) (jump_dest_1: nat) (jmp_dest2: option nat)(D: option EDenote) :BDenote :=
+  
   match D with 
   | None => ujmp_sem BBnum jump_dest_1 (* No expr *)
   | Some D => match jmp_dest2 with
