@@ -210,7 +210,7 @@ Proof.
       pose proof H1 H3 H. tauto.
     - tauto. 
   }
-  clear H0. clear H1.
+  clear H1.
   unfold BBjmp_dest_set.
   admit.
 Admitted.
