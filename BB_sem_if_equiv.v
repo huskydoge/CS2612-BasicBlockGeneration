@@ -183,6 +183,30 @@ Proof.
 Qed.
 
 
+
+Lemma BB_num_change_from_BBsA_to_BBsB:
+  forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2: BB_state),
+    ((Bnrm (BB_sem_union (BBs1 ++ BBs2)) bs1 bs2) : Prop) -> not (BBnum_set BBs2 (BB_num bs1)) -> BBjmp_dest_set BBs1 (BB_num bs2).
+Proof.
+  intros. unfold not in H0.
+  pose proof cannot_start_with bs1 bs2 (BBs1 ++ BBs2).
+
+  assert (BBnum_set BBs1 (BB_num bs1)). {
+    pose proof classic (~ BBnum_set BBs1 (BB_num bs1)). destruct H2.
+    - unfold not in H2. 
+      assert (~ BBnum_set (BBs1 ++ BBs2) (BB_num bs1)). {
+        unfold not. intros. admit. (*TODO *)
+      }
+      pose proof H1 H3 H. tauto.
+    - admit. (* apparent *)
+  }
+
+  clear H0. clear H1.
+  unfold BBjmp_dest_set.
+  admit.
+Admitted.
+
+
 Lemma BB_then_num_not_in_BB_else: 
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
   (BBnum_set BBs1) ∩ (BBnum_set BBs2) = ∅ ->
@@ -193,17 +217,19 @@ Lemma BB_then_num_not_in_BB_else:
 Proof.
   intros. sets_unfold.
   assert(BBjmp_dest_set BBs1 (BB_num bs2)).
-{
-  admit.
-}
+  {
+    unfold BB_sem_union in H2.
+    pose proof BB_num_change_from_BBsA_to_BBsB BBs1 BBs2 bs1 bs2.
+    pose proof H3 H2 H0. apply H4.
+  }
   unfold not. intros.
   assert(BB_num bs2 ∈( BBjmp_dest_set BBs1 ∩ BBnum_set BBs2)).
-{
-  split. tauto. tauto.
-}
+  {
+    split. tauto. tauto.
+  }
   rewrite H1 in H5.
   tauto.
-Admitted.
+Qed.
 
   
 
