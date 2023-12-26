@@ -192,7 +192,17 @@ Lemma BB_then_num_not_in_BB_else:
   -> not (BBnum_set BBs2 (BB_num bs2)).
 Proof.
   intros. sets_unfold.
-
+  assert(BBjmp_dest_set BBs1 (BB_num bs2)).
+{
+  admit.
+}
+  unfold not. intros.
+  assert(BB_num bs2 ∈( BBjmp_dest_set BBs1 ∩ BBnum_set BBs2)).
+{
+  split. tauto. tauto.
+}
+  rewrite H1 in H5.
+  tauto.
 Admitted.
 
   
@@ -227,7 +237,7 @@ Proof.
   destruct H5. destruct H3 as [? ?].
   exists x0.
   split.
-  ++ admit.
+  ++ admit
   ++ specialize (IHx x0). 
      apply IHx.
      -- pose proof BB_then_num_not_in_BB_else BBs1 BBs2 bs1 x0.
