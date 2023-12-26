@@ -190,6 +190,7 @@ Lemma serperate_step_aux3:
   (BB_num bs1) ∈ (BBnum_set BBs1) ->
   (BBjmp_dest_set BBs1) ∩ (BBnum_set BBs2) = ∅ ->
   (BB_num bs2) ∈ (BBjmp_dest_set BBs1) ->
+
   Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2 ->
   Bnrm (BB_list_sem (BBs1)) bs1 bs2.
 Proof.
@@ -433,7 +434,7 @@ Proof.
                exists bs1_. exists x2. cbn [Bnrm]. repeat split.
                *** apply sem_start_end_with in key2.
                     destruct key2 as [bs' [step1 step2]].
-                    clear H14.
+                    clear H14. unfold BBs_wo_last_ in step2. (*看step2！*)
                     apply unfold_once in step2. apply serperate_step_aux1 in step2.
                     apply sem_start_end_with in step2. destruct step2 as [bs'' [step2 step3]].  
                     ++++ apply unfold_once. apply serperate_step_aux2. apply sem_start_end_with_2.
