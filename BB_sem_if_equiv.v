@@ -193,6 +193,39 @@ Proof.
   - left. exists x. tauto.
 Qed.
 
+
+Lemma BB_start_in_some_block_in_BB_list:
+  forall (BBs : list BasicBlock) (bs1 bs2 : BB_state),
+    BBnum_set BBs (BB_num bs1) -> ((Bnrm (BB_sem_union BBs) bs1 bs2) : Prop) -> BBnum_set BBs (BB_num bs2).
+Proof.
+  intros. revert bs1 H H0.
+  induction BBs; intros. 
+  - simpl in H0. sets_unfold in H0. tauto.
+  - assert ( bs2.(BB_num) ∈ BBnum_set (a :: nil) \/ bs2.(BB_num) ∈ BBnum_set BBs). {
+      unfold BB_sem_union in H0. cbn[Bnrm] in H0.
+      sets_unfold in H0. destruct H0 as [? | ?].
+      - left. sets_unfold. unfold BBnum_set.
+        exists a. split. unfold In. left. tauto. admit.
+      - sets_unfold.  
+        specialize (IHBBs bs1). 
+        unfold BBnum_set in H. destruct H as [? [? ?]].
+        unfold In in H. destruct H as [? | ?].
+        + left. unfold BBnum_set. exists x. unfold In. split.
+          left. apply H. admit. (* 这里是整不出的，同上 *)
+        + right. unfold BBnum_set. exists x. split. apply H. admit. (* 这里是整不出的，同上 *)
+        
+    }
+
+    unfold BBnum_set.
+    destruct H1.
+    + sets_unfold in H1. unfold BBnum_set in H1.
+      destruct H1 as [? [? ?]]. exists x. split.
+      unfold In. left. unfold In in H1. destruct H1. apply H1. tauto. apply H2.
+    + sets_unfold in H1. unfold BBnum_set in H1.
+      destruct H1 as [? [? ?]]. exists x. split.
+      unfold In. right. unfold In in H1. apply H1. apply H2.
+Admitted.
+
 Lemma BB_num_change_from_BBsA_to_BBsB:
   forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2: BB_state),
     ((Bnrm (BB_sem_union (BBs1 ++ BBs2)) bs1 bs2) : Prop) -> not (BBnum_set BBs2 (BB_num bs1)) -> BBjmp_dest_set BBs1 (BB_num bs2).
