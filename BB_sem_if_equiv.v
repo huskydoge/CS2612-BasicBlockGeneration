@@ -224,8 +224,7 @@ Proof.
         + left. unfold BBnum_set. exists x. unfold In. split.
           left. apply H. 
           (* 类似同上 *)
-          simpl in H0. destruct H0.
-          destruct H0.
+          simpl in H0.
           admit. 
         + right. unfold BBnum_set. exists x. split. apply H. admit. (* 类似同上 *)    
     }
@@ -273,9 +272,9 @@ Proof.
     - tauto. 
   }
   clear H1.
-  unfold BBjmp_dest_set.
-  admit.
-Admitted.
+  pose proof BB_dest_in_BBsA_if_BBsA_BBsB_independent BBs1 BBs2 bs1 bs2.
+  apply H1. apply H. apply H2. unfold not. apply H0.
+Qed.
 
 
 Lemma BB_then_num_not_in_BB_else: 
