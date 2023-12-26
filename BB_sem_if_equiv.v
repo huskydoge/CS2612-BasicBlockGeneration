@@ -293,7 +293,63 @@ Proof.
   tauto.
 Qed.
 
-  
+Lemma separate_sem_union_aux1:
+  forall (BB: BasicBlock) (BBs: list BasicBlock),
+  Bnrm (BB_sem_union (BB::nil ++ BBs)) = Bnrm (BB_sem BB) ∪ Bnrm (BB_sem_union BBs).
+Proof.
+  intros.
+  sets_unfold. tauto.
+Qed.
+
+Lemma separate_sem_union_aux2:
+  forall (BB: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state),
+  Bnrm (BB_sem BB) bs1 bs2 -> Bnrm (BB_sem_union (BB:: BBs)) bs1 bs2.
+Proof.
+  intros.
+  sets_unfold. left. apply H.
+Qed.
+
+Lemma separate_sem_union_aux3:
+  forall (BB: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state),
+  Bnrm (BB_sem_union BBs) bs1 bs2 -> Bnrm (BB_sem_union (BB:: BBs)) bs1 bs2.
+Proof.
+  intros.
+  sets_unfold. right. apply H.
+Qed.
+
+
+Lemma seperate_sem_union:
+  forall (BBs1 BBs2: list BasicBlock), 
+  Bnrm (BB_sem_union (BBs1 ++ BBs2)) ==  (Bnrm (BB_sem_union BBs1)) ∪ Bnrm (BB_sem_union BBs2).
+Proof.
+  intros.
+  sets_unfold. split; intros.
+  - induction BBs1.
+    + simpl in H. sets_unfold in H. tauto.
+    + assert ( Bnrm (BB_sem_union ((a1 :: BBs1) ++ BBs2)) = Bnrm (BB_sem_union (a1 ::nil ++ BBs1 ++ BBs2))).
+    {
+      reflexivity.
+    }
+    rewrite H0 in H.
+    pose proof (separate_sem_union_aux1 a1 (BBs1 ++ BBs2)).
+    rewrite H1 in H. sets_unfold in H.
+    destruct H.
+    * left. pose proof separate_sem_union_aux2 a1 BBs1 a a0 H. tauto.
+    * pose proof IHBBs1 H.
+      destruct H2.
+      ++ pose proof separate_sem_union_aux3 a1 BBs1 a a0 H2.
+          left. tauto.
+      ++ right. tauto.
+  - induction BBs1.
+    + simpl. sets_unfold. tauto.
+    + assert ( Bnrm (BB_sem_union ((a1 :: BBs1) ++ BBs2)) = Bnrm (BB_sem_union (a1 ::nil ++ BBs1 ++ BBs2))).
+    {
+      reflexivity.
+    }
+    destruct H.
+    admit.
+Admitted.
+
 
 (* #TODO 切第二刀，把then和else切开来*)
 Lemma serperate_step_aux3:
@@ -320,12 +376,12 @@ Proof.
   pose proof sem_start_end_with (Bnrm (BB_sem_union (BBs1 ++ BBs2))) (Iter_nrm_BBs_n (BB_sem_union (BBs1 ++ BBs2)) x) bs1 bs2 H3.
   rewrite H4.
   pose proof sem_start_end_with_2 (Bnrm (BB_sem_union BBs1)) (Iter_nrm_BBs_n (BB_sem_union BBs1) x) bs1 bs2.
-  apply H6.
+  apply H6. (*?????*)
   clear H6 H3 H4.
   destruct H5. destruct H3 as [? ?].
   exists x0.
   split.
-  ++ admit.
+  ++ admit. (*这个地方*)
   ++ specialize (IHx x0). 
      apply IHx.
      -- pose proof BB_then_num_not_in_BB_else BBs1 BBs2 bs1 x0.
