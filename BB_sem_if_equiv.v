@@ -183,6 +183,20 @@ Proof.
 Qed.
 
 
+Lemma BB_then_num_not_in_BB_else: 
+  forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
+  (BBnum_set BBs1) ∩ (BBnum_set BBs2) = ∅ ->
+  BBnum_set BBs1 (BB_num bs1) ->
+  (BBjmp_dest_set BBs1) ∩ (BBnum_set BBs2) = ∅ ->
+  ((Bnrm (BB_sem_union (BBs1 ++ BBs2)) bs1 bs2) : Prop) 
+  -> BBnum_set BBs1 (BB_num bs2).
+Proof.
+  intros. sets_unfold.
+
+Admitted.
+
+  
+
 (* #TODO 切第二刀，把then和else切开来*)
 Lemma serperate_step_aux3:
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
@@ -216,7 +230,9 @@ Proof.
   ++ admit.
   ++ specialize (IHx x0). 
      apply IHx.
-     -- admit.    
+     -- pose proof BB_then_num_not_in_BB_else BBs1 BBs2 bs1 x0.
+        pose proof H5 H H0 H1 H3.
+        apply H6.
      -- apply H4. 
 Admitted.
 
