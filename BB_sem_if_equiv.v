@@ -347,6 +347,7 @@ Proof.
       reflexivity.
     }
     destruct H.
+    *
     admit.
 Admitted.
 
