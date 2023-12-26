@@ -142,14 +142,45 @@ Proof.
             
 Qed.
 
+
+Lemma BBs_sem_included: 
+  forall (BBnow : BasicBlock) (BBs : list BasicBlock) (bs1 bs2: BB_state),
+    (Bnrm (BB_list_sem (BBs))) bs1 bs2 -> (Bnrm (BB_list_sem (BBnow :: nil ++ BBs))) bs1 bs2.
+Proof.
+  intros.
+  unfold BB_list_sem. cbn[Bnrm].
+  unfold BB_list_sem in H. cbn[Bnrm] in H.
+  unfold Iter_nrm_BBs_n. sets_unfold.
+  unfold Iter_nrm_BBs_n in H. sets_unfold in H.
+  destruct H as [? ?]. exists x.
+  revert bs1 H.
+  induction x; intros.
+  - apply H.
+  - destruct H as [? [? ?]]. exists x0.
+    specialize (IHx x0).
+    pose proof IHx H0. split.
+    + unfold BB_sem_union. cbn[Bnrm].
+      unfold BB_sem_union in H. cbn[Bnrm] in H.
+      sets_unfold. right. apply H.
+    + apply H1. 
+Qed.
+
+
 Lemma serperate_step_aux2:
   forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
   (((BB_sem BBnow).(Bnrm) ∘ (BB_list_sem (BBs)).(Bnrm)) bs1 bs2 : Prop)
   ->
-  (( Rels.id ∪ (BB_sem_union (BBnow::nil ++ BBs)).(Bnrm) ∘ (BB_list_sem (BBnow::nil ++ BBs)).(Bnrm)) bs1 bs2 :Prop).
+  (( Rels.id ∪ (BB_sem_union (BBnow :: nil ++ BBs)).(Bnrm) ∘ (BB_list_sem (BBnow :: nil ++ BBs)).(Bnrm)) bs1 bs2 : Prop).
 Proof.
-(*#TODO, 显然，这是子集包含关系*) 
-Admitted.
+  intros.
+  sets_unfold. sets_unfold in H. destruct H as [? [? ?]].
+  right. unfold BB_sem_union. cbn[Bnrm]. exists x.
+  sets_unfold. repeat split.
+  - left. apply H.
+  - pose proof BBs_sem_included BBnow BBs x bs2.
+    pose proof H1 H0.
+    apply H2.
+Qed.
 
 
 (* #TODO 切第二刀，把then和else切开来*)
