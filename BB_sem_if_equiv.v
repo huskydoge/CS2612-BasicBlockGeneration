@@ -352,6 +352,29 @@ Proof.
 Admitted.
 
 
+Lemma BB_start_not_in_BBs_if_no_num_set: 
+  forall (BBs : list BasicBlock) (bs1 bs2 : BB_state),
+    ~ BBnum_set BBs (BB_num bs1) -> Bnrm (BB_sem_union BBs) bs1 bs2 -> False.
+Proof.
+  intros. unfold not in H. apply H.
+  induction BBs.
+  - simpl in H0. sets_unfold in H0. tauto.
+  - unfold BBnum_set. unfold BB_sem_union in H0. sets_unfold in H0.
+    cbn[Bnrm] in H0. destruct H0 as [? | ?].
+    + exists a. split. unfold In. left. tauto.
+      pose proof BB_sem_start_BB_num bs1 bs2 a. pose proof H1 H0. rewrite H2. tauto.
+    + unfold BBnum_set in IHBBs.
+      assert (BBnum_set BBs (BB_num bs1)). {
+        apply IHBBs.
+        - intros. destruct H1 as [? [? ?]]. apply H. unfold BBnum_set.
+          exists x. unfold In. unfold In in H1. split. right. apply H1. apply H2.
+        - apply H0.  
+      }
+      unfold BBnum_set in H1. destruct H1 as [? [? ?]].
+      exists x. unfold In. unfold In in H1. split. right. apply H1. apply H2.
+Qed.
+
+
 (* #TODO 切第二刀，把then和else切开来*)
 Lemma serperate_step_aux3:
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
@@ -382,14 +405,18 @@ Proof.
   destruct H5. destruct H3 as [? ?].
   exists x0.
   split.
-  ++ admit. (*这个地方*)
+  ++ pose proof seperate_sem_union BBs1 BBs2.
+     specialize (H5 bs1 x0). destruct H5 as [? ?]. clear H6.
+     pose proof H5 H3. sets_unfold in H6. destruct H6 as [? | ?]. apply H6.
+     pose proof BB_start_not_in_BBs_if_no_num_set BBs2 bs1 x0.
+     pose proof H7 H0 H6. tauto.
   ++ specialize (IHx x0). 
      apply IHx.
      -- pose proof BB_then_num_not_in_BB_else BBs1 BBs2 bs1 x0.
         pose proof H5 H H0 H1 H3.
         apply H6.
      -- apply H4. 
-Admitted.
+Qed.
 
 
 
