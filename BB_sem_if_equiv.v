@@ -346,10 +346,26 @@ Proof.
     {
       reflexivity.
     }
-    destruct H.
-    *
-    admit.
-Admitted.
+    destruct H. 
+    * destruct H.
+      -- pose proof separate_sem_union_aux2 a1 (BBs1++BBs2) a a0 H.
+          rewrite H0. tauto.
+      -- assert (Bnrm (BB_sem_union BBs1) a a0 \/ Bnrm (BB_sem_union BBs2) a a0).
+      {
+      left. tauto.
+      }
+      pose proof IHBBs1 H1.
+      rewrite H0. pose proof separate_sem_union_aux3 a1 (BBs1++BBs2) a a0 H2.
+      tauto.
+    * assert (Bnrm (BB_sem_union BBs1) a a0 \/ Bnrm (BB_sem_union BBs2) a a0).
+    {
+    right. tauto.
+    }
+    pose proof IHBBs1 H1.
+    rewrite H0. pose proof separate_sem_union_aux3 a1 (BBs1++BBs2) a a0 H2.
+    tauto.
+Qed.
+
 
 
 Lemma BB_start_not_in_BBs_if_no_num_set: 
