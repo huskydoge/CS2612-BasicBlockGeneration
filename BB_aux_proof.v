@@ -481,41 +481,6 @@ Definition Qd(c: cmd): Prop :=
       let res := cmd_BB_gen c BBs BBnow BBnum in
       let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in 
 
-          match c with
-            | CAsgn x e => (let BlockInfo' := BBnow.(jump_info) in
-                                            BBnow'.(jump_info) = BlockInfo')
-            | CIf e c1 c2 => (let BB_then_num := BBnum in
-                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-                   let BlockInfo' := {|
-                                        jump_kind := CJump;
-                                        jump_dest_1 := BB_then_num;
-                                        jump_dest_2 := Some (S(BB_then_num));
-                                        jump_condition := Some e
-                                      |} in
-                                      BBnow'.(jump_info) = BlockInfo')
-            | CWhile pre e body => (let BB_pre_num := BBnum in
-                   let BB_body_num := S(BB_pre_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-                   let BlockInfo' := {|
-                                        jump_kind := UJump;
-                                        jump_dest_1 := BB_pre_num;
-                                        jump_dest_2 := None;
-                                        jump_condition := None
-                                      |} in
-                                      BBnow'.(jump_info) = BlockInfo') 
-        end
-     /\
-
-    (*要拿到用于分配的下一个BBnum的信息*)
-
-    BBnow'.(commands) = BBnow.(commands) ++ BBcmds /\ BBnow'.(block_num) = BBnow.(block_num) /\
-
-    BBres = BBs ++ (BBnow' :: nil) ++ BBs' 
-
-    /\  BBnum_set BBs' ⊆ BBnum_start_end_set BBnum res.(BBn).(block_num)
-    (*新的BBs'的jmpnum在 Z \cap ([BBnum, BBn.(block_num)] \cup endinfo) *)
-    /\ (BBjmp_dest_set BBs) ⊆ add_one_num (BBnum_start_end_set BBnum res.(BBn).(block_num)) (BBnow.(jump_info).(jump_dest_1)) 
-    /\ (BBnum_set BBs' ∩ BBnum_set (BBs ++ BBnow'::nil)) = ∅ . 
-
 Lemma disjoint_c:
   forall (c: cmd),
   Qd c.
