@@ -477,9 +477,19 @@ Qed.
 (* #TODO  Check Qd *)
 Definition Qd(c: cmd): Prop :=
     (* Qd: Q disjoint, 描述的是disjoint的性质 *)
-    forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  exists BBs' BBnow' (BBcmds: list BB_cmd),
-      let res := cmd_BB_gen c BBs BBnow BBnum in
+    forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
+    let res := cmd_BB_gen c BBs BBnow BBnum in
       let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in 
+    (*Asgn感觉用不着什么分离性质*)
+    (exists BBnow' BBcmd,
+      res.(BBn) = BBnow' /\
+      BBnow'.(commands) = BBnow.(commands) ++ (BBcmd :: nil))
+    \/
+    (*CIf / CWhile*)
+    (exists BBnow' BBs' BBnum' BBs_wo_last, 
+      res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\
+      res.(BBn).(block_num) = BBnum' /\
+      (separate_property BBnow' BBs_wo_last)). x
 
 Lemma disjoint_c:
   forall (c: cmd),
