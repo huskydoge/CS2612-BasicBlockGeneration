@@ -182,7 +182,16 @@ Proof.
     apply H2.
 Qed.
 
-
+(* TODO find a name for it! *)
+Lemma no_name1:
+  forall (BBs1 BBs2 : list BasicBlock) (n: nat),
+  BBnum_set (BBs1 ++ BBs2) (n) -> BBnum_set (BBs2) (n) \/ BBnum_set (BBs1) n.
+Proof.
+  intros. unfold BBnum_set. unfold BBnum_set in H. destruct H as [? [? ?]].
+  apply in_app_iff in H. destruct H.
+  - right. exists x. tauto.
+  - left. exists x. tauto.
+Qed.
 
 Lemma BB_num_change_from_BBsA_to_BBsB:
   forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2: BB_state),
@@ -195,12 +204,12 @@ Proof.
     pose proof classic (~ BBnum_set BBs1 (BB_num bs1)). destruct H2.
     - unfold not in H2. 
       assert (~ BBnum_set (BBs1 ++ BBs2) (BB_num bs1)). {
-        unfold not. intros. admit. (*TODO *)
+        unfold not. intros. apply no_name1 in H3. 
+        destruct H3. tauto. tauto.
       }
       pose proof H1 H3 H. tauto.
-    - admit. (* apparent *)
+    - tauto. 
   }
-
   clear H0. clear H1.
   unfold BBjmp_dest_set.
   admit.
@@ -263,7 +272,7 @@ Proof.
   destruct H5. destruct H3 as [? ?].
   exists x0.
   split.
-  ++ admit
+  ++ admit.
   ++ specialize (IHx x0). 
      apply IHx.
      -- pose proof BB_then_num_not_in_BB_else BBs1 BBs2 bs1 x0.
