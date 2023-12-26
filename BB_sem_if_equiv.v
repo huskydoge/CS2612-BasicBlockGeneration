@@ -194,9 +194,26 @@ Proof.
 Qed.
 
 
+Lemma BB_start_in_BBs_if_Bnrm:
+  forall (BBs : list BasicBlock) (bs1 bs2: BB_state),
+    ((Bnrm (BB_sem_union BBs) bs1 bs2) : Prop) ->  BBnum_set BBs (BB_num bs1).
+Proof.
+  intros.
+  induction BBs.
+  - simpl in H. sets_unfold in H. tauto.
+  - destruct H.
+    + unfold BBnum_set. exists a. split. unfold In. left. tauto.
+      pose proof BB_sem_start_BB_num bs1 bs2 a.
+      pose proof H0 H. rewrite H1. tauto.
+    + apply IHBBs in H. unfold BBnum_set. unfold BBnum_set in H.
+      destruct H as [? [? ?]]. 
+      exists x. split. unfold In. right. apply H. apply H0.
+Qed.
+
+
 Lemma BB_dest_in_BBs_jmp_dest_set:
   forall (BBs : list BasicBlock) (bs1 bs2 : BB_state),
-    BBnum_set BBs (BB_num bs1) -> ((Bnrm (BB_sem_union BBs) bs1 bs2) : Prop) -> BBjmp_dest_set BBs (BB_num bs2).
+     BBnum_set BBs (BB_num bs1) -> ((Bnrm (BB_sem_union BBs) bs1 bs2) : Prop) -> BBjmp_dest_set BBs (BB_num bs2).
 Proof.
   intros. revert bs1 H H0.
   induction BBs; intros. 
@@ -209,7 +226,6 @@ Proof.
         sets_unfold in H0. destruct H0 as [? [? ?]]. unfold BBjmp_dest_set.
         exists a. split. unfold In. left. tauto.
         unfold BB_jmp_sem in H1. cbn[Bnrm] in H1.
-         (* 展开BJump的语义*)
         unfold BJump_sem in H1. destruct ( eval_cond_expr (jump_condition a.(jump_info))); destruct (jump_dest_2 a.(jump_info)).
         -- unfold cjmp_sem in H1. cbn [Bnrm] in H1. my_destruct H1. destruct H4. 
            ++ destruct H4. left. rewrite H4. reflexivity.
@@ -217,16 +233,14 @@ Proof.
         -- unfold ujmp_sem in H1. cbn [Bnrm] in H1. my_destruct H1. left. rewrite H3. reflexivity.
         -- unfold ujmp_sem in H1. cbn [Bnrm] in H1. my_destruct H1. left. rewrite H3. reflexivity.
         -- unfold ujmp_sem in H1. cbn [Bnrm] in H1. my_destruct H1. left. rewrite H3. reflexivity.     
-      - 
-        specialize (IHBBs bs1). 
+      - specialize (IHBBs bs1). 
         unfold BBnum_set in H. destruct H as [? [? ?]].
         unfold In in H. destruct H as [? | ?].
-        + left. unfold BBnum_set. exists x. unfold In. split.
-          left. apply H. 
-          (* 类似同上 *)
-          simpl in H0.
-          admit. 
-        + right. unfold BBnum_set. exists x. split. apply H. admit. (* 类似同上 *)    
+        + pose proof BB_start_in_BBs_if_Bnrm BBs bs1 bs2.
+          (* 这里需要一个性质：a和BBs中所有的num都不交 *)
+          admit.
+        + right. sets_unfold. apply IHBBs. 
+          unfold BBnum_set. exists x. split. apply H. apply H1. apply H0.
     }
     unfold BBnum_set.
     destruct H1.
