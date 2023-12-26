@@ -228,16 +228,63 @@ Proof.
 Qed.
 
 
+
+
 Lemma BDenote_concat_equiv_BB_list_sem:
-  forall (BBnow : BasicBlock) (BBs : list BasicBlock),
+  forall (BBnow : BasicBlock) (BBs : list BasicBlock)(bs1 bs2: BB_state),
+    separate_property BBnow BBs -> 
+    BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)-> (* BBnow的num是bs1.(BB_num), BBs的跳转目标中有bs2.(BBnum)*)
     let BBnow' := {|
       block_num := BBnow.(block_num);
       commands := nil;
       jump_info := BBnow.(jump_info);
     |} in
-    BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs) = BB_list_sem (BBnow' :: nil ++ BBs).
+    ((BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)).(Bnrm) bs1 bs2) = (BB_list_sem (BBnow' :: nil ++ BBs)).(Bnrm) bs1 bs2.
 Proof.
   intros.
+  assert (BBnum_set (BBnow' :: nil) == BBnum_set (BBnow :: nil)). {
+  unfold BBnum_set. unfold BBnum_set. sets_unfold. split; intros.
+  - exists BBnow. split. simpl. tauto. my_destruct H1. simpl in H1. destruct H1.
+    + rewrite <- H1 in H2. unfold BBnow' in H2. simpl in H2. tauto.
+    + tauto.
+  - exists BBnow'. split. simpl. tauto. my_destruct H1. simpl in H1. destruct H1.
+    + rewrite <- H1 in H2. unfold BBnow' in H2. simpl in H2. tauto.
+    + tauto.
+  }
+  assert (BBjmp_dest_set (BBnow' :: BBs) == BBjmp_dest_set (BBnow :: BBs)). {
+  unfold BBjmp_dest_set. unfold BBjmp_dest_set. sets_unfold. split; intros.
+  - my_destruct H2. simpl in H2. destruct H2.
+    + rewrite <- H2 in H3. unfold BBnow' in H3. simpl in H3. exists BBnow.
+      split. simpl. tauto. apply H3.
+    + exists x. split. simpl. tauto. apply H3.
+  - my_destruct H2. simpl in H2. destruct H2.
+    + rewrite <- H2 in H3. unfold BBnow' in H3. simpl in H3. exists BBnow'. split.
+      simpl. tauto. apply H3.
+    + exists x. split. simpl. tauto. apply H3.
+  }
+  assert (separate_property BBnow' BBs). {
+    unfold separate_property. unfold separate_property in H.
+    rewrite  H1. rewrite H2. apply H.
+  }
+  assert (BB_restrict BBnow' BBs (BB_num bs1) (BB_num bs2)
+  ). {
+    unfold BB_restrict. unfold BB_restrict in H0. destruct H0 as [? ?].
+    split.
+    - apply H0.
+    - split. destruct H4 as [? ?]. apply H4. destruct H4. rewrite <- H1 in H5.
+      apply H5.
+  }
+  pose proof serperate_step_aux1 bs1 bs2 BBnow' BBs H3 H4.
+  pose proof unfold_once (BBnow' :: nil ++ BBs).
+  assert ((Bnrm (BB_list_sem (BBnow' :: nil ++ BBs)) bs1 bs2) = 
+  (Rels.id ∪ Bnrm (BB_sem_union (BBnow' :: nil ++ BBs)) ∘ Bnrm (BB_list_sem (BBnow' :: nil ++ BBs)))
+  bs1 bs2). {
+    specialize (H6 bs1 bs2). (*这里很奇怪*)
+    admit.
+  }
+  rewrite H7.
+  admit.
+  
 Admitted.
 
 
