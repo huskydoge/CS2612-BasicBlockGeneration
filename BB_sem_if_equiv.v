@@ -209,15 +209,24 @@ Proof.
         sets_unfold in H0. destruct H0 as [? [? ?]]. unfold BBjmp_dest_set.
         exists a. split. unfold In. left. tauto.
         unfold BB_jmp_sem in H1. cbn[Bnrm] in H1.
-         (*TODO 应该是要展开BJump的语义，来得到这个信息，应该是对的 *)
-        admit.        
-
-      - sets_unfold.  
+         (* 展开BJump的语义*)
+        unfold BJump_sem in H1. destruct ( eval_cond_expr (jump_condition a.(jump_info))); destruct (jump_dest_2 a.(jump_info)).
+        -- unfold cjmp_sem in H1. cbn [Bnrm] in H1. my_destruct H1. destruct H4. 
+           ++ destruct H4. left. rewrite H4. reflexivity.
+           ++ destruct H4. right. rewrite H4. reflexivity.
+        -- unfold ujmp_sem in H1. cbn [Bnrm] in H1. my_destruct H1. left. rewrite H3. reflexivity.
+        -- unfold ujmp_sem in H1. cbn [Bnrm] in H1. my_destruct H1. left. rewrite H3. reflexivity.
+        -- unfold ujmp_sem in H1. cbn [Bnrm] in H1. my_destruct H1. left. rewrite H3. reflexivity.     
+      - 
         specialize (IHBBs bs1). 
         unfold BBnum_set in H. destruct H as [? [? ?]].
         unfold In in H. destruct H as [? | ?].
         + left. unfold BBnum_set. exists x. unfold In. split.
-          left. apply H. admit. (* 类似同上 *)
+          left. apply H. 
+          (* 类似同上 *)
+          simpl in H0. destruct H0.
+          destruct H0.
+          admit. 
         + right. unfold BBnum_set. exists x. split. apply H. admit. (* 类似同上 *)    
     }
     unfold BBnum_set.
