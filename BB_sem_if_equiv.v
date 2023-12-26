@@ -182,6 +182,12 @@ Proof.
     apply H2.
 Qed.
 
+(* #TODO prove it, and move it to proper file *)
+Lemma Iter_exist: 
+  forall(BBs: list BasicBlock)(bs1 bs2: BB_state),
+ ⋃(Iter_nrm_BBs_n (BB_sem_union BBs)) bs1 bs2 <-> exists n: nat, (Iter_nrm_BBs_n  (BB_sem_union BBs) n) bs1 bs2.
+Proof.
+Admitted.
 
 (* #TODO 切第二刀，把then和else切开来*)
 Lemma serperate_step_aux3:
@@ -193,6 +199,28 @@ Lemma serperate_step_aux3:
   Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2 ->
   Bnrm (BB_list_sem (BBs1)) bs1 bs2.
 Proof.
+  unfold BB_list_sem. simpl. intros.
+  rewrite Iter_exist in H3.
+  rewrite Iter_exist.
+  destruct H3.
+  exists x.
+  induction x.
+  - tauto.
+  - assert (forall (BBs: list BasicBlock), Iter_nrm_BBs_n (BB_sem_union (BBs)) (S x) =(Bnrm (BB_sem_union (BBs))   ∘ Iter_nrm_BBs_n (BB_sem_union (BBs)) (x))).
+{
+   reflexivity.
+}
+  rewrite H4 in H3.
+  pose proof sem_start_end_with (Bnrm (BB_sem_union (BBs1 ++ BBs2))) (Iter_nrm_BBs_n (BB_sem_union (BBs1 ++ BBs2)) x) bs1 bs2 H3.
+  rewrite H4.
+  pose proof sem_start_end_with_2 (Bnrm (BB_sem_union BBs1)) (Iter_nrm_BBs_n (BB_sem_union BBs1) x) bs1 bs2.
+  apply H6.
+  clear H6 H3 H4.
+  destruct H5.
+  exists x0.
+  split.
+  ++ admit.(* use some properties in nu, *)
+  ++ admit.(* use inductive hypothesis *)
 Admitted.
 
 
