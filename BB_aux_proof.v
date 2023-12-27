@@ -779,6 +779,10 @@ Proof.
       + reflexivity.
       + reflexivity.
   - cbn [cmd_BB_gen]. simpl. admit. (*模仿上面的即可 #TODO, hard*) 
+  - admit.
+  - admit.
+  - admit.
+  - admit.
 Admitted.
  
 

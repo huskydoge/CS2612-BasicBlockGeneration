@@ -612,7 +612,25 @@ Proof.
       * unfold cjmp_sem in H2. cbn [Bnrm] in H2. my_destruct H2.
         -- rewrite H2. reflexivity.
       * tauto.
-      * admit.
+      * unfold BB_jmp_sem in H2. cbn [Bnrm] in H2. rewrite H. cbn [jump_dest_1].
+        unfold BJump_sem in H2. rewrite H in H2. simpl in H2. 
+        assert ((match e with
+        | EBinop op e1 e2 => Some (binop_sem op (element_sem e1) (element_sem e2))
+        | EUnop op e1 => Some (unop_sem op (element_sem e1))
+        end) <> None). {
+          destruct e.
+          - discriminate.
+          - discriminate.
+        }
+        destruct (     
+        match e with
+        | EBinop op e1 e2 => Some (binop_sem op (element_sem e1) (element_sem e2))
+        | EUnop op e1 => Some (unop_sem op (element_sem e1))
+        end).
+        -- unfold cjmp_sem in H2. cbn [Bnrm] in H2. my_destruct H2. destruct H6.
+           ++ destruct H6. rewrite H6. reflexivity.
+           ++ destruct H6. contradiction.
+        -- tauto.
 Admitted.
 
 
