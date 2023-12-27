@@ -31,7 +31,7 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
     let res := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow startnum) in
     let basicblocks := to_result res in
     endnum = res.(next_block_num)
-    /\ 
+    -> 
     (
       exists BBnow' BBdelta,
       basicblocks = BBs ++ BBnow'::nil ++ BBdelta /\
@@ -44,7 +44,7 @@ Definition Q_BBgen_range (c: cmd): Prop :=
     let res := (cmd_BB_gen c BBs BBnow startnum) in
     let basicblocks := to_result res in
     endnum = res.(next_block_num)
-    /\ 
+    ->
     (
       exists BBnow' BBdelta,
       basicblocks = BBs ++ BBnow'::nil ++ BBdelta /\
@@ -124,4 +124,17 @@ Fixpoint BB_gen_range_soundness (c: cmd): Q_BBgen_range c :=
         (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds1)
         (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds2)
   end.
+
+Lemma BBgen_range_soundness_correct:
+    forall (c: cmd),
+     c.
+Proof.
+Admitted.
+
+
+
+
+
+
+
 
