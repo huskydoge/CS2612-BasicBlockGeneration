@@ -19,10 +19,10 @@ Require Import Main.BB_aux_proof.
 
 (*BBnumset BBs >= num*)
 Definition BB_all_ge (BBs: list BasicBlock)(num: nat): Prop :=
-    forall BB, In BB BBs -> Nat.le num BB.(block_num).
+    forall BB, In BB BBs -> Nat.le num BB.(block_num) \/ BBs = nil.
 (*BBnumset BBs < num*)
 Definition BB_all_lt (BBs: list BasicBlock)(num: nat): Prop :=
-    forall BB, In BB BBs -> Nat.lt BB.(block_num) num.
+    forall BB, In BB BBs -> Nat.lt BB.(block_num) num \/ BBs = nil.
 
 
 
@@ -70,19 +70,29 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CWhile c1 e c2).
 Proof.
-    Admitted.
+  Admitted.
 
 (*这个肯定成立，没有新的block*)
 Lemma Q_asgn_BBgen_range:
 forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
 Proof.
-Admitted.
+  intros. unfold Q_BBgen_range. intros.
+  exists {| block_num := BBnow.(block_num);
+              commands := BBnow.(commands) ++ {| X := x; E := e |} :: nil;
+              jump_info := BBnow.(jump_info) |}.
+  exists nil. repeat split. unfold BB_all_ge. intros. right. tauto.
+  unfold BB_all_lt. intros. right. tauto.
+Qed.
 
 Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
     P_BBgen_range cmd_BB_gen nil.
 Proof.
-Admitted.
+  intros. unfold P_BBgen_range. intros.
+  exists BBnow. exists nil. repeat split.
+  unfold BB_all_ge. intros. right. tauto.
+  unfold BB_all_lt. intros. right. tauto.
+Qed.
 
 Lemma P_BBgen_con:
     forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results) (c: cmd) (cmds: list cmd),
