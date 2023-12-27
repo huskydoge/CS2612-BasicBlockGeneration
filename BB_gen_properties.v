@@ -88,7 +88,11 @@ Qed.
 Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
     P_BBgen_range cmd_BB_gen nil.
 Proof.
-Admitted.
+  intros. unfold P_BBgen_range. intros.
+  exists BBnow. exists nil. repeat split.
+  unfold BB_all_ge. intros. right. tauto.
+  unfold BB_all_lt. intros. right. tauto.
+Qed.
 
 Lemma P_BBgen_con:
     forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results) (c: cmd) (cmds: list cmd),
