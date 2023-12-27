@@ -628,15 +628,15 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       
       /\ (separate_property BBnow' BBs_wo_last) (*分离性质1*)
       /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ) (*分离性质3*)
-      /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅) (*分离性质5*)
-      /\ (
+      /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). (*分离性质5*)
+      (* /\ (
       (*Then*)
       exists bs1 bs2,
       ( ~ BB_num bs1 ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)) (*分离性质4*) /\ (BB_num bs2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then))
       \/
       (*Else*)
       ( ~ BB_num bs1 ∈ BBnum_set (BB_now_then :: nil ++ BBs_then)) (*分离性质4*) /\ (BB_num bs2 ∈ BBjmp_dest_set (BB_now_else :: nil ++ BBs_else))
-      ) .
+      ) . *)
       (***分离性质TODO, 应该是要和Qb里的那些变量统一，用let ...:= .... in的形式*) 
       (* BUG 思考一下是否把while和if也分开！！！！！两者可能有不同的分离性质！*)
 
@@ -837,7 +837,6 @@ Proof.
   - sets_unfold in H1. tauto.
   - admit.
   - admit.
-  - admit.     
 Admitted.
  
 
