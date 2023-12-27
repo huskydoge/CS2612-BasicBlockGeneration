@@ -50,7 +50,10 @@ Proof.
   intros.
   split.
   - intros. 
-Admitted. (*#TODO, ?????*)
+    destruct BB1. destruct BB2.
+    simpl. injection H. intros. repeat split. apply H2. apply H1. apply H0.
+  - intros. destruct BB1. destruct BB2. simpl in H. destruct H as [? [? ?]]. rewrite H. rewrite H0. rewrite H1. tauto.
+Qed.
 
 Lemma unfold_once:
   forall (BBs: list BasicBlock),
