@@ -133,6 +133,55 @@ forall (e: expr) (c1 c2: list cmd) (BBnum: nat) (startnum midnum endnum: nat) (B
 Proof.
     Admitted.
 
+Lemma Q_while_BBgen_range (BB_now BB_pre BB_body: BasicBlock):
+forall (e: expr) (c1 c2: list cmd) (BBnum: nat) (startnum midnum endnum: nat) (BBs: list BasicBlock),
+    P_BBgen_range startnum midnum c1 BB_pre ->
+    P_BBgen_range midnum endnum c2 BB_body ->
+
+    exists BB_delta,
+    let basicblocks := to_result (cmd_BB_gen (CWhile c1 e c2) BBs BB_now BBnum) in  (*BBn是BBnext*)
+    basicblocks = BBs++ BB_now::nil ++ BB_delta /\
+    BB_all_ge BB_delta BBnum /\ BB_all_lt BB_delta endnum.
+Proof.
+    Admitted.
+
+(*这个肯定成立，没有新的block*)
+Lemma Q_seq_BBgen_range (BB_now: BasicBlock):
+forall (e: expr) (x: var_name) (BBnum: nat) (startnum endnum: nat) (BBs: list BasicBlock),
+
+    exists BB_delta,
+    let basicblocks := to_result (cmd_BB_gen (CAsgn x e) BBs BB_now BBnum) in  (*BBn是BBnext*)
+    basicblocks = BBs++ BB_now::nil ++ BB_delta /\
+    BB_all_ge BB_delta BBnum /\ BB_all_lt BB_delta endnum.
+Proof.
+Admitted.
+
+Lemma P_BBgen_nil:
+    forall (BB_now: BasicBlock)(startnum endnum: nat),
+    P_BBgen_range startnum endnum nil BB_now.
+Proof.
+Admitted.
+
+Lemma P_BBgen_con:
+    forall (c: cmd) (cmds: list cmd) (BB_now: BasicBlock)(startnum midnum endnum: nat),
+    Q_BBgen_range startnum midnum c BB_now ->
+    P_BBgen_range midnum endnum cmds BB_now ->
+    P_BBgen_range startnum endnum (c::cmds) BB_now.
+Proof.
+Admitted.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
 Lemma Q_if_BBgen_disjoint (BB_then BB_else: BasicBlock):
