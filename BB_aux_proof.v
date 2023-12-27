@@ -778,7 +778,67 @@ Proof.
       + reflexivity.
       + reflexivity.
       + reflexivity.
-  - cbn [cmd_BB_gen]. simpl. admit. (*模仿上面的即可 #TODO, hard*) 
+  - cbn [cmd_BB_gen]. simpl. 
+    subst BB_then_num. subst BB_next_num. subst BB_else_num.
+    my_destruct H. my_destruct H0.
+    replace (S (S (S BBnum))) with (BB_num1).
+    replace ({|
+    block_num := BBnum;
+    commands := nil;
+    jump_info :=
+      {|
+        jump_kind := UJump;
+        jump_dest_1 := S (S BBnum);
+        jump_dest_2 := None;
+        jump_condition := None
+      |}
+      |}) with (BB_then).
+      replace {|
+      block_num := S (S BBnum);
+      commands := nil;
+      jump_info := BBnow.(jump_info)
+    |} with (BB_next).
+    replace {|
+              block_num := BBnow.(block_num);
+              commands := BBnow.(cmd);
+              jump_info :=
+                {|
+                 jump_kind := CJump;
+                 jump_dest_1 := BBnum;
+                 jump_dest_2 := Some (S BBnum);
+                 jump_condition := Some e
+                |}
+              |} with BBnow'.
+    replace {|
+              block_num := S BBnum;
+              commands := nil;
+              jump_info :=
+                {|
+                  jump_kind := UJump;
+                  jump_dest_1 := S (S BBnum);
+                  jump_dest_2 := None;
+                  jump_condition := None
+                |}
+            |} with BB_else.
+      + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
+        assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
+        {
+          rewrite <- app_assoc. simpl. reflexivity.
+        }
+        rewrite <- H13. rewrite H10. 
+        unfold BBs_wo_last_. simpl.
+        rewrite <- app_assoc. simpl. tauto.
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.
+  - admit.     
 Admitted.
  
 
