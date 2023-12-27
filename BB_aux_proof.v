@@ -668,15 +668,15 @@ Proof.
                       jump_condition := None
                       |};
                    |}).
-                   set(BBnow' := {|block_num := BBnow.(block_num);
-                   commands := BBnow.(commands);
-                   jump_info := {|
-                      jump_kind := CJump;
-                      jump_dest_1 := BB_then_num; 
-                      jump_dest_2 := Some BB_else_num; 
-                      jump_condition := Some e
-                      |};
-                   |}).
+  set(BBnow' := {|block_num := BBnow.(block_num);
+  commands := BBnow.(commands);
+  jump_info := {|
+    jump_kind := CJump;
+    jump_dest_1 := BB_then_num; 
+    jump_dest_2 := Some BB_else_num; 
+    jump_condition := Some e
+    |};
+  |}).
   (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_then了*)
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
