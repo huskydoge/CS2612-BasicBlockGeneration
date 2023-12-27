@@ -556,11 +556,12 @@ Proof.
   }
   pose proof separate_step_aux1 bs1 bs2 BBnow' BBs H3 H4.
   pose proof unfold_once (BBnow' :: nil ++ BBs).
-  assert ((Bnrm (BB_list_sem (BBnow' :: nil ++ BBs)) bs1 bs2) = 
+  assert ((Bnrm (BB_list_sem (BBnow' :: nil ++ BBs)) bs1 bs2) <->
   (Rels.id ∪ Bnrm (BB_sem_union (BBnow' :: nil ++ BBs)) ∘ Bnrm (BB_list_sem (BBnow' :: nil ++ BBs)))
   bs1 bs2). {
-    specialize (H6 bs1 bs2). (*这里很奇怪*)
-    admit.
+    specialize (H6 bs1 bs2).
+    sets_unfold in H6.
+    (* #TODO*)
   }
   rewrite H7.
   admit.
