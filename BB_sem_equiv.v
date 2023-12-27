@@ -125,3 +125,19 @@ Fixpoint cmd_BB_gen_sound (c: cmd): Qb c :=
         (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
         (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
   end.
+
+
+Lemma cmd_BB_gen_sound_correct:
+  forall (c: cmd),
+  Qb c.
+Proof.
+  apply cmd_BB_gen_sound.
+Qed.
+
+Lemma cmd_list_BB_gen_sound_correct:
+  forall (cmds: list cmd),
+  P cmds cmd_BB_gen.
+Proof.
+  apply cmd_list_BB_gen_sound.
+  apply cmd_BB_gen_sound_correct.
+Qed.
