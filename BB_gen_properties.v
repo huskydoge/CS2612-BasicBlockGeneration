@@ -16,11 +16,11 @@ Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 Require Import Main.BB_aux_proof.
 
-Import Denotation.
+(* Import Denotation.
 Import EDenote.
 Import CDenote.
 Import EmptyEDenote.
-Import BDenote.
+Import BDenote. *)
 
 (*
 Then
@@ -92,15 +92,22 @@ Definition P_BBgen_range (startnum endnum: nat)(cmds: list cmd)(BBnow: BasicBloc
     endnum = res.(next_block_num)
     /\ 
     (
-    exists BBnow' BBdelta,
-    basicblocks = BBs ++ BBnow'::nil ++ BBdelta /\
-    BB_all_ge BBdelta startnum /\
-    BB_all_lt BBdelta endnum
+      exists BBnow' BBdelta,
+      basicblocks = BBs ++ BBnow'::nil ++ BBdelta /\
+      BB_all_ge BBdelta startnum /\
+      BB_all_lt BBdelta endnum
     ).
 
 
+Lemma P_BBgen_range_sound (startnum endnum: nat):
+  forall  (cmds: list cmd) (BBnow: BasicBlock),
+    P_BBgen_range startnum endnum cmds BBnow.
+Proof.
+  Admitted.
+  
+  
 Lemma Q_if_BBgen_range (BB_then BB_else: BasicBlock):
-forall (e: expr) (c1 c2: list cmd)(BBnum: nat)(startnum midnum endnum: nat)(BBs: list BasicBlock),
+forall (e: expr) (c1 c2: list cmd) (BBnum: nat) (startnum midnum endnum: nat) (BBs: list BasicBlock),
     P_BBgen_range startnum midnum c1 BB_then ->
     P_BBgen_range midnum endnum c2 BB_else ->
     
