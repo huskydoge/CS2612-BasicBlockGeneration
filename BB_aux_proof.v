@@ -832,9 +832,9 @@ Proof.
       + reflexivity.
       + reflexivity.
       + reflexivity.
-  - admit.
-  - admit.
-  - admit.
+  - sets_unfold. intros. my_destruct H0. admit.
+  - sets_unfold in H1. tauto.
+  - sets_unfold in H1. tauto.
   - admit.
   - admit.
   - admit.     
