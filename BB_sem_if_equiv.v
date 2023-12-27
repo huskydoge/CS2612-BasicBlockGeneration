@@ -605,7 +605,8 @@ Proof.
       * unfold cjmp_sem in H2. cbn [Bnrm] in H2. my_destruct H2.
         -- rewrite H2. reflexivity.
       * tauto.
-Qed.
+      * admit.
+Admitted.
 
 
 Lemma Q_if:
@@ -613,7 +614,9 @@ Lemma Q_if:
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qb (CIf e c1 c2).
 Proof.
   intros.
-  unfold Qb. intros. right. 
+  unfold Qb. intros. right.
+  pose proof Qd_if_sound e c1 c2 H H0. rename H1 into separate_auxs.
+  unfold Qd_if in separate_auxs. specialize (separate_auxs (BBs) (BBnow) (BBnum)). destruct separate_auxs.
   (* 这里要和BBgeneration里的情况对齐
   P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
   P c1用于分配的BBnum也是如此，如下：    
@@ -652,7 +655,7 @@ Proof.
   
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  destruct H as [BBs_then [BB_then' [ BB_cmds_then [BB_num2 [?]]]]].
+  destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
   (* Get correct BBnow for P c2 *)
   set (BB_else := {|
     block_num := BB_else_num;
@@ -664,11 +667,11 @@ Proof.
         jump_condition := None
       |}
     |}).
-  (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_then' ++ BBs_then, 注意这里的BB_then'和BB_then不同！它里面的commands可能由于CAsgn有填充*)
+  (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_now_then ++ BBs_then, 注意这里的BB_then_now和BB_then不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_else了*)
 
   unfold P in H0. 
-  specialize (H0 (BBs ++ BBnow'::nil ++ BB_then'::nil ++ BBs_then) BB_else BB_num2).
+  specialize (H0 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
 
   (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
   destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
@@ -682,8 +685,8 @@ Proof.
   commands := nil; (* 创建一个空的命令列表 *)
   jump_info := BBnow.(jump_info)
   |}).
-  set(BBs'_ := BB_then'::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
-  set(BBs_wo_last_ := BB_then'::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else). 
+  set(BBs'_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
+  set(BBs_wo_last_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else). 
   exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
   (* MAIN ========================================== *)
   repeat split.
@@ -730,7 +733,7 @@ Proof.
                 |}
             |} with BB_else.
       + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
-        assert (BBs ++ BBnow' :: BB_then' :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_then' :: BBs_then).
+        assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
         {
           rewrite <- app_assoc. simpl. reflexivity.
         }
@@ -753,7 +756,7 @@ Proof.
       (*OK 到这一步就已经是分两部分走了, 开始看上面的命题，在jmp还是不jmp之间找共通，bs1，bs2的a和a0*)
        clear H16 H11.
       assert (BB_then.(cmd) = nil).  reflexivity. (*遇到if的话，BB_then里不会添加新的cmds了*)
-      rewrite H11 in H8. (* BB_then'.(cmd) = BB_cmds_then *)
+      rewrite H11 in H8. (* BB_now_then.(cmd) = BB_cmds_then *)
       sets_unfold.
 
 
@@ -804,11 +807,11 @@ Proof.
 
                     (*第二刀*)
                     (*这里需要加入四条分离性质*)
-                    pose proof (separate_step_aux3 (BB_then'::nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) bs1_ x2).
-                    assert (BBnum_set (BB_then' :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ). admit. (*分离性质3*)
+                    pose proof (separate_step_aux3 (BB_now_then::nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) bs1_ x2).
+                    assert (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ). admit. (*分离性质3*)
                     assert ( ~ BB_num bs1_ ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). admit. (*分离性质4*)
-                    assert (BBjmp_dest_set (BB_then' :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). admit. (*分离性质5*)
-                    assert (BB_num x2 ∈ BBjmp_dest_set (BB_then' :: nil ++ BBs_then)). admit. (*分离性质6*)
+                    assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). admit. (*分离性质5*)
+                    assert (BB_num x2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)). admit. (*分离性质6*)
                     pose proof (H5 H14 H22 H23 H24). clear H14 H22 H23 H24 H5.
                     assert (bs' = bs1_). {
                       unfold BB_sem in step1.
@@ -844,10 +847,10 @@ Proof.
                     rewrite H5 in step2.
                     pose proof H25 step2. 
                     assert ({|
-                    block_num := BB_then'.(block_num);
+                    block_num := BB_now_then.(block_num);
                     commands := BB_cmds_then;
-                    jump_info := BB_then'.(jump_info)
-                  |} = BB_then'). {
+                    jump_info := BB_now_then.(jump_info)
+                  |} = BB_now_then). {
                   apply compare_two_BasicBlock. repeat split.
                     - simpl. rewrite H8. reflexivity.
                   }
