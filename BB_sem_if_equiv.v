@@ -560,12 +560,36 @@ Proof.
   (Rels.id ∪ Bnrm (BB_sem_union (BBnow' :: nil ++ BBs)) ∘ Bnrm (BB_list_sem (BBnow' :: nil ++ BBs)))
   bs1 bs2). {
     specialize (H6 bs1 bs2).
-    sets_unfold in H6.
-    (* #TODO*)
+    sets_unfold in H6. 
+    split.
+    - destruct H6 as [? ?].
+      clear H7. intros. pose proof H6 H7. destruct H8 as [? | ?].
+      + sets_unfold. left. apply H8.
+      + sets_unfold. right. apply H8.
+    - intros. pose proof H5 H7. clear H5.
+      unfold BB_list_sem. cbn[Bnrm].
+      sets_unfold in H8. destruct H8 as [? [? ?]].
+      unfold BB_restrict in H4. destruct H4 as [? [? ?]].
+      unfold BB_list_sem in H8. destruct H8 as [? ?].
+      (* ! 可以注意一下下边的操作，这里要看出来是S x0 *)
+      sets_unfold. exists (S x0). simpl.
+      sets_unfold. exists x. split. 
+      + left. exists bs1. split. tauto. 
+        unfold BB_sem in H5. cbn[Bnrm] in H5. unfold BB_cmds_sem in H5.
+        simpl in H5. sets_unfold in H5. destruct H5 as [? [? ?]].
+        rewrite <- H5 in H11. apply H11.
+      + (* 这里必须clear H5 *)
+        clear H5. revert x H8.
+        induction x0; intros.
+        simpl. simpl in H8. apply H8.
+        unfold Iter_nrm_BBs_n in H8. sets_unfold in H8. destruct H8 as [? [? ?]]. 
+        unfold Iter_nrm_BBs_n. sets_unfold. exists x1. split.
+        -- simpl. right. apply H5.
+        -- specialize (IHx0 x1). apply IHx0. apply H8.
   }
-  rewrite H7.
-  admit.
   
+  rewrite H7. clear H5 H6 H7.
+  admit.
 Admitted.
 
 Search EDenote.
