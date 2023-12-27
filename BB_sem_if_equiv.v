@@ -641,16 +641,9 @@ Proof.
   intros.
   unfold Qb. intros. right.
   pose proof Qd_if_sound e c1 c2 H H0. rename H1 into separate_auxs.
-  unfold Qd_if in separate_auxs. specialize (separate_auxs (BBs) (BBnow) (BBnum)). destruct separate_auxs.
-  (* 这里要和BBgeneration里的情况对齐
-  P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
-  P c1用于分配的BBnum也是如此，如下：    
-    let BB_then_num := BB_num in
-    let BB_else_num := S(BB_then_num) in
-    let BB_next_num := S(BB_else_num) in
-    let BB_num1 := S(BB_next_num)
-  # BBs并不是Q中的BBs ++ [BBnow]！BBnow要加上跳转信息！！！！ 
-  #: Check!!!!!! *)
+  unfold Qd_if in separate_auxs. specialize (separate_auxs (BBs) (BBnow) (BBnum)). 
+  destruct separate_auxs as [BBnow' [BBs' [BB_num' [BBs_wo_last_ [BB_then_num [BB_else_num [BB_next_num [BB_then [BB_else [BBs_then [BBs_else [BB_now_then [BB_now_else [BB_num1 [?]]]]]]]]]]]]]]].
+
   (* Get correct num *)
   set(BB_then_num := BBnum). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_else_num)). set(BB_num1 := S(BB_next_num)).
   (* Get correct BBnow for P c1 *)
