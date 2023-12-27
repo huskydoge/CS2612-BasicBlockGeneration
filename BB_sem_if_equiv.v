@@ -508,6 +508,19 @@ Proof.
 Qed.
 
 
+Lemma Iter_sem_union_sem_included: 
+  forall (BBnow: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state) (x0: nat),
+    Iter_nrm_BBs_n (BB_sem_union BBs) x0 bs1 bs2 -> Iter_nrm_BBs_n (BB_sem_union (BBnow :: BBs)) x0 bs1 bs2.
+Proof.
+  intros. revert bs1 H.
+  induction x0; intros.
+  - simpl in H. simpl. apply H.
+  - unfold Iter_nrm_BBs_n in H. sets_unfold in H. destruct H as [? [? ?]]. 
+    unfold Iter_nrm_BBs_n. sets_unfold. exists x. split.
+    -- simpl. right. apply H.
+    -- specialize (IHx0 x). apply IHx0. apply H0. 
+Qed.
+
 
 
 Lemma BDenote_concat_equiv_BB_list_sem:
