@@ -629,7 +629,7 @@ Proof.
         end).
         -- unfold cjmp_sem in H2. cbn [Bnrm] in H2. my_destruct H2. destruct H6.
            ++ destruct H6. rewrite H6. reflexivity.
-           ++ destruct H6. contradiction.
+           ++ destruct H6. unfold test_false_jmp in H7. 
         -- tauto.
 Admitted.
 
