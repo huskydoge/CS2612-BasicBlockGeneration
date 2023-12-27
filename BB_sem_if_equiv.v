@@ -432,7 +432,7 @@ Proof.
 Qed.
 
 
-(* #TODO 切第二刀，把then和else切开来*)
+(* 切第二刀，把then和else切开来*)
 Lemma separate_step_aux3:
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
   (BBnum_set BBs1) ∩ (BBnum_set BBs2) = ∅ ->

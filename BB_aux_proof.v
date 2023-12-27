@@ -577,7 +577,6 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
 
 
-(* #TODO  Check Q *)
 Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
     forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
     let res := cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum in
