@@ -84,7 +84,7 @@ Lemma list_cmd_BB_gen_aux1:
     exists BB_delta1 BB_delta2 BB1' BB2',
     res1 = BBlist1 ++ BB1'::nil ++ BB_delta1 /\
     res2 = BBlist2 ++ BB2'::nil ++ BB_delta2 /\
-    BB_next_num_to_asgn_set (BB_delta1) ∩ BB_next_num_to_asgn_set (BB_delta2) = ∅. (*我这里先不管BB1和BB2的num，因为这个其实对应的就是then和else, 这两个blocknum都好处理*)
+    BBnum_set (BB_delta1) ∩ BBnum_set (BB_delta2) = ∅. (*我这里先不管BB1和BB2的num，因为这个其实对应的就是then和else, 这两个blocknum都好处理*)
 Proof.
 Admitted.
 
@@ -95,6 +95,6 @@ Lemma list_cmd_BB_gen_aux2:
     let res := to_result (list_cmd_BB_gen cmd_BB_gen c BBlist BB BB_next_num_to_asgn) in
     exists BB_delta BB',
     res = BBlist ++ BB'::nil ++ BB_delta /\
-    ~ (BB_next_num_to_asgn_set (BB_delta) next_block_num).
+    ~ (BBnum_set (BB_delta) next_block_num).
 Proof.
 Admitted.
