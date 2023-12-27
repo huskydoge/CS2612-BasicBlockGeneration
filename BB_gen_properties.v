@@ -98,6 +98,19 @@ Definition P_BBgen_range (startnum endnum: nat)(cmds: list cmd)(BBnow: BasicBloc
       BB_all_lt BBdelta endnum
     ).
 
+Definition Q_BBgen_range (startnum endnum: nat)(c: cmd)(BBnow: BasicBlock): Prop :=
+    forall BBs,
+    let res := (cmd_BB_gen c BBs BBnow startnum) in
+    let basicblocks := to_result res in
+    endnum = res.(next_block_num)
+    /\ 
+    (
+      exists BBnow' BBdelta,
+      basicblocks = BBs ++ BBnow'::nil ++ BBdelta /\
+      BB_all_ge BBdelta startnum /\
+      BB_all_lt BBdelta endnum
+    ).
+
 
 Lemma P_BBgen_range_sound:
   forall  (cmds: list cmd) (BBnow: BasicBlock)(BBs: list BasicBlock)(startnum: nat),
@@ -108,10 +121,21 @@ Proof.
   Admitted.
   
 
+Lemma Q_if_BBgen_range (BB_now BB_then BB_else: BasicBlock):
+forall (e: expr) (c1 c2: list cmd) (BBnum: nat) (startnum midnum endnum: nat) (BBs: list BasicBlock),
+    P_BBgen_range startnum midnum c1 BB_then ->
+    P_BBgen_range midnum endnum c2 BB_else ->
+
+    exists BB_delta,
+    let basicblocks := to_result (cmd_BB_gen (CIf e c1 c2) BBs BB_now BBnum) in  (*BBn是BBnext*)
+    basicblocks = BBs++ BB_now::nil ++ BB_delta /\
+    BB_all_ge BB_delta BBnum /\ BB_all_lt BB_delta endnum.
+Proof.
+    Admitted.
 
 
   
-Lemma Q_if_BBgen_range (BB_then BB_else: BasicBlock):
+Lemma Q_if_BBgen_disjoint (BB_then BB_else: BasicBlock):
 forall (e: expr) (c1 c2: list cmd) (BBnum: nat) (startnum midnum endnum: nat) (BBs: list BasicBlock),
     P_BBgen_range startnum midnum c1 BB_then ->
     P_BBgen_range midnum endnum c2 BB_else ->
