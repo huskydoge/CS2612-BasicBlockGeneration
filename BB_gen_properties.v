@@ -70,13 +70,19 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CWhile c1 e c2).
 Proof.
-    Admitted.
+  Admitted.
 
 (*这个肯定成立，没有新的block*)
 Lemma Q_asgn_BBgen_range:
 forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
 Proof.
+  intros. unfold Q_BBgen_range. intros. split.
+  - unfold cmd_BB_gen. simpl. admit.
+  - exists {| block_num := BBnow.(block_num);
+              commands := BBnow.(commands) ++ {| X := x; E := e |} :: nil;
+              jump_info := BBnow.(jump_info) |}. 
+    admit.
 Admitted.
 
 Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
@@ -118,13 +124,4 @@ Fixpoint BB_gen_range_soundness (c: cmd): Q_BBgen_range c :=
         (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds1)
         (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds2)
   end.
-
-
-
-
-
-
-
-
-
 
