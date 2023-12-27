@@ -578,9 +578,9 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
 
 (* #TODO  Check Q *)
-Definition Qd_if(c: cmd): Prop :=
+Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
     forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
-    let res := cmd_BB_gen c BBs BBnow BBnum in
+    let res := cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in 
 
     
@@ -590,7 +590,7 @@ Definition Qd_if(c: cmd): Prop :=
       BB_then_num BB_else_num BB_next_num
       BB_then BB_else BBs_then BBs_else 
       BB_now_then BB_now_else
-      BB_num1 e
+      BB_num1
       , 
 
       (*构造变量的限制*)
@@ -644,7 +644,7 @@ Definition Qd_if(c: cmd): Prop :=
 
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
-  P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qd_if (CIf e c1 c2).
+  P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qd_if e c1 c2.
 Proof.
   intros.
   unfold Qd_if. intros.
@@ -722,7 +722,6 @@ Proof.
   exists BB_then. exists BB_else. exists BBs_then. exists BBs_else. 
   exists BB_now_then. exists BB_now_else. 
   exists (S BB_next_num). 
-  exists e. 
   (* MAIN ========================================== *)
   repeat split.
   - cbn [cmd_BB_gen]. simpl. 
