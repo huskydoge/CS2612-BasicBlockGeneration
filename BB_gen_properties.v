@@ -99,18 +99,23 @@ Definition P_BBgen_range (startnum endnum: nat)(cmds: list cmd)(BBnow: BasicBloc
     ).
 
 
-Lemma P_BBgen_range_sound (startnum endnum: nat):
-  forall  (cmds: list cmd) (BBnow: BasicBlock),
+Lemma P_BBgen_range_sound:
+  forall  (cmds: list cmd) (BBnow: BasicBlock)(BBs: list BasicBlock)(startnum: nat),
+    let res := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow startnum) in
+    let endnum := res.(next_block_num) in
     P_BBgen_range startnum endnum cmds BBnow.
 Proof.
   Admitted.
   
+
+
+
   
 Lemma Q_if_BBgen_range (BB_then BB_else: BasicBlock):
 forall (e: expr) (c1 c2: list cmd) (BBnum: nat) (startnum midnum endnum: nat) (BBs: list BasicBlock),
     P_BBgen_range startnum midnum c1 BB_then ->
     P_BBgen_range midnum endnum c2 BB_else ->
-    
+
     exists BB_then' BB_then_delta BB_else' BB_else_delta,
     let then_basicblocks := to_result (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then startnum) in
     let else_basicblocks := to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BB_then'::nil ++ BB_then_delta) BB_else midnum) in
