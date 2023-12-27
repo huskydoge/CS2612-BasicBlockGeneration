@@ -63,16 +63,16 @@ SSS BB_next_num_to_asgn: 以BBthen为起点，下一个分配的num
 (* 
     - delta1 ∩ delta2 = ∅ ，一条大引理
     考虑BB1和BB2：
-    - BBnum ⪦ BB_next_num_to_asgn -> BBnum ⪦ delta的num ，一条引理
-    - Bnum delta ≥ BB_next_num_to_asgn 一条引理
-    - delta.(next_block_num) ⪧ BBnum delta 一条引理
-    - BBnum ⪦ BBnum delta -> BBnum ∉ BBnum delta 一条引理
-        于是有 BB1num < delta1的num < delta1.(next_block_num) = BB_next_num_to_asgn2 ≤ BBnum delta2
+    - BBnum < BB_next_num_to_asgn -> BBnum < BBnum_set delta ，一条引理
+    - Bnum_set delta ≥ BB_next_num_to_asgn 一条引理，下一个分配的num，一定小于等于新生成的BBs里所有的num
+    - delta.(next_block_num) ⪧ BBnum_set delta 一条引理，而生成完毕后，现在分配到的那个num，一定大于刚刚生成的BBs里所有的num
+    - BBnum < BBnum_set delta -> BBnum ∉ BBnum_set delta 一条引理
+        于是有 BB1num < BBnum_set delta1 < delta1.(next_block_num) = BB_next_num_to_asgn2 ≤ BBnum_set delta2
         ->
-        BB1num  ∉ BBnum delta2
-    - 类似地证明， BB2num  ∉ BBnum delta1，但是方向是反一下
+        BB1num  ∉ BBnum_set delta2
+    - 类似地证明， BB2num  ∉ BBnum_set delta1，但是方向是反一下
     - 再加上BB1num ≠ BB2 num ，到时候用的时候，这是已经有的条件，不需要引理
-    那么 BBnumset (BB1::delta1) ∩ BBnumset (BB2::delta2) = ∅
+    那么 BBnum_set (BB1::delta1) ∩ BBnumset (BB2::delta2) = ∅
 *)
 
 (*以生成一次BBs1，之后拿到的下一个用于分配的BB_next_num_to_asgn继续生成BBs2, 那么两段BBs的number不交*)
