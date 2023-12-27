@@ -119,13 +119,22 @@ Fixpoint BB_gen_range_soundness (c: cmd): Q_BBgen_range c :=
         (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds2)
   end.
 
-Lemma BBgen_range_soundness_correct:
+
+Lemma BBgen_range_single_soundness_correct:
     forall (c: cmd),
-     c.
+    Q_BBgen_range c.
 Proof.
-Admitted.
+    apply BB_gen_range_soundness.
+Qed.
 
-
+Lemma BBgen_range_list_soundness_correct:
+    forall (cmds: list cmd),
+    P_BBgen_range cmd_BB_gen cmds.
+Proof.
+    apply BBgen_list_range_soundness.
+    pose proof BBgen_range_single_soundness_correct.
+    apply H.
+Qed.
 
 
 
