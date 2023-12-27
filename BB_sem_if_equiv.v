@@ -720,15 +720,214 @@ Lemma Q_if:
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qb (CIf e c1 c2).
 Proof.
   intros.
-  unfold Qb. intros. right.
-  pose proof Qd_if_sound e c1 c2 H H0. rename H1 into separate_auxs.
-  unfold Qd_if in separate_auxs. specialize (separate_auxs (BBs) (BBnow) (BBnum)). 
-  destruct separate_auxs as [BBnow' [BBs' [BB_num' [BBs_wo_last_ [BB_then_num [BB_else_num [BB_next_num [BB_then [BB_else [BBs_then [BBs_else [BB_now_then [BB_now_else [BB_num1 [?]]]]]]]]]]]]]]].
-  exists BBnow', BBs', BB_num' ,BBs_wo_last_.
-  repeat split; try apply H2.
-  - apply H1.
+  unfold Qb. intros. right. 
+  (* 这里要和BBgeneration里的情况对齐
+  P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
+  P c1用于分配的BBnum也是如此，如下：    
+    let BB_then_num := BB_num in
+    let BB_else_num := S(BB_then_num) in
+    let BB_next_num := S(BB_else_num) in
+    let BB_num1 := S(BB_next_num)
+  # BBs并不是Q中的BBs ++ [BBnow]！BBnow要加上跳转信息！！！！ 
+  #: Check!!!!!! *)
+  (* Get correct num *)
+  set(BB_then_num := BBnum). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_else_num)). set(BB_num1 := S(BB_next_num)).
+  (* Get correct BBnow for P c1 *)
+  set(BB_then := {|block_num := BB_then_num;
+                   commands := nil;
+                   jump_info := {|
+                      jump_kind := UJump;
+                      jump_dest_1 := BB_next_num; 
+                      jump_dest_2 := None; 
+                      jump_condition := None
+                      |};
+                   |}).
+  set(BBnow' := {|block_num := BBnow.(block_num);
+                   commands := BBnow.(commands);
+                   jump_info := {|
+                      jump_kind := CJump;
+                      jump_dest_1 := BB_then_num; 
+                      jump_dest_2 := Some BB_else_num; 
+                      jump_condition := Some e
+                      |};
+                   |}).
+  pose proof Qd_if_sound e c1 c2 H H0. rename H1 into Qdif.
+  unfold Qd_if in Qdif. 
+  (* Get correct BBs for P c1 *)
+  (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
+  (*此时的BBnow则应该用BB_then了*)
+  (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
+  (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
+  (* Get correct BBs for P c1 *)
+  (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
+  (*此时的BBnow则应该用BB_then了*)
+  (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
+  (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
+  unfold P in H. specialize (H (BBs ++ BBnow'::nil) BB_then BB_num1). 
+  
+  (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
+  (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
+  destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
+  (* Get correct BBnow for P c2 *)
+  set (BB_else := {|
+    block_num := BB_else_num;
+    commands := nil;
+    jump_info := {|
+        jump_kind := UJump;
+        jump_dest_1 := BB_next_num; 
+        jump_dest_2 := None; 
+        jump_condition := None
+      |}
+    |}).
+  (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_now_then ++ BBs_then, 注意这里的BB_now_then和BB_then不同！它里面的commands可能由于CAsgn有填充*)
+  (*此时的BBnow则应该用BB_else了*)
+
+  unfold P in H0. 
+
+  specialize (H0 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
+
+  (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
+  destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
+
+  (*接下来要去构造结论中的BBs'和BBnum'
+    BBnum'是最终停留在的BB的编号，应该是BBnext的编号
+    BBs', 根据Q中的定义，是要剔除掉BBnow之后的Delta的部分，因为这是IF，所以BBnow中是不会增加新的cmd了
+  *)
+  set(BB_next := {|
+  block_num := BB_next_num;
+  commands := nil; (* 创建一个空的命令列表 *)
+  jump_info := BBnow.(jump_info)
+  |}).
+  set(BBs'_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
+  set(BBs_wo_last_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else). 
+  (* Get correct BBs' for Q *)
+  (* Get correct BBs' for Q *)
+  exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
   (* MAIN ========================================== *)
-  - my_destruct H2. rename H11 into separate_auxs1. rename H12 into separate_auxs2. 
+
+
+  (*assert 1*)
+  assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BasicBlocks) ++
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BBn) :: nil =
+  BBs ++ (BBnow' :: nil) ++ BBs'_). 
+  {
+  cbn [cmd_BB_gen]. simpl. 
+  subst BB_then_num. subst BB_next_num. subst BB_else_num.
+  my_destruct H. my_destruct H0.
+  replace (S (S (S BBnum))) with (BB_num1).
+  replace ({|
+  block_num := BBnum;
+  commands := nil;
+  jump_info :=
+    {|
+      jump_kind := UJump;
+      jump_dest_1 := S (S BBnum);
+      jump_dest_2 := None;
+      jump_condition := None
+    |}
+    |}) with (BB_then).
+    replace {|
+    block_num := S (S BBnum);
+    commands := nil;
+    jump_info := BBnow.(jump_info)
+  |} with (BB_next).
+  replace {|
+            block_num := BBnow.(block_num);
+            commands := BBnow.(cmd);
+            jump_info :=
+              {|
+               jump_kind := CJump;
+               jump_dest_1 := BBnum;
+               jump_dest_2 := Some (S BBnum);
+               jump_condition := Some e
+              |}
+            |} with BBnow'.
+  replace {|
+            block_num := S BBnum;
+            commands := nil;
+            jump_info :=
+              {|
+                jump_kind := UJump;
+                jump_dest_1 := S (S BBnum);
+                jump_dest_2 := None;
+                jump_condition := None
+              |}
+          |} with BB_else.
+    + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
+      assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
+      {
+        rewrite <- app_assoc. simpl. reflexivity.
+      }
+      rewrite <- H13. rewrite H10. rewrite <- app_assoc. simpl. rewrite <- app_assoc. simpl. reflexivity. 
+    + reflexivity.
+    + reflexivity.
+    + reflexivity.
+    + reflexivity.
+    + reflexivity.
+  } 
+
+  (*assert 2*)
+  assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BasicBlocks) =
+  BBs ++ (BBnow' :: nil) ++ BBs_wo_last_).
+  {  (*模仿上面的即可 #TODO, hard*)
+    admit.
+  } 
+  rename H1 into add_prop1.
+  rename H2 into add_prop2. 
+  repeat split.
+  - apply add_prop1. 
+  - apply add_prop2.
+  -
+      my_destruct H0. my_destruct H.
+      assert (BB_then_num = BBnum). {
+        reflexivity.
+      }
+      rewrite H13 in *. 
+      specialize (Qdif BBs BBnow BBnum BBnow' BBs'_ BBs_wo_last_ 
+      BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
+      (S BB_next_num) add_prop1 add_prop2 H13).
+      assert (S BB_next_num = S BB_next_num). reflexivity.
+      assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = S BB_else_num). reflexivity.
+
+      assert (BB_then =
+      {|
+        block_num := BB_then_num;
+        commands := nil;
+        jump_info :=
+          {|
+            jump_kind := UJump;
+            jump_dest_1 := BB_next_num;
+            jump_dest_2 := None;
+            jump_condition := None
+          |}
+      |}). reflexivity.
+      assert (BB_else =
+      {|
+        block_num := BB_else_num;
+        commands := nil;
+        jump_info :=
+          {|
+            jump_kind := UJump;
+            jump_dest_1 := BB_next_num;
+            jump_dest_2 := None;
+            jump_condition := None
+          |}
+      |}). reflexivity.
+      assert (BBnow' =
+      {|
+        block_num := BBnow.(block_num);
+        commands := BBnow.(cmd);
+        jump_info :=
+          {|
+            jump_kind := CJump;
+            jump_dest_1 := BB_then_num;
+            jump_dest_2 := Some BB_else_num;
+            jump_condition := Some e
+          |}
+      |}). reflexivity.
+      specialize (Qdif H15 H16 H14 H17 H18 H19).
+      clear H13 H15 H16 H14 H17 H18 H19.
+
       assert (BB_now_else.(block_num) = BB_else_num).
       {
         rewrite H3. reflexivity.
@@ -743,6 +942,8 @@ Proof.
       rewrite H11 in H8. (* BB_now_then.(cmd) = BB_cmds_then *)
       sets_unfold.
 
+
+
       pose proof BDenote_concat_equiv_BB_list_sem BBnow' BBs_wo_last_.
 
       remember ({|
@@ -750,21 +951,32 @@ Proof.
       commands := nil;
       jump_info := BBnow'.(jump_info)
     |}) as BB_jmp.
-         my_destruct H14.
-         pose proof (unfold_once (BB_jmp :: nil ++ BBs_wo_last_)).
-         pose proof separate_step_aux1.
-         specialize (H22 x1 x2 BB_jmp BBs_wo_last_).
-         (*这里需要加入两条分离性质*)
-         assert (separate_property BB_jmp BBs_wo_last_). admit. (*分离性质1*)
-         assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). admit. (*分离性质2, 这个感觉是可以直接写证明，就一个起点和终点约束*)
-         assert (((Rels.id
-         ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_))
-           ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2
-        :
-        Prop)). admit. (* TODO *)
-        specialize (H22 H23 H24 H25).
-        rename H15 into key1.  
-        clear H23 H24 H25 H21 H16.
+
+      my_destruct H14.
+      pose proof (unfold_once (BB_jmp :: nil ++ BBs_wo_last_)).
+      pose proof separate_step_aux1.
+      specialize (H22 x1 x2 BB_jmp BBs_wo_last_).
+      (*这里需要加入两条分离性质*)
+      destruct Qdif as [separate_prop1 [separate_prop2 separate_prop3]].
+      assert (separate_property BB_jmp BBs_wo_last_).
+      {
+        unfold separate_property.  unfold separate_property in separate_prop1.
+        pose proof separate_prop1.
+        (*BB_jmp的num和jmpinfo都和BBnow'一样*)
+        rewrite HeqBB_jmp.
+        (*TODO*)
+        admit.
+      }
+      (*分离性质1*)
+      assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). admit. 
+      assert (((Rels.id
+      ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_))
+        ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2
+    :
+    Prop)). admit. (* TODO *)
+    specialize (H22 H23 H24 H25).
+    rename H15 into key1.  
+    clear H23 H24 H25 H21 H16.
 
 
          pose proof true_or_false e a.
@@ -782,7 +994,7 @@ Proof.
                st := a ;  
                |}).
                exists bs1_. exists x2. cbn [Bnrm]. repeat split.
-               ***  apply sem_start_end_with in key2.
+               *** apply sem_start_end_with in key2.
                     destruct key2 as [bs' [step1 step2]].
                     clear H14.
                     (* apply unfold_once in step2. apply separate_step_aux1 in step2. *)
@@ -790,10 +1002,10 @@ Proof.
                     (*第二刀*)
                     (*这里需要加入四条分离性质*)
                     pose proof (separate_step_aux3 (BB_now_then::nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) bs1_ x2).
-                    assert (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ). admit. (*分离性质3*)
-                    assert ( ~ BB_num bs1_ ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). admit. (*分离性质4*)
-                    assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). admit. (*分离性质5*)
-                    assert (BB_num x2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)). admit. (*分离性质6*)
+                    assert (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ). tauto. 
+                    assert ( ~ BB_num bs1_ ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). admit. (*TODO*)
+                    assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). tauto.
+                    assert (BB_num x2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)). admit. (*TODO*)
                     pose proof (H5 H14 H22 H23 H24). clear H14 H22 H23 H24 H5.
                     assert (bs' = bs1_). {
                       unfold BB_sem in step1.
@@ -841,55 +1053,7 @@ Proof.
                *** rewrite H9. reflexivity.
                *** apply H20.
 
-          ** right. exists a. split. (*test false的情况*)
-             -- pose proof BB_false_jmp_iff_test_false_jmp e a. apply H23. apply H21.
-             -- sets_unfold. clear key1. (* key1是then分支的情况 *)
-                rename H5 into key1. apply key1. rename H22 into key2.
-                set(bs1_ := {|
-                    BB_num := BB_else_num;
-                    st := a ;  
-                    |}).
-                exists bs1_. exists x2. cbn [Bnrm]. repeat split.
-                *** apply sem_start_end_with in key2.
-                    destruct key2 as [bs' [step1 step2]]. clear H14.
-
-                    assert (bs' = bs1_). {
-                      unfold BB_sem in step1.
-                      cbn [Bnrm] in step1.
-                      sets_unfold in step1.
-                      my_destruct step1.
-                      simpl in step1. rewrite HeqBB_jmp in step1. simpl in step1. sets_unfold in step1.
-                      pose proof BB_jmp_sem_simplify BB_jmp x3 bs' e BB_then_num BB_else_num. 
-                      assert ((BB_jmp.(jump_info) =
-                      {|
-                        jump_kind := CJump;
-                        jump_dest_1 := BB_then_num;
-                        jump_dest_2 := Some BB_else_num;
-                        jump_condition := Some e
-                      |}) /\ Bnrm (BB_jmp_sem BB_jmp) x3 bs'). {
-                        split.
-                        rewrite HeqBB_jmp. reflexivity.
-                        apply H5.
-                      }
-                      pose proof H14 H22.
-                      destruct H23.
-                      + pose proof true_or_false_classic2 e a H21.
-                        rewrite step1 in H17. rewrite H17 in H23.
-                        my_destruct H23. contradiction.
-                      + my_destruct H23.
-                        rewrite HeqBB_jmp in H25. simpl in H25. assert (bs' = bs1_). 
-                        {
-                          rewrite <- step1 in H24. rewrite H17 in H24. pose proof compare_two_BB_state bs' bs1_.
-                          apply H26. split. 
-                          - admit. (* 利用H25即可 *)
-                          - apply H24.
-                        }
-                        apply H26.
-                    }
-                    
-                    (* 这里要理论上会简单一点？else对应的BBs_else本身和BBs_是连在一起的，这里不会再用到aux3了，但可能需要别的引理 *)
-                    admit.
-
+          ** right. admit. (*test false的情况*)
         - admit.  (*反方向*)
         - admit.  (*出错*)
         - admit. (*出错*)

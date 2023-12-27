@@ -585,18 +585,16 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
     
 
     (*CIf*)
-    exists BBnow' BBs' BBnum' BBs_wo_last 
+    forall BBnow' BBs' BBs_wo_last 
       BB_then_num BB_else_num BB_next_num
       BB_then BB_else BBs_then BBs_else 
       BB_now_then BB_now_else
       BB_num1
       , 
 
-      (*构造变量的限制*)
-      res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\
-      res.(BBn).(block_num) = BBnum' 
-      /\ BB_then_num = BBnum /\ BB_else_num = S(BB_then_num) /\ BB_next_num = S(BB_else_num) /\ BB_num1 = S(BB_next_num)
-      /\ BB_then = {|block_num := BB_then_num;
+      res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' -> res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last ->
+      BB_then_num = BBnum -> BB_else_num = S(BB_then_num) -> BB_next_num = S(BB_else_num) -> BB_num1 = S(BB_next_num)
+      -> BB_then = {|block_num := BB_then_num;
         commands := nil;
         jump_info := {|
           jump_kind := UJump;
@@ -605,7 +603,7 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
           jump_condition := None
           |};
         |}
-      /\ BB_else = {|
+      -> BB_else = {|
         block_num := BB_else_num;
         commands := nil;
         jump_info := {|
@@ -615,7 +613,7 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
             jump_condition := None
           |}
         |}
-      /\ BBnow' = {|block_num := BBnow.(block_num);
+      -> BBnow' = {|block_num := BBnow.(block_num);
       commands := BBnow.(commands);
       jump_info := {|
          jump_kind := CJump;
@@ -624,217 +622,21 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
          jump_condition := Some e
          |};
       |}
+  
       
-      /\ (separate_property BBnow' BBs_wo_last) (*分离性质1*)
+      -> (separate_property BBnow' BBs_wo_last) (*分离性质1*)
       /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ) (*分离性质3*)
       /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). (*分离性质5*)
-      (* /\ (
-      (*Then*)
-      exists bs1 bs2,
-      ( ~ BB_num bs1 ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)) (*分离性质4*) /\ (BB_num bs2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then))
-      \/
-      (*Else*)
-      ( ~ BB_num bs1 ∈ BBnum_set (BB_now_then :: nil ++ BBs_then)) (*分离性质4*) /\ (BB_num bs2 ∈ BBjmp_dest_set (BB_now_else :: nil ++ BBs_else))
-      ) . *)
-      (***分离性质TODO, 应该是要和Qb里的那些变量统一，用let ...:= .... in的形式*) 
-      (* BUG 思考一下是否把while和if也分开！！！！！两者可能有不同的分离性质！*)
-
-      
-
+ 
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qd_if e c1 c2.
 Proof.
   intros.
-  unfold Qd_if. intros.
-  (* 这里要和BBgeneration里的情况对齐
-  P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
-  P c1用于分配的BBnum也是如此，如下：    
-    let BB_then_num := BB_num in
-    let BB_else_num := S(BB_then_num) in
-    let BB_next_num := S(BB_else_num) in
-    let BB_num1 := S(BB_next_num)
-  # BBs并不是Q中的BBs ++ [BBnow]！BBnow要加上跳转信息！！！！ 
-  #: Check!!!!!! *)
-  (* Get correct num *)
-  set(BB_then_num := BBnum). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_else_num)). set(BB_num1 := S(BB_next_num)).
-  (* Get correct BBnow for P c1 *)
-  set(BB_then := {|block_num := BB_then_num;
-                   commands := nil;
-                   jump_info := {|
-                      jump_kind := UJump;
-                      jump_dest_1 := BB_next_num; 
-                      jump_dest_2 := None; 
-                      jump_condition := None
-                      |};
-                   |}).
-  set(BBnow' := {|block_num := BBnow.(block_num);
-  commands := BBnow.(commands);
-  jump_info := {|
-    jump_kind := CJump;
-    jump_dest_1 := BB_then_num; 
-    jump_dest_2 := Some BB_else_num; 
-    jump_condition := Some e
-    |};
-  |}).
-  (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
-  (*此时的BBnow则应该用BB_then了*)
-  (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
-  (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  unfold P in H. specialize (H (BBs ++ BBnow'::nil) BB_then BB_num1).
-  (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
-  (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
-  (* Get correct BBnow for P c2 *)
-  set (BB_else := {|
-    block_num := BB_else_num;
-    commands := nil;
-    jump_info := {|
-        jump_kind := UJump;
-        jump_dest_1 := BB_next_num; 
-        jump_dest_2 := None; 
-        jump_condition := None
-      |}
-    |}).
-  (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_now_then ++ BBs_then, 注意这里的BB_then_now和BB_then不同！它里面的commands可能由于CAsgn有填充*)
-  (*此时的BBnow则应该用BB_else了*)
-
-  unfold P in H0. 
-  specialize (H0 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
-
-  (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
-  destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
-
-  (*接下来要去构造结论中的BBs'和BBnum'
-    BBnum'是最终停留在的BB的编号，应该是BBnext的编号
-    BBs', 根据Q中的定义，是要剔除掉BBnow之后的Delta的部分，因为这是IF，所以BBnow中是不会增加新的cmd了
-  *)
-  set(BB_next := {|
-  block_num := BB_next_num;
-  commands := nil; (* 创建一个空的命令列表 *)
-  jump_info := BBnow.(jump_info)
-  |}).
-  set(BBs'_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
-  set(BBs_wo_last_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else). 
-  exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
-  exists BB_then_num. exists BB_else_num. exists BB_next_num.
-  exists BB_then. exists BB_else. exists BBs_then. exists BBs_else. 
-  exists BB_now_then. exists BB_now_else. 
-  exists (S BB_next_num). 
-  (* MAIN ========================================== *)
+  unfold Qd_if. intros. (*TODO*)
   repeat split.
-  - cbn [cmd_BB_gen]. simpl. 
-    subst BB_then_num. subst BB_next_num. subst BB_else_num.
-    my_destruct H. my_destruct H0.
-    replace (S (S (S BBnum))) with (BB_num1).
-    replace ({|
-    block_num := BBnum;
-    commands := nil;
-    jump_info :=
-      {|
-        jump_kind := UJump;
-        jump_dest_1 := S (S BBnum);
-        jump_dest_2 := None;
-        jump_condition := None
-      |}
-      |}) with (BB_then).
-      replace {|
-      block_num := S (S BBnum);
-      commands := nil;
-      jump_info := BBnow.(jump_info)
-    |} with (BB_next).
-    replace {|
-              block_num := BBnow.(block_num);
-              commands := BBnow.(cmd);
-              jump_info :=
-                {|
-                 jump_kind := CJump;
-                 jump_dest_1 := BBnum;
-                 jump_dest_2 := Some (S BBnum);
-                 jump_condition := Some e
-                |}
-              |} with BBnow'.
-    replace {|
-              block_num := S BBnum;
-              commands := nil;
-              jump_info :=
-                {|
-                  jump_kind := UJump;
-                  jump_dest_1 := S (S BBnum);
-                  jump_dest_2 := None;
-                  jump_condition := None
-                |}
-            |} with BB_else.
-      + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
-        assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
-        {
-          rewrite <- app_assoc. simpl. reflexivity.
-        }
-        rewrite <- H13. rewrite H10. rewrite <- app_assoc. simpl. rewrite <- app_assoc. simpl. reflexivity. 
-      + reflexivity.
-      + reflexivity.
-      + reflexivity.
-      + reflexivity.
-      + reflexivity.
-  - cbn [cmd_BB_gen]. simpl. 
-    subst BB_then_num. subst BB_next_num. subst BB_else_num.
-    my_destruct H. my_destruct H0.
-    replace (S (S (S BBnum))) with (BB_num1).
-    replace ({|
-    block_num := BBnum;
-    commands := nil;
-    jump_info :=
-      {|
-        jump_kind := UJump;
-        jump_dest_1 := S (S BBnum);
-        jump_dest_2 := None;
-        jump_condition := None
-      |}
-      |}) with (BB_then).
-      replace {|
-      block_num := S (S BBnum);
-      commands := nil;
-      jump_info := BBnow.(jump_info)
-    |} with (BB_next).
-    replace {|
-              block_num := BBnow.(block_num);
-              commands := BBnow.(cmd);
-              jump_info :=
-                {|
-                 jump_kind := CJump;
-                 jump_dest_1 := BBnum;
-                 jump_dest_2 := Some (S BBnum);
-                 jump_condition := Some e
-                |}
-              |} with BBnow'.
-    replace {|
-              block_num := S BBnum;
-              commands := nil;
-              jump_info :=
-                {|
-                  jump_kind := UJump;
-                  jump_dest_1 := S (S BBnum);
-                  jump_dest_2 := None;
-                  jump_condition := None
-                |}
-            |} with BB_else.
-      + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
-        assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
-        {
-          rewrite <- app_assoc. simpl. reflexivity.
-        }
-        rewrite <- H13. rewrite H10. 
-        unfold BBs_wo_last_. simpl.
-        rewrite <- app_assoc. simpl. tauto.
-      + reflexivity.
-      + reflexivity.
-      + reflexivity.
-      + reflexivity.
-      + reflexivity.
-  - sets_unfold. intros. my_destruct H0. destruct H1 as [? ?].
-    admit.
-  - sets_unfold in H1. tauto.
-  - sets_unfold in H1. tauto.
+  - admit.
+  - admit.
   - admit.
   - admit.
 Admitted.
