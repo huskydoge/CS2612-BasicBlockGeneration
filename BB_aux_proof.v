@@ -615,6 +615,18 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). (*分离性质5*)
  
 
+Lemma In_tail_inclusive:
+  forall (BBs : list BasicBlock) (BB tl : BasicBlock),
+    In BB BBs -> In BB (BBs ++ tl::nil).
+Proof.
+  intros. induction BBs.
+  - unfold In in H. tauto.
+  - unfold In. simpl.
+    unfold In in H. destruct H as [? | ?].
+    + left. apply H.
+    + right. pose proof IHBBs H. apply H0.
+Qed. 
+
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
     Qd_if e c1 c2.
@@ -643,11 +655,17 @@ Proof.
       - unfold BBnum_set. exists x. split. apply H10. apply H14.
       - unfold BBjmp_dest_set. exists x0. repeat split. unfold In.
         unfold In in H11. destruct H11 as [? | ?]. left. apply H11. right. 
-        rewrite <- H15. admit. left. apply H16. 
+        rewrite <- H15. 
+        + pose proof In_tail_inclusive BBs_wo_last x0 (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).
+          pose proof H17 H11. apply H18.
+        + left. apply H16. 
       - unfold BBnum_set. repeat split. exists x. split. apply H10. apply H14.
         unfold BBjmp_dest_set. exists x0. repeat split. unfold In.
         unfold In in H11. destruct H11 as [? | ?]. left. apply H11. right.
-        rewrite <- H15. admit. right. apply H16. 
+        rewrite <- H15. 
+        + pose proof In_tail_inclusive BBs_wo_last x0 (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).
+          pose proof H17 H11. apply H18.
+        + right. apply H16. 
     }
     
     rewrite H13 in H16. sets_unfold in H16. tauto.
@@ -678,6 +696,8 @@ Proof.
       rewrite BBlist_else_prop. simpl. rewrite app_assoc_reverse. reflexivity.
     }
 
+    clear H9.
+    clear H10 H11 H14 H15.
     (* pose proof H9 H14 H15. destruct H16 as [? ?].
     clear H10 H11 H14 H15. *)
     
