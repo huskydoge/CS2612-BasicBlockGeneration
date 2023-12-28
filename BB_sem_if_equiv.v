@@ -967,8 +967,8 @@ Proof.
         (*TODO*)
         admit.
       }
-      (*分离性质1*)
-      assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). admit. 
+      (*限制的一些性质*)
+      assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). admit. (*TODO*) 
       assert (((Rels.id
       ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_))
         ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2
