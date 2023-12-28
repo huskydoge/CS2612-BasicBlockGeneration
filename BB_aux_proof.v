@@ -609,6 +609,8 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       -> to_result (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1) = BBs ++ BBnow' :: nil ++  BB_now_then::nil ++ BBs_then
       -> to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_num2) = BBs ++ BBnow'::nil ++ BB_now_then :: nil ++ BBs_then ++ BB_now_else :: nil ++ BBs_else
       -> BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1).(next_block_num)
+      -> BB_now_then.(block_num) = BB_then_num
+      -> BB_now_else.(block_num) = BB_else_num
       
       -> (separate_property BBnow' BBs_wo_last) (*分离性质1*)
       /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ) (*分离性质3*)
@@ -633,7 +635,7 @@ Lemma Qd_if_sound:
     Qd_if e c1 c2.
 Proof.
   intros.
-  unfold Qd_if. intros. rename H8 into BBlist_then_prop. rename H9 into BBlist_else_prop. rename H10 into BB_num2_prop.
+  unfold Qd_if. intros. rename H8 into BBlist_then_prop. rename H9 into BBlist_else_prop. rename H10 into BB_num2_prop. rename H11 into BBnowthen_num_prop. rename H12 into BBnowelse_num_prop.
   repeat split.
   - pose proof BBgen_range_single_soundness_correct (CIf e c1 c2).
     unfold Q_BBgen_range in H8.
