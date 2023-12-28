@@ -697,6 +697,7 @@ Proof.
     }
 
     clear H9.
+    pose proof H14 H15. 
     clear H10 H11 H14 H15.
     (* pose proof H9 H14 H15. destruct H16 as [? ?].
     clear H10 H11 H14 H15. *)
@@ -705,19 +706,22 @@ Proof.
     assert (~ exists x, x ∈ BBnum_set (BB_now_then :: nil ++ BBs_then) /\ x ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). {
       intros contra.
       destruct contra. destruct H10 as [? ?].
-      sets_unfold in H10. unfold BBnum_set in H10.
-      destruct H10 as [? [? ?]].
-      sets_unfold in H11. unfold BBnum_set in H11.
-      destruct H11 as [? [? ?]].
-      unfold BB_all_ge in H12, H16.
-      unfold BB_all_lt in H13, H17.
-      specialize (H12 x0). specialize (H13 x0). specialize (H16 x1). specialize (H17 x1).
-      (* ! H10, H11与H12-H17不一致啊 *)
+      destruct H9 as [? [? ?]]. destruct H13 as [? ?].
+
+      (* 对于H10和H11分成四种情况讨论 *)
+      sets_unfold in H10. sets_unfold in H11.
+      unfold BBnum_set in H10, H11.
+      destruct H10 as [? [? ?]]. destruct H11 as [? [? ?]].
+      unfold In in H10. unfold In in H11.
+      destruct H10 as [? | ?]; destruct H11 as [? | ?].
+      - rewrite <- H10 in H17. rewrite <- H11 in H18.
+        rewrite <- H17 in H18. contradiction.  
       admit.
     }
 
     (* 最后利用集合性质来证 *)
     admit.
+
 
 
     
