@@ -23,6 +23,25 @@ Import CDenote.
 Import EmptyEDenote.
 Import BDenote.
 
+Lemma never_go_wrong: 
+   forall (e: EDenote) (s: state),
+  (exists (i : int64), (e).(nrm) s i).
+Proof.
+Admitted.
+
+Lemma true_or_false:
+  forall (e: EDenote) (s: state),
+  (test_true_jmp (e)) s \/ (test_false_jmp (e)) s.
+Proof.
+  intros. assert((exists (i : int64), (e).(nrm) s i)). pose proof never_go_wrong e s. tauto.
+  destruct H.
+  pose proof classic (Int64.signed x = 0).
+  unfold test_true_jmp. unfold test_false_jmp.
+  destruct H0.
+  - right. rewrite <- H0. rewrite Int64.repr_signed. apply H.
+  - left. exists x. split. apply H. apply H0.
+Qed.
+
 Ltac my_destruct H :=
   match type of H with 
   | exists _, _ => destruct H as [? H]; my_destruct H 
@@ -191,18 +210,20 @@ Lemma BB_jmp_sem_num_in_BBjmp_dest_set:
   (BB_jmp_sem BB).(Bnrm) bs1 bs2 -> bs2.(BB_num) ∈ BBjmp_dest_set (BB :: nil).
 Proof.
   intros.
-  unfold BB_jmp_sem in H. simpl in H.
-  unfold BBjmp_dest_set. sets_unfold. unfold In.
-  exists BB. unfold BJump_sem in H.
-  destruct eval_cond_expr.
-  + split. left. tauto. right. destruct jump_dest_2. 
-    - unfold cjmp_sem in H. simpl in H.
-      destruct H as [[? [? [?| ?]]] ].
-      ++ admit. (* 这是说If语句走Then分支的情况，没有用到dest2，缺条件 *)
-      ++ destruct H1 as [? ?]. rewrite H1. tauto.
-    - admit. (* 这里是Condition有的，但是却选择了UJmp的情况，应该是None，但是缺条件 *) 
-  + split. left. tauto. left. unfold ujmp_sem in H. simpl in H. destruct H as [? [? [? ?]]]. rewrite H1. tauto. 
-Admitted.
+  unfold BBjmp_dest_set. unfold In. simpl. exists BB. split.
+  + left. tauto.
+  + unfold BB_jmp_sem in H. simpl in H. destruct eval_cond_expr.
+    unfold BJump_sem in H. destruct jump_dest_2.
+    - unfold cjmp_sem in H. simpl in H. my_destruct H. 
+      destruct H2.
+      ++ left. destruct H2. rewrite H2. reflexivity.
+      ++ right. destruct H2. rewrite H2. reflexivity.
+    - unfold ujmp_sem in H. simpl in H. my_destruct H.
+      left. rewrite H1. reflexivity.
+    - unfold BJump_sem in H. unfold ujmp_sem in H. simpl in H. my_destruct H.
+      left. rewrite H1. reflexivity.
+Qed.
+
 
 
 Lemma iter_concate:
