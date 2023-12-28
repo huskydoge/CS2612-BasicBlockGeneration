@@ -800,7 +800,7 @@ Proof.
                       jump_condition := Some e
                       |};
                    |}).
-  pose proof Qd_if_sound e c1 c2 H H0. rename H1 into Qdif.
+  pose proof Qd_if_sound e c1 c2. rename H1 into Qdif.
   unfold Qd_if in Qdif. 
   (* Get correct BBs for P c1 *)
   (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
@@ -860,66 +860,119 @@ Proof.
   (cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BBn) :: nil =
   BBs ++ (BBnow' :: nil) ++ BBs'_). 
   {
-  cbn [cmd_BB_gen]. simpl. 
-  subst BB_then_num. subst BB_next_num. subst BB_else_num.
-  my_destruct H. my_destruct H0.
-  replace (S (S (S BBnum))) with (BB_num1).
-  replace ({|
-  block_num := BBnum;
-  commands := nil;
-  jump_info :=
-    {|
-      jump_kind := UJump;
-      jump_dest_1 := S (S BBnum);
-      jump_dest_2 := None;
-      jump_condition := None
-    |}
-    |}) with (BB_then).
-    replace {|
-    block_num := S (S BBnum);
+    cbn [cmd_BB_gen]. simpl. 
+    subst BB_then_num. subst BB_next_num. subst BB_else_num.
+    my_destruct H. my_destruct H0.
+    replace (S (S (S BBnum))) with (BB_num1).
+    replace ({|
+    block_num := BBnum;
     commands := nil;
-    jump_info := BBnow.(jump_info)
-  |} with (BB_next).
-  replace {|
-            block_num := BBnow.(block_num);
-            commands := BBnow.(cmd);
-            jump_info :=
-              {|
-               jump_kind := CJump;
-               jump_dest_1 := BBnum;
-               jump_dest_2 := Some (S BBnum);
-               jump_condition := Some e
-              |}
-            |} with BBnow'.
-  replace {|
-            block_num := S BBnum;
-            commands := nil;
-            jump_info :=
-              {|
-                jump_kind := UJump;
-                jump_dest_1 := S (S BBnum);
-                jump_dest_2 := None;
-                jump_condition := None
-              |}
-          |} with BB_else.
-    + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
-      assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
-      {
-        rewrite <- app_assoc. simpl. reflexivity.
-      }
-      rewrite <- H13. rewrite H10. rewrite <- app_assoc. simpl. rewrite <- app_assoc. simpl. reflexivity. 
-    + reflexivity.
-    + reflexivity.
-    + reflexivity.
-    + reflexivity.
-    + reflexivity.
+    jump_info :=
+      {|
+        jump_kind := UJump;
+        jump_dest_1 := S (S BBnum);
+        jump_dest_2 := None;
+        jump_condition := None
+      |}
+      |}) with (BB_then).
+      replace {|
+      block_num := S (S BBnum);
+      commands := nil;
+      jump_info := BBnow.(jump_info)
+    |} with (BB_next).
+    replace {|
+              block_num := BBnow.(block_num);
+              commands := BBnow.(cmd);
+              jump_info :=
+                {|
+                jump_kind := CJump;
+                jump_dest_1 := BBnum;
+                jump_dest_2 := Some (S BBnum);
+                jump_condition := Some e
+                |}
+              |} with BBnow'.
+    replace {|
+              block_num := S BBnum;
+              commands := nil;
+              jump_info :=
+                {|
+                  jump_kind := UJump;
+                  jump_dest_1 := S (S BBnum);
+                  jump_dest_2 := None;
+                  jump_condition := None
+                |}
+            |} with BB_else.
+      + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
+        assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
+        {
+          rewrite <- app_assoc. simpl. reflexivity.
+        }
+        rewrite <- H13. rewrite H10. rewrite <- app_assoc. simpl. rewrite <- app_assoc. simpl. reflexivity. 
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
+      + reflexivity.
   } 
 
   (*assert 2*)
   assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BasicBlocks) =
   BBs ++ (BBnow' :: nil) ++ BBs_wo_last_).
   {  (*模仿上面的即可 #TODO, hard*)
-    admit.
+    cbn [cmd_BB_gen]. simpl. 
+    subst BB_then_num. subst BB_next_num. subst BB_else_num.
+    my_destruct H. my_destruct H0.
+    replace (S (S (S BBnum))) with (BB_num1).
+    replace ({|
+    block_num := BBnum;
+    commands := nil;
+    jump_info :=
+      {|
+        jump_kind := UJump;
+        jump_dest_1 := S (S BBnum);
+        jump_dest_2 := None;
+        jump_condition := None
+      |}
+      |}) with (BB_then).
+      replace {|
+      block_num := S (S BBnum);
+      commands := nil;
+      jump_info := BBnow.(jump_info)
+    |} with (BB_next).
+    replace {|
+              block_num := BBnow.(block_num);
+              commands := BBnow.(cmd);
+              jump_info :=
+                {|
+                jump_kind := CJump;
+                jump_dest_1 := BBnum;
+                jump_dest_2 := Some (S BBnum);
+                jump_condition := Some e
+                |}
+              |} with BBnow'.
+    replace {|
+              block_num := S BBnum;
+              commands := nil;
+              jump_info :=
+                {|
+                  jump_kind := UJump;
+                  jump_dest_1 := S (S BBnum);
+                  jump_dest_2 := None;
+                  jump_condition := None
+                |}
+            |} with BB_else.
+    + remember (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1).(next_block_num) as BB_then_end_num.
+      clear Qdif.
+      unfold to_result. rewrite H5. rewrite <- app_assoc. simpl.
+      simpl in H11. rewrite H2 in H11. rewrite H11.
+      rewrite <- app_assoc. simpl.
+      simpl in BBs_wo_last_. subst BBs_wo_last_.
+      tauto.
+    + reflexivity.
+    + reflexivity.
+    + reflexivity.
+    + reflexivity.
+    + reflexivity.
   } 
   rename H1 into add_prop1.
   rename H2 into add_prop2. 
