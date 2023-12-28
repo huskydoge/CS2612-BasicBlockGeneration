@@ -628,7 +628,26 @@ Proof.
     pose proof H8 Heqendnum H. 
     sets_unfold. intros.
     destruct H10 as [? ?].
-    admit.
+    destruct H9 as [? [? ?]].
+    unfold BBnum_set in H10. unfold BBjmp_dest_set in H11.
+    destruct H10 as [? [? ?]]. 
+    assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil ++ BBs_wo_last = BBs'). {
+          (* 这个是列表的性质 *)
+          admit.
+    }
+    assert (a ∈ BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs')). {
+      sets_unfold. destruct H11 as [? [? [? | ?]]]. split. 
+      - unfold BBnum_set. exists x. split. apply H10. apply H14.
+      - unfold BBjmp_dest_set. exists x0. repeat split. unfold In.
+        unfold In in H11. destruct H11 as [? | ?]. left. apply H11. right. 
+        rewrite <- H15. right. apply H11. left. apply H16.
+      - unfold BBnum_set. repeat split. exists x. split. apply H10. apply H14.
+        unfold BBjmp_dest_set. exists x0. repeat split. unfold In.
+        unfold In in H11. destruct H11 as [? | ?]. left. apply H11. right.
+        rewrite <- H15. right. apply H11. right. apply H16. 
+    }
+    
+    rewrite H13 in H16. sets_unfold in H16. tauto.
   - sets_unfold in H8. tauto.
   - sets_unfold in H8. tauto.
   - pose proof BBgen_range_list_soundness_correct c1.
