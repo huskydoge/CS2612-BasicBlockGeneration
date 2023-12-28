@@ -39,7 +39,9 @@ Definition BB_all_ge (BBs: list BasicBlock)(num: nat): Prop :=
 Definition BB_all_lt (BBs: list BasicBlock)(num: nat): Prop :=
     forall BB, In BB BBs -> Nat.lt BB.(block_num) num \/ BBs = nil.
 
-
+(*定义自然数区间*)
+Definition section (startnum endnum: nat) : nat -> Prop :=
+  fun BBnum => Nat.le startnum BBnum /\ Nat.le BBnum endnum.
 
 Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results)(cmds: list cmd): Prop :=
     forall startnum endnum BBs BBnow BBnow' BBdelta,
@@ -53,7 +55,7 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
     (
       BB_all_ge BBdelta startnum /\
       BB_all_lt BBdelta endnum /\ 
-      BBnum_set (BBnow':: nil) ∩ BBjmp_dest_set (BBnow'::BBdelta) = ∅
+      BBjmp_dest_set (BBnow'::BBdelta) ⊆ add_one_num (section startnum endnum) BBnow.(jump_info).(jump_dest_1)
     ).
 
 Definition Q_BBgen_range (c: cmd): Prop :=
@@ -65,7 +67,7 @@ Definition Q_BBgen_range (c: cmd): Prop :=
     (
       BB_all_ge BBdelta startnum /\
       BB_all_lt BBdelta endnum /\
-      BBnum_set (BBnow':: nil) ∩ BBjmp_dest_set (BBnow'::BBdelta) = ∅
+      BBjmp_dest_set (BBnow'::BBdelta) ⊆ add_one_num (section startnum endnum) BBnow.(jump_info).(jump_dest_1)
     ).
 
 
