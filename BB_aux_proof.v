@@ -682,6 +682,13 @@ Proof.
   apply (lt_irrefl a H).
 Qed.
 
+Lemma not_a_le_b_and_a_gt_b: forall (a b : nat), 
+  le a b -> lt b a -> False.
+Proof.
+  intros. unfold not. intros.
+  destruct H.
+Admitted. (*TODO*)
+
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
     Qd_if e c1 c2.
@@ -703,7 +710,7 @@ Proof.
     assert ((BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) = BBs'). {
           (* 这个是列表的性质, 在H里两边消去即可 *)
           rewrite H0 in H.
-          admit.
+          admit. (*TODO*)
     }
     assert (a ∈ BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs')). {
       sets_unfold. destruct H11 as [? [? [? | ?]]]. split. 
@@ -789,12 +796,8 @@ Proof.
         + simpl in H11. tauto.
         + unfold BB_all_ge in H9. specialize (H9 x1 H11). destruct H9. 
           (* Nat.le BB_then_end_num x1.(block_num)*)
-          * assert (lt BB_then_num x1.(block_num)).
-            assert (lt BB_then_num BB_then_end_num). 
-            {
-            admit.
-            }
-            apply (a_lt_b_le_c BB_then_num BB_then_end_num x1.(block_num) H19 H9). rewrite H17 in H19. pose proof (not_a_lt_a (x1.(block_num))). contradiction.
+          * rewrite <- H17 in H9. assert (lt BB_then_num BB_then_end_num). admit.
+            pose proof (not_a_le_b_and_a_gt_b BB_then_end_num BB_then_num H9 H19). tauto.
           * rewrite H9 in H11. simpl in H11. tauto.
       (*x1 in (nil ++ BBs_else), x0 in (nil ++ BBs_then) *)
       - unfold BB_all_lt in H13. specialize (H13 x0 H10).
@@ -806,6 +809,7 @@ Proof.
         + rewrite H13 in H10. simpl in H10. tauto.
         + rewrite H9 in H11. simpl in H11. tauto.
         }
+    +
     (*集合性质证明*)
 Admitted.
 
