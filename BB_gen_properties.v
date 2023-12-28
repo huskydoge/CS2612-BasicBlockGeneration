@@ -48,6 +48,8 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
     endnum = res.(next_block_num)
     -> 
       basicblocks = BBs ++ BBnow'::nil ++ BBdelta ->
+      BBnow'.(block_num) <> BBnow'.(jump_info).(jump_dest_1) ->
+      Some BBnow'.(block_num) <> BBnow'.(jump_info).(jump_dest_2) ->
     (
       BB_all_ge BBdelta startnum /\
       BB_all_lt BBdelta endnum /\ 
@@ -128,7 +130,9 @@ Proof.
 }
   rewrite H2. split.
   - unfold BB_all_ge. intros. tauto.
-  - unfold BB_all_lt. intros. admit.
+  - unfold BB_all_lt. intros. split. 
+    + intros. tauto.
+    + simpl.
 Admitted.
 
 Lemma P_BBgen_con:

@@ -716,10 +716,11 @@ Proof.
       unfold BBnum_set in H10, H11.
       destruct H10 as [? [? ?]]. destruct H11 as [? [? ?]].
       unfold In in H10. unfold In in H11.
-      assert (Nat.lt BB_num1 BB_then_end_num) as Hcomp1. {
-        unfold BB_all_ge in H12. unfold BB_all_lt in H13.
-        admit.
-      }
+      destruct H11; destruct H10.
+      - rewrite <- H10 in H17. rewrite <- H11 in H18. rewrite <- H17 in H18. 
+        rewrite BBnowelse_num_prop in H18. rewrite BBnowthen_num_prop in H18.
+        rewrite H2 in H18. pose proof Sx_not_equal_x.
+      
 
       assert (Nat.lt BB_then_end_num BB_else_end_num) as Hcomp2. {
         admit.
