@@ -50,7 +50,8 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
       basicblocks = BBs ++ BBnow'::nil ++ BBdelta ->
     (
       BB_all_ge BBdelta startnum /\
-      BB_all_lt BBdelta endnum
+      BB_all_lt BBdelta endnum /\ 
+      BBnum_set (BBnow':: nil) ∩ BBjmp_dest_set (BBnow'::BBdelta) = ∅
     ).
 
 Definition Q_BBgen_range (c: cmd): Prop :=
@@ -61,7 +62,8 @@ Definition Q_BBgen_range (c: cmd): Prop :=
     -> basicblocks = BBs ++ BBnow'::nil ++ BBdelta ->
     (
       BB_all_ge BBdelta startnum /\
-      BB_all_lt BBdelta endnum
+      BB_all_lt BBdelta endnum /\
+      BBnum_set (BBnow':: nil) ∩ BBjmp_dest_set (BBnow'::BBdelta) = ∅
     ).
 
 
