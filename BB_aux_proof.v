@@ -849,7 +849,7 @@ Proof.
         + rewrite H13 in H10. simpl in H10. tauto.
         + rewrite H9 in H11. simpl in H11. tauto.
         }
-    +
+    + intros contra.
     (*集合性质证明*)
 Admitted.
 

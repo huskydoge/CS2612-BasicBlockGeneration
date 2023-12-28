@@ -300,6 +300,8 @@ Proof.
 Qed.
 
 
+
+
 Lemma BB_dest_in_BBs_jmp_dest_set:
   forall (BBs : list BasicBlock) (bs1 bs2 : BB_state),
      BBnum_set BBs (BB_num bs1) -> ((Bnrm (BB_sem_union BBs) bs1 bs2) : Prop) -> BBjmp_dest_set BBs (BB_num bs2).
@@ -522,7 +524,7 @@ Proof.
 Qed.
 
 
-
+(*IMPORTANT*)
 Lemma BDenote_concat_equiv_BB_list_sem:
   forall (BBnow : BasicBlock) (BBs : list BasicBlock)(bs1 bs2: BB_state),
     separate_property BBnow BBs -> 
@@ -602,7 +604,7 @@ Proof.
   }
   
   rewrite H7. clear H5 H6 H7.
-  admit.
+  admit. (* TODO *)
 Admitted.
 
 Search EDenote.
@@ -713,6 +715,53 @@ Proof.
              pose proof H8 H7. contradiction.
           ++ destruct H6. rewrite H6. simpl. tauto.
 Qed.
+
+
+(*将BB::nil ++ BBs 的jmpdest分离开来*)
+Lemma BBjmp_dest_set_separate:
+  forall (BBnow: BasicBlock) (BBs: list BasicBlock),
+  BBjmp_dest_set (BBnow :: BBs) == BBjmp_dest_set (BBnow :: nil) ∪ BBjmp_dest_set BBs.
+Proof.
+  intros. unfold BBjmp_dest_set. unfold BBjmp_dest_set. sets_unfold. split; intros.
+  - my_destruct H. simpl in H. destruct H.
+    + left. exists BBnow. split. simpl. tauto. rewrite <- H in H0. apply H0.
+    + right. exists x. split. tauto. apply H0.
+  - my_destruct H. simpl in H. destruct H. my_destruct H. destruct H.
+    + exists BBnow. split. simpl. tauto. rewrite <- H in H0. apply H0.
+    + tauto.
+    + my_destruct H. exists x. split. simpl. tauto. apply H0.
+Qed.
+    
+Lemma BB_restrict_sound:
+    forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x1 x2: BB_state),
+    Bnrm
+        (BDenote_concate (BB_jmp_sem BBnow)
+           (BB_list_sem BBs)) x1 x2 -> BB_restrict 
+           BBnow BBs x1.(BB_num) x2.(BB_num).
+Proof.
+  (*TODO*)
+Admitted.
+
+
+(*如果BBs1是BBs2的子集，那么语义上也是*)
+Lemma BB_sem_child_prop :
+  forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2 : BB_state),
+    (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
+    Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
+Proof.
+  (*TODO*)
+Admitted.
+
+(*两个BB如果跳转信息和num相同，那么jmpsem相同*)
+Lemma share_BBjmp_info_and_num_means_same:
+  forall (BB1 BB2: BasicBlock) (x1 x2: BB_state),
+  BB1.(jump_info) = BB2.(jump_info) -> BB1.(block_num) = BB2.(block_num) -> 
+  BB2.(commands) = nil ->
+  Bnrm (BB_jmp_sem BB1) x1 x2 -> Bnrm (BB_sem BB2) x1 x2.
+Proof.
+  intros. 
+  (*TODO*)
+Admitted.
 
 
 Lemma Q_if:
@@ -943,7 +992,6 @@ Proof.
       sets_unfold.
 
 
-
       pose proof BDenote_concat_equiv_BB_list_sem BBnow' BBs_wo_last_.
 
       remember ({|
@@ -963,17 +1011,92 @@ Proof.
         unfold separate_property.  unfold separate_property in separate_prop1.
         pose proof separate_prop1.
         (*BB_jmp的num和jmpinfo都和BBnow'一样*)
-        rewrite HeqBB_jmp.
-        (*TODO*)
-        admit.
+        assert (BBjmp_dest_set (BBnow' :: BBs_wo_last_) == BBjmp_dest_set (BB_jmp :: BBs_wo_last_)).
+        pose proof (BBjmp_dest_set_separate BBnow'  BBs_wo_last_ ).
+        pose proof (BBjmp_dest_set_separate BB_jmp  BBs_wo_last_ ).
+        rewrite H24. rewrite H25. 
+        assert (BBjmp_dest_set (BBnow' :: nil) == BBjmp_dest_set (BB_jmp :: nil)).
+        {
+          unfold BBjmp_dest_set. sets_unfold. split; intros.
+          - my_destruct H26. simpl in H26. destruct H26.
+            + exists BB_jmp. split. 
+              * simpl. tauto. 
+              * assert (jump_dest_1 x3.(jump_info) = jump_dest_1 BB_jmp.(jump_info)).
+                rewrite HeqBB_jmp. cbn [jump_info]. rewrite H26. reflexivity.
+                assert (jump_dest_2 x3.(jump_info) = jump_dest_2 BB_jmp.(jump_info)).
+                rewrite HeqBB_jmp. cbn [jump_info]. rewrite H26. reflexivity.
+                rewrite <- H28. rewrite <- H29. apply H27.
+            + tauto.
+          - my_destruct H26. simpl in H26. destruct H26.
+            + exists BBnow'. split. 
+              * simpl. tauto. 
+              * assert (jump_dest_1 x3.(jump_info) = jump_dest_1 BBnow'.(jump_info)).
+              rewrite <- H26.  rewrite HeqBB_jmp. cbn [jump_info]. reflexivity.
+              assert (jump_dest_2 x3.(jump_info) = jump_dest_2 BBnow'.(jump_info)).
+              rewrite <- H26.  rewrite HeqBB_jmp. cbn [jump_info]. reflexivity.
+              rewrite <- H28. rewrite <- H29. apply H27.
+            + tauto.
+        }
+        rewrite H26. reflexivity.
+        assert (BBnum_set (BBnow' :: nil) == BBnum_set (BB_jmp :: nil)).
+        {
+          unfold BBnum_set. sets_unfold. split; intros.
+          - my_destruct H25. 
+            + exists BB_jmp. split. 
+              * simpl. tauto. 
+              * simpl in H25. destruct H25.
+                ++ assert (block_num x3 = block_num BB_jmp).
+                  rewrite HeqBB_jmp. cbn [block_num]. 
+                  rewrite H25. tauto.
+                  rewrite <- H27. apply H26.
+                ++ tauto.
+          - my_destruct H25. 
+            + exists BBnow'. split. 
+              * simpl. tauto. 
+              * simpl in H25. destruct H25.
+                ++ assert (block_num x3 = block_num BBnow').
+                  rewrite <- H25. rewrite HeqBB_jmp. cbn [block_num]. reflexivity.
+                  rewrite <- H27. apply H26.
+                ++ tauto.
+        }
+        rewrite <- H25. rewrite <- H24. apply H23.
       }
       (*限制的一些性质*)
-      assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). admit. (*TODO*) 
+      assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). 
+      {
+      pose proof BB_restrict_sound BBnow' BBs_wo_last_ x1 x2 H14.
+      admit. (*TODO*) 
+      }
       assert (((Rels.id
-      ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_))
-        ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2
-    :
-    Prop)). admit. (* TODO *)
+      ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_)) ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2 :Prop)).
+      {
+      sets_unfold. right.
+      unfold BDenote_concate in H14. cbn [Bnrm] in H14. apply sem_start_end_with in H14.
+      destruct H14. exists x3. destruct H14. split.
+      (*跨一步*)
+      - sets_unfold. pose proof BB_sem_child_prop (BB_jmp::nil) (BB_jmp::nil ++ BBs_wo_last_) x1 x3.
+        assert ((forall bb : BasicBlock,
+        In bb (BB_jmp :: nil) -> In bb (BB_jmp::nil ++ BBs_wo_last_))).
+        {
+          intros. simpl. simpl in H27. destruct H27.
+          - rewrite H27. left. reflexivity.
+          - tauto.
+        }
+        pose proof H26 H27. clear H26.
+        pose proof share_BBjmp_info_and_num_means_same BBnow' BB_jmp x1 x3.
+        assert (BBnow'.(jump_info) = BB_jmp.(jump_info)). rewrite HeqBB_jmp. reflexivity.
+        assert (BBnow'.(block_num) = BB_jmp.(block_num)). rewrite HeqBB_jmp. reflexivity.
+        assert (BB_jmp.(commands) = nil).  rewrite HeqBB_jmp. reflexivity.
+        pose proof H26 H29 H30 H31. pose proof H32 H14.
+        assert (Bnrm (BB_sem_union (BB_jmp :: nil)) x1 x3).
+        {
+          unfold BB_sem_union. cbn [Bnrm]. sets_unfold. left. apply H33.
+        }
+        pose proof H28 H34.
+        apply H35.
+      (*再跨一步*)
+      - admit. (*TODO, simlar*)
+      }
     specialize (H22 H23 H24 H25).
     rename H15 into key1.  
     clear H23 H24 H25 H21 H16.
