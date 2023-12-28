@@ -638,6 +638,49 @@ Proof.
   - apply IHa. inversion H. exact H.
 Qed.
 
+Lemma x_lt_Sx:
+  forall (a : nat),
+    lt a (S a).
+Proof.
+  intros. induction a.
+  - apply Nat.lt_0_succ.
+  - apply lt_n_S. apply IHa.
+Qed.
+
+Lemma x_lt_SSx:
+  forall (a : nat),
+    lt a (S (S a)).
+Proof.
+  intros. induction a.
+  - apply Nat.lt_0_succ.
+  - apply lt_n_S. apply IHa.
+Qed.
+
+Lemma a_lt_b_le_c:
+  forall (a b c : nat),
+    lt a b -> le b c -> lt a c.
+Proof.
+  intros. induction H0.
+  - apply H.
+  - transitivity b.
+    + apply H.
+    + admit.
+Admitted.
+
+Lemma a_lt_b_a_neq_b : forall (a b : nat), lt a b -> a <> b.
+Proof.
+  intros a b H.
+  unfold not.
+  intros H0.
+  rewrite H0 in H.
+  apply (lt_irrefl b H).
+Qed.
+
+Lemma not_a_lt_a: forall (a : nat), ~ lt a a.
+Proof.
+  intros a H.
+  apply (lt_irrefl a H).
+Qed.
 
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
@@ -726,35 +769,44 @@ Proof.
       destruct H10 as [? [? ?]]. destruct H11 as [? [? ?]].
       unfold In in H10. unfold In in H11.
       destruct H11; destruct H10.
+      (*BB_now_else = x1, BB_now_then = x0 *)
       - rewrite <- H10 in H17. rewrite <- H11 in H18. rewrite <- H17 in H18. 
         rewrite BBnowelse_num_prop in H18. rewrite BBnowthen_num_prop in H18.
-        rewrite H2 in H18. pose proof Sx_not_equal_x.
+        rewrite H2 in H18. pose proof Sx_not_equal_x BB_then_num H18. tauto.
+      (*BB_now_else = x1, x0 in (nil ++ BBs_then) *)
+      - rewrite <- H17 in H18. rewrite <- H11 in H18. rewrite BBnowelse_num_prop in H18.
+        destruct BBs_then.
+        + simpl in H10. tauto.
+        + unfold BB_all_ge in H12. specialize (H12 x0 H10). destruct H12. 
+          * assert (lt BB_else_num x0.(block_num)).
+            assert (lt BB_else_num BB_num1). rewrite H4. rewrite H3. apply x_lt_SSx.
+            apply (a_lt_b_le_c BB_else_num BB_num1 x0.(block_num) H19 H12). rewrite H18 in H19. pose proof (not_a_lt_a (x0.(block_num))). contradiction.
+          * rewrite H12 in H10. simpl in H10. tauto.
+      (*x1 in (nil ++ BBs_else), BB_now_then = x0 *)
       
-
-      assert (Nat.lt BB_then_end_num BB_else_end_num) as Hcomp2. {
-        admit.
-      }
-
-      destruct H10 as [? | ?]; destruct H11 as [? | ?].
-      - rewrite <- H10 in H17. rewrite <- H11 in H18.
-        rewrite BBnowthen_num_prop in H17.
-        rewrite BBnowelse_num_prop in H18. 
-        rewrite H2 in H18. rewrite H17 in H18. 
-        pose proof Sx_not_equal_x x H18. tauto.
-      - unfold BB_all_ge in H9. specialize (H9 x1). apply H9 in H11.
-        unfold BB_all_lt in H13. 
-        destruct H11 as [? | ?].
-
-      admit.
-    }
-
-    (* 最后利用集合性质来证 *)
-    admit.
-
-
-
-    
-
+      - rewrite <- H10 in H17. rewrite <- H18 in H17. rewrite BBnowthen_num_prop in H17.
+        destruct BBs_else.
+        + simpl in H11. tauto.
+        + unfold BB_all_ge in H9. specialize (H9 x1 H11). destruct H9. 
+          (* Nat.le BB_then_end_num x1.(block_num)*)
+          * assert (lt BB_then_num x1.(block_num)).
+            assert (lt BB_then_num BB_then_end_num). 
+            {
+            admit.
+            }
+            apply (a_lt_b_le_c BB_then_num BB_then_end_num x1.(block_num) H19 H9). rewrite H17 in H19. pose proof (not_a_lt_a (x1.(block_num))). contradiction.
+          * rewrite H9 in H11. simpl in H11. tauto.
+      (*x1 in (nil ++ BBs_else), x0 in (nil ++ BBs_then) *)
+      - unfold BB_all_lt in H13. specialize (H13 x0 H10).
+        unfold BB_all_ge in H9. specialize (H9 x1 H11).
+        destruct H13 as [? | ?]; destruct H9 as [? | ?].
+        + clear H16.
+          pose proof (a_lt_b_le_c x0.(block_num) BB_then_end_num x1.(block_num) H13 H9). rewrite <- H18 in H17. rewrite H17 in H16. pose proof (not_a_lt_a x1.(block_num)).  contradiction.
+        + rewrite H9 in H11. simpl in H11. tauto.
+        + rewrite H13 in H10. simpl in H10. tauto.
+        + rewrite H9 in H11. simpl in H11. tauto.
+        }
+    (*集合性质证明*)
 Admitted.
 
  
