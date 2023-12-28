@@ -623,14 +623,66 @@ Proof.
   - pose proof BBgen_range_single_soundness_correct (CIf e c1 c2).
     unfold Q_BBgen_range in H8.
     remember ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num)) as endnum.
-    specialize (H8 BBnum endnum BBs BBnow). pose proof H8 Heqendnum.
+    specialize (H8 BBnum endnum BBs BBnow BBnow' BBs'). 
+    unfold to_result in H8.
+    pose proof H8 Heqendnum H. 
+    sets_unfold. intros.
+    destruct H10 as [? ?].
     admit.
   - sets_unfold in H8. tauto.
   - sets_unfold in H8. tauto.
-  - admit.
+  - pose proof BBgen_range_list_soundness_correct c1.
+    pose proof BBgen_range_list_soundness_correct c2.
+    unfold P_BBgen_range in H8, H9.
+    (* Do if part first *)
+    remember ((list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow'::nil) BB_then BB_num1).(next_block_num)) as BB_then_end_num.
+    specialize (H8 BB_num1 BB_then_end_num (BBs ++ BBnow'::nil) BB_then BB_now_then BBs_then).
+    pose proof H8 HeqBB_then_end_num.
+
+    assert (to_result (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1) = (BBs ++ BBnow' :: nil) ++ BB_now_then :: nil ++ BBs_then). {
+      unfold to_result.
+      (*TODO *)
+      admit.
+    }
+    pose proof H10 H11. destruct H12 as [? ?].
+
+    (* Then the second part *)
+    remember ((list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_then_end_num).(next_block_num)) as BB_else_end_num.
+
+    specialize (H9 BB_then_end_num BB_else_end_num (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_now_else BBs_else).
+    pose proof H9 HeqBB_else_end_num.
+    
+    assert (to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_then_end_num) =
+    (BBs ++ BBnow' :: BB_now_then :: BBs_then) ++ BB_now_else :: nil ++ BBs_else). {
+      admit.
+    }
+
+    pose proof H14 H15. destruct H16 as [? ?].
+    clear H10 H11 H14 H15.
+    
+    (* 之后只需要利用H12, H13, H16, H17来完成证明 *)
+    assert (~ exists x, x ∈ BBnum_set (BB_now_then :: nil ++ BBs_then) /\ x ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). {
+      intros contra.
+      destruct contra. destruct H10 as [? ?].
+      sets_unfold in H10. unfold BBnum_set in H10.
+      destruct H10 as [? [? ?]].
+      sets_unfold in H11. unfold BBnum_set in H11.
+      destruct H11 as [? [? ?]].
+      unfold BB_all_ge in H12, H16.
+      unfold BB_all_lt in H13, H17.
+      specialize (H12 x0). specialize (H13 x0). specialize (H16 x1). specialize (H17 x1).
+      (* ! H10, H11与H12-H17不一致啊 *)
+      admit.
+    }
+
+    (* 最后利用集合性质来证 *)
+    admit.
+
+
     
 
 Admitted.
+
  
 
 Definition Qb(c: cmd): Prop :=
