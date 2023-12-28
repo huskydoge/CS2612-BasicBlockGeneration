@@ -42,27 +42,24 @@ Definition BB_all_lt (BBs: list BasicBlock)(num: nat): Prop :=
 
 
 Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results)(cmds: list cmd): Prop :=
-    forall startnum endnum BBs BBnow,
+    forall startnum endnum BBs BBnow BBnow' BBdelta,
     let res := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow startnum) in
     let basicblocks := to_result res in
     endnum = res.(next_block_num)
     -> 
+      basicblocks = BBs ++ BBnow'::nil ++ BBdelta ->
     (
-      exists BBnow' BBdelta,
-      basicblocks = BBs ++ BBnow'::nil ++ BBdelta /\
       BB_all_ge BBdelta startnum /\
       BB_all_lt BBdelta endnum
     ).
 
 Definition Q_BBgen_range (c: cmd): Prop :=
-    forall startnum endnum BBs BBnow,
+    forall startnum endnum BBs BBnow BBnow' BBdelta,
     let res := (cmd_BB_gen c BBs BBnow startnum) in
     let basicblocks := to_result res in
     endnum = res.(next_block_num)
-    ->
+    -> basicblocks = BBs ++ BBnow'::nil ++ BBdelta ->
     (
-      exists BBnow' BBdelta,
-      basicblocks = BBs ++ BBnow'::nil ++ BBdelta /\
       BB_all_ge BBdelta startnum /\
       BB_all_lt BBdelta endnum
     ).
@@ -92,22 +89,15 @@ Lemma Q_asgn_BBgen_range:
 forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
 Proof.
-  intros. unfold Q_BBgen_range. intros.
-  exists {| block_num := BBnow.(block_num);
-              commands := BBnow.(commands) ++ {| X := x; E := e |} :: nil;
-              jump_info := BBnow.(jump_info) |}.
-  exists nil. repeat split. unfold BB_all_ge. intros. right. tauto.
-  unfold BB_all_lt. intros. right. tauto.
-Qed.
+  intros. unfold Q_BBgen_range. intros.  (*TODO*)
+Admitted.
 
 Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
     P_BBgen_range cmd_BB_gen nil.
 Proof.
-  intros. unfold P_BBgen_range. intros.
-  exists BBnow. exists nil. repeat split.
-  unfold BB_all_ge. intros. right. tauto.
-  unfold BB_all_lt. intros. right. tauto.
-Qed.
+  intros. unfold P_BBgen_range. intros.   (*TODO*)
+
+Admitted.
 
 Lemma P_BBgen_con:
     forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results) (c: cmd) (cmds: list cmd),
