@@ -72,6 +72,7 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CIf e c1 c2).
 Proof.
+ intros.
   Admitted.
 
 Lemma Q_while_BBgen_range:
@@ -84,20 +85,49 @@ forall (e: expr) (c1 c2: list cmd),
 Proof.
   Admitted.
 
+Lemma length_eq : forall (A : Type) (xs ys : list A),
+  xs = ys -> length xs = length ys.
+Proof.
+  intros A xs ys H.
+  rewrite H.
+  reflexivity.
+Qed.
+
 (*这个肯定成立，没有新的block*)
 Lemma Q_asgn_BBgen_range:
 forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
 Proof.
-  intros. unfold Q_BBgen_range. intros.  (*TODO*)
-Admitted.
+  intros. unfold Q_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0.
+  pose proof app_inv_head BBs  ({|
+     block_num := BBnow.(block_num);
+     commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+     jump_info := BBnow.(jump_info) |} :: nil) (BBnow' :: BBdelta) H0.
+  clear H0. assert(BBdelta=nil).
+{
+  destruct BBdelta. tauto. pose proof length_eq BasicBlock ( {|
+     block_num := BBnow.(block_num);
+     commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+     jump_info := BBnow.(jump_info) |} :: nil) (BBnow' :: b :: BBdelta) H1. unfold length in H0. discriminate.
+}
+  rewrite H0. split.
+  - unfold BB_all_ge. intros. tauto.
+  - unfold BB_all_lt. intros. tauto.
+Qed.
 
 Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
     P_BBgen_range cmd_BB_gen nil.
 Proof.
-  intros. unfold P_BBgen_range. intros.   (*TODO*)
-
-Admitted.
+  intros. unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0. 
+  pose proof app_inv_head BBs (BBnow :: nil) (BBnow' :: BBdelta) H0.
+  assert(BBdelta = nil).
+{
+  destruct BBdelta. tauto. pose proof length_eq BasicBlock (BBnow :: nil) (BBnow' :: b :: BBdelta) H1. discriminate.
+}
+  rewrite H2. split.
+  - unfold BB_all_ge. intros. tauto.
+  - unfold BB_all_lt. intros. tauto.
+Qed.
 
 Lemma P_BBgen_con:
     forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results) (c: cmd) (cmds: list cmd),
