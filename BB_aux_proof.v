@@ -678,8 +678,8 @@ Proof.
       rewrite BBlist_else_prop. simpl. rewrite app_assoc_reverse. reflexivity.
     }
 
-    pose proof H9 H14 H15. destruct H16 as [? ?].
-    clear H10 H11 H14 H15.
+    (* pose proof H9 H14 H15. destruct H16 as [? ?].
+    clear H10 H11 H14 H15. *)
     
     (* 之后只需要利用H12, H13, H16, H17来完成证明 *)
     assert (~ exists x, x ∈ BBnum_set (BB_now_then :: nil ++ BBs_then) /\ x ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). {
