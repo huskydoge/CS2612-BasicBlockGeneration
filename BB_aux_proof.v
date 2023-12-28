@@ -706,8 +706,8 @@ Proof.
   - apply H.
   - transitivity b.
     + apply H.
-    + admit.
-Admitted.
+    + nia. 
+Qed.
 
 Lemma a_lt_b_a_neq_b : forall (a b : nat), lt a b -> a <> b.
 Proof.
@@ -728,8 +728,8 @@ Lemma not_a_le_b_and_a_gt_b: forall (a b : nat),
   le a b -> lt b a -> False.
 Proof.
   intros. unfold not. intros.
-  destruct H.
-Admitted. (*TODO*)
+  destruct H; nia.
+Qed.
 
 Lemma cur_num_lt_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
@@ -739,7 +739,7 @@ Proof.
   - simpl. apply le_n.
   - simpl. destruct a.
     + simpl. admit.
-    + simpl. admit.
+    + simpl. cbn[cmd_BB_gen]. admit.
     + simpl. admit.
 Admitted. (*TODO*)
 
@@ -870,7 +870,7 @@ Proof.
         + rewrite H13 in H10. simpl in H10. tauto.
         + rewrite H9 in H11. simpl in H11. tauto.
         }
-    +
+    
     (*集合性质证明*)
 Admitted.
 
