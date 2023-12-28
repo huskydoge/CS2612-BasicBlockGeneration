@@ -796,7 +796,7 @@ Proof.
         + simpl in H11. tauto.
         + unfold BB_all_ge in H9. specialize (H9 x1 H11). destruct H9. 
           (* Nat.le BB_then_end_num x1.(block_num)*)
-          * rewrite <- H17 in H9. assert (lt BB_then_num BB_then_end_num). admit.
+          * rewrite <- H17 in H9. assert (lt BB_then_num BB_then_end_num). admit. (*TODO*)
             pose proof (not_a_le_b_and_a_gt_b BB_then_end_num BB_then_num H9 H19). tauto.
           * rewrite H9 in H11. simpl in H11. tauto.
       (*x1 in (nil ++ BBs_else), x0 in (nil ++ BBs_then) *)
