@@ -607,7 +607,7 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
          |};
       |}
       -> to_result (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1) = BBs ++ BBnow' :: nil ++  BB_now_then::nil ++ BBs_then
-      -> to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_then :: BBs_then) BB_else BB_num2) = BBs ++ BBnow'::nil ++ BB_now_then :: nil ++ BBs_then ++ BB_now_else :: nil ++ BBs_else
+      -> to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_num2) = BBs ++ BBnow'::nil ++ BB_now_then :: nil ++ BBs_then ++ BB_now_else :: nil ++ BBs_else
       -> BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1).(next_block_num)
       
       -> (separate_property BBnow' BBs_wo_last) (*分离性质1*)
@@ -672,7 +672,7 @@ Proof.
     specialize (H9 BB_then_end_num BB_else_end_num (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_now_else BBs_else).
     pose proof H9 HeqBB_else_end_num.
     
-    assert (to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_then :: BBs_then) BB_else BB_then_end_num) =
+    assert (to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_then_end_num) =
     (BBs ++ BBnow' :: BB_now_then :: BBs_then) ++ BB_now_else :: nil ++ BBs_else). {
       rewrite <- BB_num2_prop. 
       rewrite BBlist_else_prop. simpl. rewrite app_assoc_reverse. reflexivity.
