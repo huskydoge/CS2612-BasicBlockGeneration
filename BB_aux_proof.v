@@ -627,6 +627,7 @@ Proof.
     + right. pose proof IHBBs H. apply H0.
 Qed. 
 
+
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
     Qd_if e c1 c2.
@@ -713,9 +714,23 @@ Proof.
       unfold BBnum_set in H10, H11.
       destruct H10 as [? [? ?]]. destruct H11 as [? [? ?]].
       unfold In in H10. unfold In in H11.
+      assert (Nat.lt BB_num1 BB_then_end_num) as Hcomp1. {
+        unfold BB_all_ge in H12. unfold BB_all_lt in H13.
+        admit.
+      }
+
+      assert (Nat.lt BB_then_end_num BB_else_end_num) as Hcomp2. {
+        admit.
+      }
+
       destruct H10 as [? | ?]; destruct H11 as [? | ?].
       - rewrite <- H10 in H17. rewrite <- H11 in H18.
-        rewrite <- H17 in H18. contradiction.  
+        rewrite <- H17 in H18. admit.
+      - unfold BB_all_ge in H9. specialize (H9 x1). apply H9 in H11.
+        unfold BB_all_lt in H13. 
+        
+        destruct H11 as [? | ?].
+
       admit.
     }
 
