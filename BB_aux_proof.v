@@ -573,7 +573,7 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       BB_then_num BB_else_num BB_next_num
       BB_then BB_else BBs_then BBs_else 
       BB_now_then BB_now_else
-      BB_num1
+      BB_num1 BB_num2
       , 
 
       res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' -> res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last ->
@@ -606,7 +606,9 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
          jump_condition := Some e
          |};
       |}
-  
+      -> to_result (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1) = BBs ++ BBnow' :: nil ++  BB_now_then::nil ++ BBs_then
+      -> to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_then :: BBs_then) BB_else BB_num2) = BBs ++ BBnow'::nil ++ BB_now_then :: nil ++ BBs_then ++ BB_now_else :: nil ++ BBs_else
+      -> BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1).(next_block_num)
       
       -> (separate_property BBnow' BBs_wo_last) (*分离性质1*)
       /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ) (*分离性质3*)
@@ -618,7 +620,7 @@ Lemma Qd_if_sound:
     Qd_if e c1 c2.
 Proof.
   intros.
-  unfold Qd_if. intros.
+  unfold Qd_if. intros. rename H8 into BBlist_then_prop. rename H9 into BBlist_else_prop. rename H10 into BB_num2_prop.
   repeat split.
   - pose proof BBgen_range_single_soundness_correct (CIf e c1 c2).
     unfold Q_BBgen_range in H8.
@@ -631,8 +633,9 @@ Proof.
     destruct H9 as [? [? ?]].
     unfold BBnum_set in H10. unfold BBjmp_dest_set in H11.
     destruct H10 as [? [? ?]]. 
-    assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil ++ BBs_wo_last = BBs'). {
-          (* 这个是列表的性质 *)
+    assert ((BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) = BBs'). {
+          (* 这个是列表的性质, 在H里两边消去即可 *)
+          rewrite H0 in H.
           admit.
     }
     assert (a ∈ BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs')). {
@@ -640,11 +643,11 @@ Proof.
       - unfold BBnum_set. exists x. split. apply H10. apply H14.
       - unfold BBjmp_dest_set. exists x0. repeat split. unfold In.
         unfold In in H11. destruct H11 as [? | ?]. left. apply H11. right. 
-        rewrite <- H15. right. apply H11. left. apply H16.
+        rewrite <- H15. admit. left. apply H16. 
       - unfold BBnum_set. repeat split. exists x. split. apply H10. apply H14.
         unfold BBjmp_dest_set. exists x0. repeat split. unfold In.
         unfold In in H11. destruct H11 as [? | ?]. left. apply H11. right.
-        rewrite <- H15. right. apply H11. right. apply H16. 
+        rewrite <- H15. admit. right. apply H16. 
     }
     
     rewrite H13 in H16. sets_unfold in H16. tauto.
@@ -659,9 +662,7 @@ Proof.
     pose proof H8 HeqBB_then_end_num.
 
     assert (to_result (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1) = (BBs ++ BBnow' :: nil) ++ BB_now_then :: nil ++ BBs_then). {
-      unfold to_result.
-      (*TODO *)
-      admit.
+      rewrite BBlist_then_prop. simpl. rewrite app_assoc_reverse. reflexivity.
     }
     pose proof H10 H11. destruct H12 as [? ?].
 
@@ -671,12 +672,13 @@ Proof.
     specialize (H9 BB_then_end_num BB_else_end_num (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_now_else BBs_else).
     pose proof H9 HeqBB_else_end_num.
     
-    assert (to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_then_end_num) =
+    assert (to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_then :: BBs_then) BB_else BB_then_end_num) =
     (BBs ++ BBnow' :: BB_now_then :: BBs_then) ++ BB_now_else :: nil ++ BBs_else). {
-      admit.
+      rewrite <- BB_num2_prop. 
+      rewrite BBlist_else_prop. simpl. rewrite app_assoc_reverse. reflexivity.
     }
 
-    pose proof H14 H15. destruct H16 as [? ?].
+    pose proof H9 H14 H15. destruct H16 as [? ?].
     clear H10 H11 H14 H15.
     
     (* 之后只需要利用H12, H13, H16, H17来完成证明 *)
