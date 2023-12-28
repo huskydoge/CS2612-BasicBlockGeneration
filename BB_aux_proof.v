@@ -656,6 +656,15 @@ Proof.
   - apply lt_n_S. apply IHa.
 Qed.
 
+Lemma x_lt_SSSx:
+  forall (a : nat),
+    lt a (S (S (S a))).
+Proof.
+  intros. induction a.
+  - apply Nat.lt_0_succ.
+  - apply lt_n_S. apply IHa.
+Qed.
+
 Lemma a_lt_b_le_c:
   forall (a b c : nat),
     lt a b -> le b c -> lt a c.
@@ -687,6 +696,18 @@ Lemma not_a_le_b_and_a_gt_b: forall (a b : nat),
 Proof.
   intros. unfold not. intros.
   destruct H.
+Admitted. (*TODO*)
+
+Lemma cur_num_lt_next_num:
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
+    le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
+Proof.
+  intros. induction c.
+  - simpl. apply le_n.
+  - simpl. destruct a.
+    + simpl. admit.
+    + simpl. admit.
+    + simpl. admit.
 Admitted. (*TODO*)
 
 Lemma Qd_if_sound:
@@ -796,7 +817,10 @@ Proof.
         + simpl in H11. tauto.
         + unfold BB_all_ge in H9. specialize (H9 x1 H11). destruct H9. 
           (* Nat.le BB_then_end_num x1.(block_num)*)
-          * rewrite <- H17 in H9. assert (lt BB_then_num BB_then_end_num). admit. (*TODO*)
+          * rewrite <- H17 in H9. 
+            assert (lt BB_then_num BB_then_end_num). pose proof (cur_num_lt_next_num (BBs ++ BBnow' :: nil) BB_then BB_num1 c1) .
+            rewrite <- HeqBB_then_end_num in H19.
+            assert (lt BB_then_num BB_num1). rewrite H4. rewrite H3. rewrite H2. apply x_lt_SSSx. pose proof (a_lt_b_le_c BB_then_num BB_num1 BB_then_end_num H20 H19). tauto.
             pose proof (not_a_le_b_and_a_gt_b BB_then_end_num BB_then_num H9 H19). tauto.
           * rewrite H9 in H11. simpl in H11. tauto.
       (*x1 in (nil ++ BBs_else), x0 in (nil ++ BBs_then) *)
