@@ -629,6 +629,15 @@ Proof.
     + right. pose proof IHBBs H. apply H0.
 Qed. 
 
+Lemma Sx_not_equal_x:
+  forall (a : nat),
+    S a = a -> False.
+Proof.
+  intros. induction a.
+  - inversion H.
+  - apply IHa. inversion H. exact H.
+Qed.
+
 
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
@@ -727,10 +736,12 @@ Proof.
 
       destruct H10 as [? | ?]; destruct H11 as [? | ?].
       - rewrite <- H10 in H17. rewrite <- H11 in H18.
-        rewrite <- H17 in H18. admit.
+        rewrite BBnowthen_num_prop in H17.
+        rewrite BBnowelse_num_prop in H18. 
+        rewrite H2 in H18. rewrite H17 in H18. 
+        pose proof Sx_not_equal_x x H18. tauto.
       - unfold BB_all_ge in H9. specialize (H9 x1). apply H9 in H11.
         unfold BB_all_lt in H13. 
-        
         destruct H11 as [? | ?].
 
       admit.
