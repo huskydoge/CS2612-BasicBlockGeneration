@@ -23,6 +23,25 @@ Import CDenote.
 Import EmptyEDenote.
 Import BDenote.
 
+Lemma never_go_wrong: 
+   forall (e: EDenote) (s: state),
+  (exists (i : int64), (e).(nrm) s i).
+Proof.
+Admitted.
+
+Lemma true_or_false:
+  forall (e: EDenote) (s: state),
+  (test_true_jmp (e)) s \/ (test_false_jmp (e)) s.
+Proof.
+  intros. assert((exists (i : int64), (e).(nrm) s i)). pose proof never_go_wrong e s. tauto.
+  destruct H.
+  pose proof classic (Int64.signed x = 0).
+  unfold test_true_jmp. unfold test_false_jmp.
+  destruct H0.
+  - right. rewrite <- H0. rewrite Int64.repr_signed. apply H.
+  - left. exists x. split. apply H. apply H0.
+Qed.
+
 Ltac my_destruct H :=
   match type of H with 
   | exists _, _ => destruct H as [? H]; my_destruct H 
@@ -179,18 +198,19 @@ Lemma BB_jmp_sem_num_in_BBjmp_dest_set:
   (BB_jmp_sem BB).(Bnrm) bs1 bs2 -> bs2.(BB_num) ∈ BBjmp_dest_set (BB :: nil).
 Proof.
   intros.
-  unfold BB_jmp_sem in H. simpl in H.
-  unfold BBjmp_dest_set. sets_unfold. unfold In.
-  exists BB. unfold BJump_sem in H.
-  destruct eval_cond_expr.
-  + split. left. tauto. right. destruct jump_dest_2. 
-    - unfold cjmp_sem in H. simpl in H.
-      destruct H as [[? [? [?| ?]]] ].
-      ++ admit. (* 这是说If语句走Then分支的情况，没有用到dest2，缺条件 *)
-      ++ destruct H1 as [? ?]. rewrite H1. tauto.
-    - admit. (* 这里是Condition有的，但是却选择了UJmp的情况，应该是None，但是缺条件 *) 
-  + split. left. tauto. left. unfold ujmp_sem in H. simpl in H. destruct H as [? [? [? ?]]]. rewrite H1. tauto. 
-Admitted.
+  unfold BBjmp_dest_set. unfold In. simpl. exists BB. split.
+  + left. tauto.
+  + unfold BB_jmp_sem in H. simpl in H. destruct eval_cond_expr.
+    unfold BJump_sem in H. destruct jump_dest_2.
+    - unfold cjmp_sem in H. simpl in H. my_destruct H. 
+      destruct H2.
+      ++ left. destruct H2. rewrite H2. reflexivity.
+      ++ right. destruct H2. rewrite H2. reflexivity.
+    - unfold ujmp_sem in H. simpl in H. my_destruct H.
+      left. rewrite H1. reflexivity.
+    - unfold BJump_sem in H. unfold ujmp_sem in H. simpl in H. my_destruct H.
+      left. rewrite H1. reflexivity.
+Qed.
 
 
 Lemma iter_concate:
@@ -638,77 +658,17 @@ Proof.
   - apply IHa. inversion H. exact H.
 Qed.
 
-Lemma x_lt_Sx:
-  forall (a : nat),
-    lt a (S a).
+ (* used in Qd_if_sound *)
+Lemma list_assoc : forall (A : Type) (xs ys zs : list A),
+  (xs ++ ys) ++ zs = xs ++ ys ++ zs.
 Proof.
-  intros. induction a.
-  - apply Nat.lt_0_succ.
-  - apply lt_n_S. apply IHa.
+  intros A xs ys zs.
+  induction xs as [| x xs' IHxs'].
+  - (* Base case: xs is empty *)
+    simpl. reflexivity.
+  - (* Inductive case: xs = x :: xs' *)
+    simpl. rewrite IHxs'. reflexivity.
 Qed.
-
-Lemma x_lt_SSx:
-  forall (a : nat),
-    lt a (S (S a)).
-Proof.
-  intros. induction a.
-  - apply Nat.lt_0_succ.
-  - apply lt_n_S. apply IHa.
-Qed.
-
-Lemma x_lt_SSSx:
-  forall (a : nat),
-    lt a (S (S (S a))).
-Proof.
-  intros. induction a.
-  - apply Nat.lt_0_succ.
-  - apply lt_n_S. apply IHa.
-Qed.
-
-Lemma a_lt_b_le_c:
-  forall (a b c : nat),
-    lt a b -> le b c -> lt a c.
-Proof.
-  intros. induction H0.
-  - apply H.
-  - transitivity b.
-    + apply H.
-    + admit.
-Admitted.
-
-Lemma a_lt_b_a_neq_b : forall (a b : nat), lt a b -> a <> b.
-Proof.
-  intros a b H.
-  unfold not.
-  intros H0.
-  rewrite H0 in H.
-  apply (lt_irrefl b H).
-Qed.
-
-Lemma not_a_lt_a: forall (a : nat), ~ lt a a.
-Proof.
-  intros a H.
-  apply (lt_irrefl a H).
-Qed.
-
-Lemma not_a_le_b_and_a_gt_b: forall (a b : nat), 
-  le a b -> lt b a -> False.
-Proof.
-  intros. unfold not. intros.
-  destruct H.
-Admitted. (*TODO*)
-
-Lemma cur_num_lt_next_num:
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
-    le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
-Proof.
-  intros. induction c.
-  - simpl. apply le_n.
-  - simpl. destruct a.
-    + simpl. admit.
-    + simpl. admit.
-    + simpl. admit.
-Admitted. (*TODO*)
 
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
@@ -730,8 +690,12 @@ Proof.
     destruct H10 as [? [? ?]]. 
     assert ((BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) = BBs'). {
           (* 这个是列表的性质, 在H里两边消去即可 *)
-          rewrite H0 in H.
-          admit. (*TODO*)
+          rewrite H0 in H. assert(BBs ++ (BBnow' :: nil) ++ (BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) =
+    BBs ++ ((BBnow' :: nil) ++ BBs')). rewrite <- H. 
+          pose proof list_assoc BasicBlock BBs  ((BBnow' :: nil) ++ BBs_wo_last)  ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil).
+          rewrite H15. reflexivity. 
+          pose proof app_inv_head (BBs ++ BBnow' :: nil) (BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) BBs'.
+         rewrite app_assoc_reverse in H16. rewrite app_assoc_reverse in H16. pose proof H16 H15. apply H17.
     }
     assert (a ∈ BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs')). {
       sets_unfold. destruct H11 as [? [? [? | ?]]]. split. 
@@ -797,44 +761,35 @@ Proof.
       destruct H10 as [? [? ?]]. destruct H11 as [? [? ?]].
       unfold In in H10. unfold In in H11.
       destruct H11; destruct H10.
-      (*BB_now_else = x1, BB_now_then = x0 *)
       - rewrite <- H10 in H17. rewrite <- H11 in H18. rewrite <- H17 in H18. 
         rewrite BBnowelse_num_prop in H18. rewrite BBnowthen_num_prop in H18.
-        rewrite H2 in H18. pose proof Sx_not_equal_x BB_then_num H18. tauto.
-      (*BB_now_else = x1, x0 in (nil ++ BBs_then) *)
-      - rewrite <- H17 in H18. rewrite <- H11 in H18. rewrite BBnowelse_num_prop in H18.
-        destruct BBs_then.
-        + simpl in H10. tauto.
-        + unfold BB_all_ge in H12. specialize (H12 x0 H10). destruct H12. 
-          * assert (lt BB_else_num x0.(block_num)).
-            assert (lt BB_else_num BB_num1). rewrite H4. rewrite H3. apply x_lt_SSx.
-            apply (a_lt_b_le_c BB_else_num BB_num1 x0.(block_num) H19 H12). rewrite H18 in H19. pose proof (not_a_lt_a (x0.(block_num))). contradiction.
-          * rewrite H12 in H10. simpl in H10. tauto.
-      (*x1 in (nil ++ BBs_else), BB_now_then = x0 *)
+        rewrite H2 in H18. pose proof Sx_not_equal_x.
       
-      - rewrite <- H10 in H17. rewrite <- H18 in H17. rewrite BBnowthen_num_prop in H17.
-        destruct BBs_else.
-        + simpl in H11. tauto.
-        + unfold BB_all_ge in H9. specialize (H9 x1 H11). destruct H9. 
-          (* Nat.le BB_then_end_num x1.(block_num)*)
-          * rewrite <- H17 in H9. 
-            assert (lt BB_then_num BB_then_end_num). pose proof (cur_num_lt_next_num (BBs ++ BBnow' :: nil) BB_then BB_num1 c1) .
-            rewrite <- HeqBB_then_end_num in H19.
-            assert (lt BB_then_num BB_num1). rewrite H4. rewrite H3. rewrite H2. apply x_lt_SSSx. pose proof (a_lt_b_le_c BB_then_num BB_num1 BB_then_end_num H20 H19). tauto.
-            pose proof (not_a_le_b_and_a_gt_b BB_then_end_num BB_then_num H9 H19). tauto.
-          * rewrite H9 in H11. simpl in H11. tauto.
-      (*x1 in (nil ++ BBs_else), x0 in (nil ++ BBs_then) *)
-      - unfold BB_all_lt in H13. specialize (H13 x0 H10).
-        unfold BB_all_ge in H9. specialize (H9 x1 H11).
-        destruct H13 as [? | ?]; destruct H9 as [? | ?].
-        + clear H16.
-          pose proof (a_lt_b_le_c x0.(block_num) BB_then_end_num x1.(block_num) H13 H9). rewrite <- H18 in H17. rewrite H17 in H16. pose proof (not_a_lt_a x1.(block_num)).  contradiction.
-        + rewrite H9 in H11. simpl in H11. tauto.
-        + rewrite H13 in H10. simpl in H10. tauto.
-        + rewrite H9 in H11. simpl in H11. tauto.
-        }
-    +
-    (*集合性质证明*)
+
+      assert (Nat.lt BB_then_end_num BB_else_end_num) as Hcomp2. {
+        admit.
+      }
+
+      destruct H10 as [? | ?]; destruct H11 as [? | ?].
+      - rewrite <- H10 in H17. rewrite <- H11 in H18.
+        rewrite BBnowthen_num_prop in H17.
+        rewrite BBnowelse_num_prop in H18. 
+        rewrite H2 in H18. rewrite H17 in H18. 
+        pose proof Sx_not_equal_x x H18. tauto.
+      - unfold BB_all_ge in H9. specialize (H9 x1). apply H9 in H11.
+        unfold BB_all_lt in H13. 
+        destruct H11 as [? | ?].
+
+      admit.
+    }
+Q
+    (* 最后利用集合性质来证 *)
+    admit.
+
+
+
+    
+
 Admitted.
 
  
@@ -852,7 +807,7 @@ Definition Qb(c: cmd): Prop :=
     \/
     (*CIf / CWhile*)
     (exists BBnow' BBs' BBnum' BBs_wo_last, 
-      res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\
+(*       res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\ *)
       res.(BBn).(block_num) = BBnum' /\
       BCequiv (BDenote_concate (BB_jmp_sem BBnow')(BB_list_sem BBs_wo_last)) (cmd_sem c) BBnow.(block_num) (S (S BBnum))). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
 (* # BUG BCequiv里不应该有最后的BBnext！*)
