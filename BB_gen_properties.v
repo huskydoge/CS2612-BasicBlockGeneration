@@ -14,8 +14,23 @@ Require Import Main.cmd_denotations.
 Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
-Require Import Main.BB_aux_proof.
 
+
+Definition BB_num_set := nat -> Prop.
+
+Definition add_one_num (oldset: BB_num_set)(new: nat): BB_num_set :=
+  fun BBnum => oldset BBnum \/ BBnum = new.
+
+(*BBnum \in (nat \cap [BBnum_start, BBnum_end]) *)
+Definition BBnum_start_end_set (BBnum_start: nat) (BBnum_end: nat): BB_num_set :=
+  fun BBnum => Nat.le BBnum_start BBnum /\ Nat.le BBnum BBnum_end.
+
+Definition BBnum_set (BBs: list BasicBlock): BB_num_set :=
+  (* 拿到一串BBs里，所有出现的BBnum，包括block num和jmp dest num*)
+  fun BBnum => exists BB, (In BB BBs) /\ BB.(block_num) = BBnum.
+
+Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
+  fun BBnum => exists BB, (In BB BBs) /\ (BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum).
 
 (*BBnumset BBs >= num*)
 Definition BB_all_ge (BBs: list BasicBlock)(num: nat): Prop :=
@@ -60,7 +75,7 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CIf e c1 c2).
 Proof.
-Admitted.
+  Admitted.
 
 Lemma Q_while_BBgen_range:
 forall (e: expr) (c1 c2: list cmd),

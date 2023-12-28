@@ -39,26 +39,6 @@ Proof.
 Qed.
 
 
-(* Lemma P_nil_aux1:
-  forall (BBnow : BasicBlock) (a0 : state),
-  Bnrm
-    (jmp_sem (jump_dest_1 BBnow.(jump_info))
-      (jump_dest_2 BBnow.(jump_info))
-      (eval_cond_expr (jump_condition BBnow.(jump_info))))
-    {| BB_num := BBnow.(block_num); st := a0 |}
-    {| BB_num := BBnow.(block_num); st := a0 |}.
-Proof.
-  intros.
-  unfold jmp_sem.
-  destruct jump_condition.
-  + admit.
-  + simpl. 
-    split. tauto.
-    admit.    
-Admitted. *)
-
-
-
 (* #TODO: fix p_nil*)
 Lemma P_nil: forall cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results,
   P nil (cmd_BB_gen).

@@ -977,85 +977,83 @@ Proof.
     specialize (H22 H23 H24 H25).
     rename H15 into key1.  
     clear H23 H24 H25 H21 H16.
+    pose proof true_or_false e a.
+    assert (exists i : int64, EDenote.nrm (eval_expr e) a i). {
+      pose proof No_err_and_inf_for_expr e x1. rewrite H17 in H16. tauto.
+    }
+    pose proof H15 H16.
+    destruct H21. 
+    ** left. (*如果test true*)
+      exists a. split. 
+      -- pose proof BB_true_jmp_iff_test_true_jmp e a. apply H23. apply H21.
+      -- clear H5. apply key1. rename H22 into key2.
+          set(bs1_ := {|
+          BB_num := BB_then_num;
+          st := a ;  
+          |}).
+          exists bs1_. exists x2. cbn [Bnrm]. repeat split.
+          *** apply sem_start_end_with in key2.
+              destruct key2 as [bs' [step1 step2]].
+              clear H14.
+              (* apply unfold_once in step2. apply separate_step_aux1 in step2. *)
 
-
-         pose proof true_or_false e a.
-         assert (exists i : int64, EDenote.nrm (eval_expr e) a i). {
-            pose proof No_err_and_inf_for_expr e x1. rewrite H17 in H16. tauto.
-         }
-         pose proof H15 H16.
-         destruct H21. 
-         ** left. (*如果test true*)
-            exists a. split. 
-            -- pose proof BB_true_jmp_iff_test_true_jmp e a. apply H23. apply H21.
-            -- clear H5. apply key1. rename H22 into key2.
-               set(bs1_ := {|
-               BB_num := BB_then_num;
-               st := a ;  
-               |}).
-               exists bs1_. exists x2. cbn [Bnrm]. repeat split.
-               *** apply sem_start_end_with in key2.
-                    destruct key2 as [bs' [step1 step2]].
-                    clear H14.
-                    (* apply unfold_once in step2. apply separate_step_aux1 in step2. *)
-
-                    (*第二刀*)
-                    (*这里需要加入四条分离性质*)
-                    pose proof (separate_step_aux3 (BB_now_then::nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) bs1_ x2).
-                    assert (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ). tauto. 
-                    assert ( ~ BB_num bs1_ ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). admit. (*TODO*)
-                    assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). tauto.
-                    assert (BB_num x2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)). admit. (*TODO*)
-                    pose proof (H5 H14 H22 H23 H24). clear H14 H22 H23 H24 H5.
-                    assert (bs' = bs1_). {
-                      unfold BB_sem in step1.
-                      cbn [Bnrm] in step1.
-                      sets_unfold in step1.
-                      my_destruct step1.
-                      simpl in step1. rewrite HeqBB_jmp in step1. simpl in step1. sets_unfold in step1.
-                      pose proof BB_jmp_sem_simplify BB_jmp x3 bs' e BB_then_num BB_else_num. 
-                      assert ((BB_jmp.(jump_info) =
-                      {|
-                        jump_kind := CJump;
-                        jump_dest_1 := BB_then_num;
-                        jump_dest_2 := Some BB_else_num;
-                        jump_condition := Some e
-                      |}) /\ Bnrm (BB_jmp_sem BB_jmp) x3 bs'). {
-                        split.
-                        rewrite HeqBB_jmp. reflexivity.
-                        apply H5.
-                      }
-                      pose proof H14 H22.
-                      destruct H23.
-                      + my_destruct H23.
-                        rewrite HeqBB_jmp in H26. simpl in H26. assert (bs' = bs1_). 
-                        {
-                          rewrite <- step1 in H24. rewrite H17 in H24. pose proof compare_two_BB_state bs' bs1_.
-                          apply H27. split. apply H26. apply H24.
-                        }
-                        apply H27.
-                      + my_destruct H23.
-                      pose proof true_or_false_classic1 e a H21.
-                      rewrite step1 in H17. rewrite H17 in H23. contradiction. 
-                    }
-                    rewrite H5 in step2.
-                    pose proof H25 step2. 
-                    assert ({|
-                    block_num := BB_now_then.(block_num);
-                    commands := BB_cmds_then;
-                    jump_info := BB_now_then.(jump_info)
-                  |} = BB_now_then). {
-                  apply compare_two_BasicBlock. repeat split.
-                    - simpl. rewrite H8. reflexivity.
+              (*第二刀*)
+              (*这里需要加入四条分离性质*)
+              pose proof (separate_step_aux3 (BB_now_then::nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) bs1_ x2).
+              assert (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ). tauto. 
+              assert ( ~ BB_num bs1_ ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). admit. (*TODO*)
+              assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). tauto.
+              assert (BB_num x2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)). admit. (*TODO*)
+              pose proof (H5 H14 H22 H23 H24). clear H14 H22 H23 H24 H5.
+              assert (bs' = bs1_). {
+                unfold BB_sem in step1.
+                cbn [Bnrm] in step1.
+                sets_unfold in step1.
+                my_destruct step1.
+                simpl in step1. rewrite HeqBB_jmp in step1. simpl in step1. sets_unfold in step1.
+                pose proof BB_jmp_sem_simplify BB_jmp x3 bs' e BB_then_num BB_else_num. 
+                assert ((BB_jmp.(jump_info) =
+                {|
+                  jump_kind := CJump;
+                  jump_dest_1 := BB_then_num;
+                  jump_dest_2 := Some BB_else_num;
+                  jump_condition := Some e
+                |}) /\ Bnrm (BB_jmp_sem BB_jmp) x3 bs'). {
+                  split.
+                  rewrite HeqBB_jmp. reflexivity.
+                  apply H5.
+                }
+                pose proof H14 H22.
+                destruct H23.
+                + my_destruct H23.
+                  rewrite HeqBB_jmp in H26. simpl in H26. assert (bs' = bs1_). 
+                  {
+                    rewrite <- step1 in H24. rewrite H17 in H24. pose proof compare_two_BB_state bs' bs1_.
+                    apply H27. split. apply H26. apply H24.
                   }
-                  rewrite H22. apply H14.
-                *** apply H18.
-               *** rewrite H9. reflexivity.
-               *** apply H20.
+                  apply H27.
+                + my_destruct H23.
+                pose proof true_or_false_classic1 e a H21.
+                rewrite step1 in H17. rewrite H17 in H23. contradiction. 
+              }
+              rewrite H5 in step2.
+              pose proof H25 step2. 
+              assert ({|
+              block_num := BB_now_then.(block_num);
+              commands := BB_cmds_then;
+              jump_info := BB_now_then.(jump_info)
+            |} = BB_now_then). {
+            apply compare_two_BasicBlock. repeat split.
+              - simpl. rewrite H8. reflexivity.
+            }
+            rewrite H22. apply H14.
+          *** apply H18.
+          *** rewrite H9. reflexivity.
+          *** apply H20.
 
-          ** right. admit. (*test false的情况*)
-        - admit.  (*反方向*)
-        - admit.  (*出错*)
-        - admit. (*出错*)
-        - admit. (*无限*)
+    ** right. admit. (*test false的情况*)
+  - admit.  (*反方向*)
+  - admit.  (*出错*)
+  - admit. (*出错*)
+  - admit. (*无限*)
 Admitted.

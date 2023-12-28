@@ -14,6 +14,7 @@ Require Import Main.cmd_denotations.
 Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
+Require Import Main.BB_gen_properties.
 
 
 Import Denotation.
@@ -94,21 +95,6 @@ Definition BDenote_concate (BD1: BDenote) (BD2: BDenote): BDenote := {|
 |}.
 
 
-Definition BB_num_set := nat -> Prop.
-
-Definition add_one_num (oldset: BB_num_set)(new: nat): BB_num_set :=
-  fun BBnum => oldset BBnum \/ BBnum = new.
-
-(*BBnum \in (nat \cap [BBnum_start, BBnum_end]) *)
-Definition BBnum_start_end_set (BBnum_start: nat) (BBnum_end: nat): BB_num_set :=
-  fun BBnum => Nat.le BBnum_start BBnum /\ Nat.le BBnum BBnum_end.
-
-Definition BBnum_set (BBs: list BasicBlock): BB_num_set :=
-  (* 拿到一串BBs里，所有出现的BBnum，包括block num和jmp dest num*)
-  fun BBnum => exists BB, (In BB BBs) /\ BB.(block_num) = BBnum.
-
-Definition BBjmp_dest_set (BBs: list BasicBlock): BB_num_set :=
-  fun BBnum => exists BB, (In BB BBs) /\ (BB.(jump_info).(jump_dest_1) = BBnum \/ BB.(jump_info).(jump_dest_2) = Some BBnum).
 
 (* Some Important Property for S ========================================================================================================
   假如(S1 U ... U Sn)* (BBnum_start, s1) (BBnum_end, s2)
@@ -633,7 +619,7 @@ Lemma Qd_if_sound:
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qd_if e c1 c2.
 Proof.
   intros.
-  unfold Qd_if. intros. (*TODO*)
+  unfold Qd_if. intros.
   repeat split.
   - admit.
   - admit.
