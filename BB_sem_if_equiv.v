@@ -801,7 +801,7 @@ Proof.
                       jump_condition := Some e
                       |};
                    |}).
-  pose proof Qd_if_sound e c1 c2 H H0. rename H1 into Qdif.
+  pose proof Qd_if_sound e c1 c2. rename H1 into Qdif.
   unfold Qd_if in Qdif. 
   (* Get correct BBs for P c1 *)
   (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)

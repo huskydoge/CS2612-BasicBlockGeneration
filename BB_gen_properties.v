@@ -48,6 +48,8 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
     endnum = res.(next_block_num)
     -> 
       basicblocks = BBs ++ BBnow'::nil ++ BBdelta ->
+      BBnow'.(block_num) <> BBnow'.(jump_info).(jump_dest_1) ->
+      Some BBnow'.(block_num) <> BBnow'.(jump_info).(jump_dest_2) ->
     (
       BB_all_ge BBdelta startnum /\
       BB_all_lt BBdelta endnum /\ 
@@ -123,11 +125,12 @@ Proof.
   intros. unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0. 
   pose proof app_inv_head BBs (BBnow :: nil) (BBnow' :: BBdelta) H0.
   assert(BBdelta = nil).
-
-(* {
-  destruct BBdelta. tauto. pose proof length_eq BasicBlock (BBnow :: nil) (BBnow' :: b :: BBdelta) H1. discriminate.
-} 
-  rewrite H2. split.
+{
+  admit.
+  (* destruct BBdelta. tauto. pose proof length_eq BasicBlock (BBnow :: nil) (BBnow' :: b :: BBdelta) H1. discriminate. *)
+}
+  admit.
+  (* rewrite H2. split.
   - unfold BB_all_ge. intros. tauto.
   - unfold BB_all_lt. intros. split. 
     + intros. tauto.
@@ -185,7 +188,6 @@ Proof.
     pose proof BBgen_range_single_soundness_correct.
     apply H.
 Qed.
-
 
 
 
