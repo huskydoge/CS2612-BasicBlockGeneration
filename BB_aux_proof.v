@@ -386,7 +386,7 @@ Proof.
 Qed.
 
 
-
+(* BUG Not Used*)
 Lemma BBs_sem_num_not_BB_sem_num:
 forall (bs1 bs2 bs3: BB_state) (BBnow: BasicBlock) (BBs: list BasicBlock),
   (BBs <> nil) -> separate_property BBnow BBs -> BB_num bs1 = BBnow.(block_num) -> Bnrm (BB_sem_union (nil ++ BBs)) bs2 bs3 -> (bs2 <> bs3) -> BB_num bs3 <> BB_num bs1.
@@ -492,7 +492,7 @@ Proof.
   apply H0 in H6. tauto.
 Qed.
 
-(*不考虑出错和inf的情况*)
+(* 不考虑出错和inf的情况*)
 Lemma No_err_and_inf_for_expr:
   forall (e: expr) (bs: BB_state),
   (exists i : int64, EDenote.nrm (eval_expr e) (st bs) i).
@@ -601,7 +601,10 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
     let res := cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in 
 
-    (*TODO added new condition!!!!*)
+    (* 新条件，BBnow为无条件跳转！*)
+    (BBnow.(jump_info).(jump_kind) = UJump /\ BBnow.(jump_info).(jump_dest_2) = None) ->
+
+
     (*CIf*)
     forall BBnow' BBs' BBs_wo_last 
       BB_then_num BB_else_num BB_next_num
@@ -651,6 +654,7 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅). (*分离性质5*)
  
 
+(*如果在BBs里，那么一定在BBs ++ tl里*)
 Lemma In_tail_inclusive:
   forall (BBs : list BasicBlock) (BB tl : BasicBlock),
     In BB BBs -> In BB (BBs ++ tl::nil).
@@ -749,7 +753,13 @@ Lemma Qd_if_sound:
     Qd_if e c1 c2.
 Proof.
   intros.
-  unfold Qd_if. intros. rename H8 into BBlist_then_prop. rename H9 into BBlist_else_prop. rename H10 into BB_num2_prop. rename H11 into BBnowthen_num_prop. rename H12 into BBnowelse_num_prop.
+  unfold Qd_if. intros.
+  rename H0 into BBlist_prop.
+  rename H1 into wo_last_prop. rename H2 into then_num_prop. rename H3 into else_num_prop. rename H4 into next_num_prop. rename H5 into BBnum1_prop. 
+  rename H6 into BB_then_prop. rename H7 into BB_else_prop. rename H8 into BBnow'_prop.
+  rename H9 into BBlist_then_prop. rename H10 into BBlist_else_prop.
+  rename H11 into BBnum2_prop. rename H12 into BBnowthen_blocknum_prop.
+  rename H13 into BBnowelse_blocknum_prop.
   repeat split.
   - pose proof BBgen_range_single_soundness_correct (CIf e c1 c2).
     unfold Q_BBgen_range in H8.
