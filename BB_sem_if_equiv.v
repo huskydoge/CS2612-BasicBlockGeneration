@@ -963,7 +963,7 @@ Proof.
               |}
           |} with BB_else.
   + remember (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1).(next_block_num) as BB_then_end_num.
-    clear Qdif.
+    (* clear Qdif. *)
     unfold to_result. rewrite H5. rewrite <- app_assoc. simpl.
     simpl in H11. rewrite H2 in H11. rewrite H11.
     rewrite <- app_assoc. simpl.
@@ -988,11 +988,10 @@ Proof.
       rewrite H13 in *. 
       specialize (Qdif BBs BBnow BBnum BBnow' BBs'_ BBs_wo_last_ 
       BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
-      (S BB_next_num) add_prop1 add_prop2 H13).
-      assert (S BB_next_num = S BB_next_num). reflexivity.
-      assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = S BB_else_num). reflexivity.
-
-      assert (BB_then =
+      (S BB_next_num) BB_num2 add_prop1 add_prop2 H13).
+      assert (A1: BB_else_num = S BB_then_num). reflexivity. assert (A2: BB_next_num = S BB_else_num). reflexivity.
+      assert (A3: S BB_next_num = S BB_next_num). reflexivity.
+      assert (A4: BB_then =
       {|
         block_num := BB_then_num;
         commands := nil;
@@ -1003,8 +1002,8 @@ Proof.
             jump_dest_2 := None;
             jump_condition := None
           |}
-      |}). reflexivity.
-      assert (BB_else =
+      |}) . reflexivity.
+      assert (A5: BB_else =
       {|
         block_num := BB_else_num;
         commands := nil;
@@ -1016,7 +1015,7 @@ Proof.
             jump_condition := None
           |}
       |}). reflexivity.
-      assert (BBnow' =
+      assert (A6: BBnow' =
       {|
         block_num := BBnow.(block_num);
         commands := BBnow.(cmd);
@@ -1028,8 +1027,26 @@ Proof.
             jump_condition := Some e
           |}
       |}). reflexivity.
-      specialize (Qdif H15 H16 H14 H17 H18 H19).
-      clear H13 H15 H16 H14 H17 H18 H19.
+      assert (A7: to_result
+      (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then (S BB_next_num)) =
+    BBs ++ BBnow' :: nil ++ BB_now_then :: nil ++ BBs_then).
+      {
+        admit.
+      }
+      assert (A8: to_result
+      (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_num2) = BBs ++BBnow' :: nil ++ BB_now_then :: nil ++ BBs_then ++ BB_now_else :: nil ++ BBs_else).
+      {
+        admit.
+      }
+      assert (A9: BB_num2 =
+      (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then
+         (S BB_next_num)).(next_block_num)). {
+           admit.
+         }
+      assert (A10: BB_now_then.(block_num) = BB_then_num). admit.
+      assert (A11: BB_now_else.(block_num) = BB_else_num). admit.
+      specialize (Qdif A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11).
+      clear H13.
 
       assert (BB_now_else.(block_num) = BB_else_num).
       {
