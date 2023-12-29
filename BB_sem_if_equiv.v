@@ -1357,15 +1357,16 @@ Proof.
             admit.
         *** apply H18.
         *** rewrite H20. admit. (*结论应该是显然的*)
-  - intros.
+  - intros. rename H1 into cmd_sem_prop.
     exists {| st := a; BB_num := BBnow.(block_num) |}.
     exists {| st := a0; BB_num := BB_next_num |}.
     repeat split; try tauto.
     remember ({| BB_num := BBnow.(block_num); st := a |} ) as bs1.
     remember ({| BB_num := BB_next_num; st := a0 |}) as bs2.
-    unfold cmd_sem in H1. sets_unfold in H1.
-    destruct H1 as [? | ?].
-    + sets_unfold in H1. my_destruct H1.
+    unfold cmd_sem in cmd_sem_prop. sets_unfold in cmd_sem_prop.
+    destruct cmd_sem_prop as [t1 | t2].
+    (* test true -> then 分支*)
+    + sets_unfold in t1. destruct t1 as [i [t11 t12]].
       unfold BDenote_concate. cbn[Bnrm]. sets_unfold. 
       exists {| st := a; BB_num := BB_then.(block_num) |}. split.
 
@@ -1376,9 +1377,9 @@ Proof.
          ++ unfold cjmp_sem. cbn[Bnrm]. 
             repeat split; subst bs1; subst bs2; try tauto.
             left. simpl. split. tauto. unfold test_true_jmp.
-            * unfold test_true in H1. sets_unfold in H1.
-              my_destruct H1. exists x2. split.
-              apply H1. apply H4.
+            * unfold test_true in t11. sets_unfold in t11.
+              destruct t11 as [t111 t112]. destruct t111 as [x_ [aux1 aux2]]. exists x_. split.
+              apply aux1. apply aux2.
             * simpl. admit. (* 这个理论上肯定成立 *)
         ++ unfold cjmp_sem. cbn[Bnrm]. 
           repeat split; subst bs1; subst bs2; try tauto.
