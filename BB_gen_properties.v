@@ -108,6 +108,26 @@ Definition empty_block := {|
 |}.
 
 
+Lemma add_BBs_in_generation_reserves_BB:
+  forall (cmds : list cmd) (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+
+  to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) 
+  = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
+Proof.
+  intros.
+   
+Admitted.
+
+
+Lemma add_BBs_in_generation_retains_next_block_num:
+  forall (cmds : list cmd) (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+    (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).(next_block_num) =
+    (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(next_block_num).
+Proof.
+  intros.
+Admitted.
+
+
 Lemma Q_if_BBgen_range:
 forall (e: expr) (c1 c2: list cmd),
     P_BBgen_range cmd_BB_gen c1  ->
@@ -154,16 +174,24 @@ Proof.
   set(else_end_num := (else_res).(next_block_num)).
 
   specialize (c1_prop then_start_num then_end_num BBs BB_then_now then_delta).
-  assert (c1_aux1 : jump_kind BB_then_now.(jump_info) = UJump ). admit.
-  assert (c1_aux2 : then_end_num = (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num).(next_block_num)). admit.
-  assert (c1_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num) = BBs ++ then_delta)). admit.
+  assert (c1_aux1 : jump_kind BB_then_now.(jump_info) = UJump ). subst BB_then_now. simpl. tauto.
+
+  assert (c1_aux2 : then_end_num = (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num).(next_block_num)). subst then_end_num. subst then_res. pose proof add_BBs_in_generation_retains_next_block_num c1 BBs BB_then_now then_start_num. apply H.
+
+  assert (c1_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num) = BBs ++ then_delta)). pose proof add_BBs_in_generation_reserves_BB c1 BBs BB_then_now then_start_num. unfold to_result in H. unfold to_result. subst then_delta. subst then_res. apply H. 
+
   specialize (c1_prop c1_aux1 c1_aux2 c1_aux3).
   clear c1_aux1 c1_aux2 c1_aux3.
 
   specialize (c2_prop then_end_num endnum BBs BB_else_now else_delta).
-  assert (c2_aux1 : jump_kind BB_else_now.(jump_info) = UJump ). admit.
-  assert (c2_aux2 : endnum = (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num).(next_block_num)). admit.
-  assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num) = BBs ++ else_delta)). admit.
+  assert (c2_aux1 : jump_kind BB_else_now.(jump_info) = UJump ). subst BB_else_now. simpl. tauto.
+
+  assert (c2_aux2 : endnum = (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num).(next_block_num)). {
+    rewrite endnum_eq.
+    (* Correct, but cannot prove. *)
+    admit.
+  }
+  assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num) = BBs ++ else_delta)). subst else_delta. subst else_res. unfold to_result. pose proof add_BBs_in_generation_reserves_BB c2 BBs BB_else_now then_end_num. unfold to_result in H. apply H.
   specialize (c2_prop c2_aux1 c2_aux2 c2_aux3).
   clear c2_aux1 c2_aux2 c2_aux3.
 
@@ -173,7 +201,11 @@ Proof.
   (*拆分BBdelta, 去掉头部的number后， BBdelta里有BBnow的num，还有剩下所有新增的num，其中包括BBthendelta，BBelsedelta，以及BBnext*)
   assert (separate_delta_num: 
   BBnum_set (tl BBdelta) ==  BBnum_set then_delta ∪ BBnum_set else_delta ∪ unit_set(S (S startnum))
-  ). admit.
+  ). {
+    split; sets_unfold; intros.
+    - admit.
+    - admit.
+  }
 
   (*拆分BBdelta的jump dest. jumpdest里包含，一个是来自BBnow的预定跳转信息，另一个是BBthennum和BBelsenum*)
   assert (separate_delta_jump_dest:
