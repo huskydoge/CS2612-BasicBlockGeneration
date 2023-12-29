@@ -740,8 +740,23 @@ Lemma BB_restrict_sound:
            (BB_list_sem BBs)) x1 x2 -> BB_restrict 
            BBnow BBs x1.(BB_num) x2.(BB_num).
 Proof.
-  (*TODO*)
-Admitted.
+  intros.
+  unfold BDenote_concate in H. cbn[Bnrm] in H.
+  sets_unfold in H. destruct H as [? [? ?]].
+  unfold BB_restrict. repeat split.
+  - unfold BB_jmp_sem in H. cbn[Bnrm] in H.
+    unfold BJump_sem in H. destruct eval_cond_expr.
+    destruct jump_dest_2.
+    + unfold cjmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H2.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H1.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H1.
+  - unfold BB_list_sem in H0. cbn[Bnrm] in H0.
+    unfold BBjmp_dest_set. admit.
+  - sets_unfold. intros. my_destruct H1. admit.
+  - sets_unfold in H1. tauto.
+  - sets_unfold in H1. tauto.  
+Admitted. 
+
 
 
 (*如果BBs1是BBs2的子集，那么语义上也是*)
@@ -750,8 +765,10 @@ Lemma BB_sem_child_prop :
     (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
     Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
 Proof.
-  (*TODO*)
+  intros. 
 Admitted.
+    
+
 
 (*两个BB如果跳转信息和num相同，那么jmpsem相同*)
 Lemma share_BBjmp_info_and_num_means_same:
