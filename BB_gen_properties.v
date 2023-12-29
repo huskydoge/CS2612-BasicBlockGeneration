@@ -16,6 +16,16 @@ Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 
 
+Lemma cut_eq_part:
+  forall (A: Type) (a b: A) (l1 l2: list A),
+  l1 ++ a :: l2 = l1 ++ b :: l2 -> a = b.
+Proof.
+  intros.
+  induction l1.
+  - simpl in H. inversion H. reflexivity.
+  - simpl in H. inversion H. apply IHl1. apply H1.
+Qed.
+
 Definition BB_num_set := nat -> Prop.
 
 Definition add_one_num (oldset: BB_num_set)(new: nat): BB_num_set :=
@@ -314,21 +324,8 @@ Lemma Q_asgn_BBgen_range:
 forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
 Proof.
-  intros. unfold Q_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0.
-  pose proof app_inv_head BBs  ({|
-     block_num := BBnow.(block_num);
-     commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
-     jump_info := BBnow.(jump_info) |} :: nil) (BBnow' :: BBdelta) H0.
-  clear H0. assert(BBdelta=nil).
-{
-  destruct BBdelta. tauto. pose proof length_eq BasicBlock ( {|
-     block_num := BBnow.(block_num);
-     commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
-     jump_info := BBnow.(jump_info) |} :: nil) (BBnow' :: b :: BBdelta) H1. unfold length in H0. discriminate.
-}
-  rewrite H0. split.
-  - unfold BB_all_ge. intros. tauto.
-  - unfold BB_all_lt. intros. admit.
+  intros. unfold Q_BBgen_range. intros. simpl in H0.
+  unfold to_result in H1. simpl in H1. simpl in H1. 
 Admitted.
 
 Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
