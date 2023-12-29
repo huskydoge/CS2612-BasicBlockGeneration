@@ -765,7 +765,11 @@ Lemma BB_sem_child_prop :
     (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
     Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
 Proof.
-  intros. 
+  intros. induction BBs1.
+  + simpl in H0.  tauto.
+  + induction BBs2. 
+    - pose proof H a. simpl in H1. assert(a=a \/ In a BBs1). left. reflexivity. tauto.
+    - admit. (* TODO *)
 Admitted.
     
 
