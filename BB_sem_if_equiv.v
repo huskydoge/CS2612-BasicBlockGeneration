@@ -819,7 +819,7 @@ Proof.
                       |};
                    |}).
   pose proof Qd_if_sound e c1 c2. rename H1 into Qdif.
-  unfold Qd_if in Qdif. 
+  unfold Qd_if in Qdif. rename H into P1. rename H0 into P2. 
   (* Get correct BBs for P c1 *)
   (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_then了*)
@@ -830,11 +830,11 @@ Proof.
   (*此时的BBnow则应该用BB_then了*)
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  unfold P in H. specialize (H (BBs ++ BBnow'::nil) BB_then BB_num1). 
+  unfold P in P1. specialize (P1 (BBs ++ BBnow'::nil) BB_then BB_num1). 
   
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
+  destruct P1 as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
   (* Get correct BBnow for P c2 *)
   set (BB_else := {|
     block_num := BB_else_num;
@@ -849,12 +849,12 @@ Proof.
   (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_now_then ++ BBs_then, 注意这里的BB_now_then和BB_then不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_else了*)
 
-  unfold P in H0. 
+  unfold P in P2. 
 
-  specialize (H0 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
+  specialize (P2 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
 
   (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
-  destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
+  destruct P2 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
 
   (*接下来要去构造结论中的BBs'和BBnum'
     BBnum'是最终停留在的BB的编号，应该是BBnext的编号
@@ -1063,7 +1063,7 @@ Proof.
       assert (A10: BB_now_then.(block_num) = BB_then_num). admit.
       assert (A11: BB_now_else.(block_num) = BB_else_num). admit.
       specialize (Qdif A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11).
-      clear H13.
+      clear H13 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11.
 
       assert (BB_now_else.(block_num) = BB_else_num).
       {
