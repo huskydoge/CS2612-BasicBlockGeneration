@@ -736,6 +736,8 @@ Proof.
   destruct H; nia.
 Qed.
 
+
+
 Lemma cur_num_lt_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
@@ -755,41 +757,38 @@ Proof.
   intros.
   unfold Qd_if. intros.
   rename H0 into BBlist_prop.
+  rename H into jmp_prop.
   rename H1 into wo_last_prop. rename H2 into then_num_prop. rename H3 into else_num_prop. rename H4 into next_num_prop. rename H5 into BBnum1_prop. 
   rename H6 into BB_then_prop. rename H7 into BB_else_prop. rename H8 into BBnow'_prop.
   rename H9 into BBlist_then_prop. rename H10 into BBlist_else_prop.
   rename H11 into BBnum2_prop. rename H12 into BBnowthen_blocknum_prop.
   rename H13 into BBnowelse_blocknum_prop.
   repeat split.
-  - pose proof BBgen_range_single_soundness_correct (CIf e c1 c2).
-    unfold Q_BBgen_range in H8.
+  - pose proof BBgen_range_single_soundness_correct (CIf e c1 c2) as range_prop.
+    unfold Q_BBgen_range in range_prop.
     remember ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num)) as endnum.
-    specialize (H8 BBnum endnum BBs BBnow BBnow' BBs'). 
-    unfold to_result in H8.
-    pose proof H8 Heqendnum H. 
-    sets_unfold. intros.
-    destruct H10 as [? ?].
-    destruct H9 as [? [? ?]].
-    unfold BBnum_set in H10. unfold BBjmp_dest_set in H11.
-    destruct H10 as [? [? ?]]. 
-    assert ((BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) = BBs'). {
+    specialize (range_prop BBnum endnum BBs BBnow (BBnow'::nil ++ BBs')). 
+    unfold to_result in range_prop.
+    pose proof range_prop jmp_prop Heqendnum BBlist_prop as range_prop. 
+    sets_unfold. intros. rename H into key.
+    destruct range_prop as [num_range_prop1 [num_range_prop2 jmp_range_prop]].
+    assert (key_prop1: (BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) = BBs'). {
           (* 这个是列表的性质, 在H里两边消去即可 *)
           assert(BBs ++ (BBnow' :: nil) ++ (BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) =
-          BBs ++ ((BBnow' :: nil) ++ BBs')). rewrite <- H. 
+          BBs ++ ((BBnow' :: nil) ++ BBs')). rewrite <- BBlist_prop. 
                 pose proof list_assoc BasicBlock BBs  ((BBnow' :: nil) ++ BBs_wo_last)  ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil).
-                rewrite H0. rewrite H15. reflexivity. 
-                pose proof app_inv_head (BBs ++ BBnow' :: nil) (BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) BBs'.
-               rewrite app_assoc_reverse in H16. rewrite app_assoc_reverse in H16. pose proof H16 H15. apply H17.
+                rewrite wo_last_prop. 
+                rewrite <-  app_assoc.
+                rewrite app_assoc_reverse. reflexivity.
+                pose proof app_inv_head ( BBs ++ (BBnow' :: nil)) (BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) (BBs').
+                apply H0. rewrite <- app_assoc. rewrite app_assoc_reverse. apply H.
     }
-    assert (a ∈ BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs')). {
-      sets_unfold. destruct H11 as [? [? [? | ?]]]. split. 
-      - unfold BBnum_set. exists x. split. apply H10. apply H14.
-      - unfold BBjmp_dest_set. exists x0. repeat split. unfold In.
-        unfold In in H11. destruct H11 as [? | ?]. left. apply H11. right. 
-        rewrite <- H15. 
-        + pose proof In_tail_inclusive BBs_wo_last x0 (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).
-          pose proof H17 H11. apply H18.
-        + left. apply H16. 
+    assert (key_prop2: a ∈ BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs')). {
+      sets_unfold. destruct key as [key1 key2]. split. 
+      - apply key1.
+      - unfold BBjmp_dest_set in key2. unfold BBjmp_dest_set. destruct key2 as [? [? ?]]. exists x. split.
+        + apply H0.
+        + apply H1.
       - unfold BBnum_set. repeat split. exists x. split. apply H10. apply H14.
         unfold BBjmp_dest_set. exists x0. repeat split. unfold In.
         unfold In in H11. destruct H11 as [? | ?]. left. apply H11. right.
