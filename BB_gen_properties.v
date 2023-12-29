@@ -48,8 +48,6 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
     endnum = res.(next_block_num)
     -> 
       basicblocks = BBs ++ BBnow'::nil ++ BBdelta ->
-      BBnow'.(block_num) <> BBnow'.(jump_info).(jump_dest_1) ->
-      Some BBnow'.(block_num) <> BBnow'.(jump_info).(jump_dest_2) ->
     (
       BB_all_ge BBdelta startnum /\
       BB_all_lt BBdelta endnum /\ 
