@@ -16,6 +16,7 @@ Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 Require Import Main.BB_aux_proof.
 Require Import Coq.Program.Equality.
+Require Import Main.BB_gen_properties.
 Import Denotation.
 Import EDenote.
 Import CDenote.
