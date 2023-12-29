@@ -777,7 +777,7 @@ Lemma Q_if:
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qb (CIf e c1 c2).
 Proof.
   intros.
-  unfold Qb. intros. rename H1 into jmp_prop. rename H2 into BBnow_num_prop. right. 
+  unfold Qb. intros. rename H1 into jmp_prop. rename H2 into BBnow_num_prop. rename H3 into BBnow_not_jmp_toself. right. 
   (* 这里要和BBgeneration里的情况对齐
   P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
   P c1用于分配的BBnum也是如此，如下：    
@@ -1060,7 +1060,10 @@ Proof.
         rewrite H3. simpl. reflexivity.
       }
 
-      specialize (Qdif H15 H16 H14 H17 H18 H19 lst_prop1 lst_prop2 BB_num2_prop BBnowthen_num_prop BBnowelse_num_prop).
+      specialize (
+        Qdif H15 H16 H14 H17 H18 H19 
+        lst_prop1 lst_prop2 BB_num2_prop BBnowthen_num_prop BBnowelse_num_prop
+        BBnow_num_prop BBnow_not_jmp_toself).
       clear H13 H15 H16 H14 H17 H18 H19.
 
       assert (BB_now_else.(block_num) = BB_else_num).
@@ -1151,7 +1154,27 @@ Proof.
       assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). 
       {
       pose proof BB_restrict_sound BBnow' BBs_wo_last_ x1 x2 H14.
-      admit. (*TODO*) 
+        assert (t1: BBnow'.(block_num) = BB_jmp.(block_num)). rewrite HeqBB_jmp. reflexivity.
+        assert (t2: BBnow'.(jump_info) = BB_jmp.(jump_info)). rewrite HeqBB_jmp. reflexivity.
+        unfold BB_restrict. unfold BB_restrict in H24. rewrite t1 in H24.
+        assert (t3: BBnum_set (BBnow' :: nil) == BBnum_set (BB_jmp :: nil)).
+        sets_unfold. intros. split; intros; rename H25 into focus.
+        - unfold BBnum_set in *. destruct focus as [f1 f2]. exists BB_jmp. split.
+          + simpl. tauto.
+          + destruct f2 as [cf1 cf2]. simpl in cf1. destruct cf1.
+            ++ rewrite <- H25 in cf2. rewrite <- t1. tauto.
+            ++ tauto.
+        -  unfold BBnum_set in *. destruct focus as [f1 f2]. exists BBnow'. split.
+          + simpl. tauto.
+          + destruct f2 as [cf1 cf2]. simpl in cf1. destruct cf1.
+            ++ rewrite <- H25 in cf2. rewrite t1. tauto.
+            ++ tauto.
+        - rename H24 into key.
+          assert (key2: BBnum_set (BB_jmp :: nil) ∩ BBnum_set BBs_wo_last_ == ∅).
+          {
+            rewrite <- t3. tauto. 
+          }
+          tauto.
       }
       assert (((Rels.id
       ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_)) ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2 :Prop)).

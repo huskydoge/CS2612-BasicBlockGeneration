@@ -601,7 +601,10 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
     let res := cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in 
 
-    (* 新条件，BBnow为无条件跳转！*)
+
+
+    (*BBnow的jumpinfo是CJump*)
+    (* BBnow为无条件跳转！*)
     (BBnow.(jump_info).(jump_kind) = UJump /\ BBnow.(jump_info).(jump_dest_2) = None) ->
 
 
@@ -648,8 +651,10 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       -> BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then BB_num1).(next_block_num)
       -> BB_now_then.(block_num) = BB_then_num
       -> BB_now_else.(block_num) = BB_else_num
-      
-      -> (separate_property BBnow' BBs_wo_last) (*分离性质1*)
+      -> lt BBnow.(block_num) BBnum  (*BBnow的num小于下一个分配的num*)
+      -> BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) (*BBnow不会无条件跳转到自身*)
+      ->
+      (separate_property BBnow' BBs_wo_last) (*分离性质1*)
       /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅ ) (*分离性质3*)
       /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅). (*分离性质5*)
  
@@ -754,6 +759,8 @@ Proof.
   rename H9 into BBlist_then_prop. rename H10 into BBlist_else_prop.
   rename H11 into BBnum2_prop. rename H12 into BBnowthen_blocknum_prop.
   rename H13 into BBnowelse_blocknum_prop.
+  rename H14 into bbnow_num_lt_BBnum.
+  rename H15 into bbnow_num_neq_jmpdest1.
   repeat split.
   - pose proof BBgen_range_single_soundness_correct (CIf e c1 c2) as range_prop.
     unfold Q_BBgen_range in range_prop.
@@ -789,13 +796,26 @@ Proof.
         + apply H0. 
     }
 
-    assert (empty_: BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs') = ∅).
+    assert (empty_: BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs') == ∅).
     { 
-    (*num_range_prop1 | num_range_prop2 | jmp_range_prop*)
-    admit. (*TODO*)
-
+      (*num_range_prop1 | num_range_prop2 | jmp_range_prop*)
+      sets_unfold in jmp_range_prop.
+      intros contra.
+      specialize (jmp_range_prop contra).
+      split.
+      - intros.
+        destruct H as [cond1 cond2].
+        pose proof jmp_range_prop cond2.
+        destruct H as [case1 | case2].
+        + unfold section in case1. destruct case1 as [? ?]. unfold BBnum_set in cond1.
+          destruct cond1 as [BBnow'_ conds].
+          destruct conds. simpl in H1. destruct H1. rewrite <- H1 in H2. rewrite BBnow'_prop in H2.
+          cbn [block_num] in H2. rewrite H2 in bbnow_num_lt_BBnum. lia. tauto.
+        + unfold unit_set in case2. unfold BBnum_set in cond1. destruct cond1. destruct H. simpl in H.
+          destruct H. rewrite <- H in H0. rewrite BBnow'_prop in H0. cbn [block_num] in H0. lia. tauto.
+      - intros. sets_unfold in H. tauto.
     }
-    rewrite empty_ in key_prop2. tauto.
+    sets_unfold in empty_. specialize (empty_ a). tauto.
     
     (* rewrite H13 in H16. sets_unfold in H16. tauto. *)
   - sets_unfold in H. tauto.
@@ -929,7 +949,8 @@ Definition Qb(c: cmd): Prop :=
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
     let res := cmd_BB_gen c BBs BBnow BBnum in
     jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None ->
-    lt BBnow.(block_num) BBnum ->
+    lt BBnow.(block_num) BBnum -> 
+    BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) -> (*不会跳转到自己*)
     (*CAsgn*)
     (exists BBnow' BBcmd,
       res.(BBn) = BBnow' /\
