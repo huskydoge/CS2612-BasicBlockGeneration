@@ -765,7 +765,11 @@ Lemma BB_sem_child_prop :
     (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
     Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
 Proof.
-  intros. 
+  intros. induction BBs1.
+  + simpl in H0.  tauto.
+  + induction BBs2. 
+    - pose proof H a. simpl in H1. assert(a=a \/ In a BBs1). left. reflexivity. tauto.
+    - admit. (* TODO *)
 Admitted.
     
 
@@ -1306,12 +1310,12 @@ Proof.
     ** right. exists a. split. (*test false的情况*)
       -- pose proof BB_false_jmp_iff_test_false_jmp e a. apply H23. apply H21.
       -- sets_unfold. clear key1. (* key1是then分支的情况 *)
-        rename H5 into key1. apply key1. rename H22 into key2.
-        set(bs1_ := {|
-            BB_num := BB_else_num;
-            st := a ;  
-            |}).
-        exists bs1_. exists x2. cbn [Bnrm]. repeat split.
+          rename H5 into key1. apply key1. rename H22 into key2.
+          set(bs1_ := {|
+              BB_num := BB_else_num;
+              st := a ;  
+              |}).
+          exists bs1_. exists x2. cbn [Bnrm]. repeat split.
         *** apply sem_start_end_with in key2.
             destruct key2 as [bs' [step1 step2]]. clear H14.
 
@@ -1351,8 +1355,51 @@ Proof.
 
             (* 这里要理论上会简单一点？else对应的BBs_else本身和BBs_是连在一起的，这里不会再用到aux3了，但可能需要别的引理 *)
             admit.
-       
-  - admit.  (*反方向*)
+        *** apply H18.
+        *** rewrite H20. admit. (*结论应该是显然的*)
+  - intros.
+    exists {| st := a; BB_num := BBnow.(block_num) |}.
+    exists {| st := a0; BB_num := BB_next_num |}.
+    repeat split; try tauto.
+    remember ({| BB_num := BBnow.(block_num); st := a |} ) as bs1.
+    remember ({| BB_num := BB_next_num; st := a0 |}) as bs2.
+    unfold cmd_sem in H1. sets_unfold in H1.
+    destruct H1 as [? | ?].
+    + sets_unfold in H1. my_destruct H1.
+      unfold BDenote_concate. cbn[Bnrm]. sets_unfold. 
+      exists {| st := a; BB_num := BB_then.(block_num) |}. split.
+
+      (* Two parts. Initial jump and all the others *)
+
+      -- unfold BB_jmp_sem. cbn[Bnrm]. unfold BJump_sem.
+         subst BBnow'. simpl. destruct e.
+         ++ unfold cjmp_sem. cbn[Bnrm]. 
+            repeat split; subst bs1; subst bs2; try tauto.
+            left. simpl. split. tauto. unfold test_true_jmp.
+            * unfold test_true in H1. sets_unfold in H1.
+              my_destruct H1. exists x2. split.
+              apply H1. apply H4.
+            * simpl. admit. (* 这个理论上肯定成立 *)
+        ++ unfold cjmp_sem. cbn[Bnrm]. 
+          repeat split; subst bs1; subst bs2; try tauto.
+          left. simpl. split. tauto. unfold test_true_jmp.
+          * unfold test_true in H1. sets_unfold in H1.
+            my_destruct H1. exists x2. split.
+            apply H1. apply H4.
+          * simpl. admit. (* 这个理论上肯定成立 *)
+
+      -- my_destruct H.
+         destruct H7. clear err_cequiv inf_cequiv. 
+         pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
+         destruct H7. clear H7. pose proof H9 H2.
+         my_destruct H7. simpl in H7. clear H9.
+         (* Inconsistency here. *)
+         admit.
+
+
+      admit. (* test true的情况 *)
+    + sets_unfold in H1. my_destruct H1.
+      admit. (* test false的情况 *) 
   - admit.  (*出错*)
   - admit. (*出错*)
   - admit. (*无限*)
