@@ -43,6 +43,7 @@ Definition BB_all_lt (BBs: list BasicBlock)(num: nat): Prop :=
 Definition section (startnum endnum: nat) : nat -> Prop :=
   fun BBnum => Nat.le startnum BBnum /\ Nat.le BBnum endnum.
 
+(*Question 3*)
 Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results)(cmds: list cmd): Prop :=
     forall startnum endnum BBs BBnow BBnow' BBdelta,
     let res := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow startnum) in
@@ -50,8 +51,6 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
     endnum = res.(next_block_num)
     -> 
       basicblocks = BBs ++ BBnow'::nil ++ BBdelta ->
-      BBnow'.(block_num) <> BBnow'.(jump_info).(jump_dest_1) ->
-      Some BBnow'.(block_num) <> BBnow'.(jump_info).(jump_dest_2) ->
     (
       BB_all_ge BBdelta startnum /\
       BB_all_lt BBdelta endnum /\ 
@@ -75,7 +74,6 @@ Lemma Q_if_BBgen_range:
 forall (e: expr) (c1 c2: list cmd),
     P_BBgen_range cmd_BB_gen c1  ->
     P_BBgen_range cmd_BB_gen c2  ->
-
     Q_BBgen_range (CIf e c1 c2).
 Proof.
   intros.

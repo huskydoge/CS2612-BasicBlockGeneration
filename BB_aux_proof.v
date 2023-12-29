@@ -601,6 +601,7 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
     let res := cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum in
     let BBres := res.(BasicBlocks) ++ (res.(BBn) :: nil) in 
 
+    (*TODO added new condition!!!!*)
     (*CIf*)
     forall BBnow' BBs' BBs_wo_last 
       BB_then_num BB_else_num BB_next_num
@@ -646,8 +647,8 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       -> BB_now_else.(block_num) = BB_else_num
       
       -> (separate_property BBnow' BBs_wo_last) (*分离性质1*)
-      /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅ ) (*分离性质3*)
-      /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) = ∅). (*分离性质5*)
+      /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅ ) (*分离性质3*)
+      /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅). (*分离性质5*)
  
 
 Lemma In_tail_inclusive:
@@ -741,7 +742,7 @@ Proof.
     + simpl. admit.
     + simpl. cbn[cmd_BB_gen]. admit.
     + simpl. admit.
-Admitted. (*TODO*)
+Admitted. (*TODO Question 2*)
 
 Lemma Qd_if_sound:
   forall (e: expr) (c1 c2: list cmd),
@@ -787,8 +788,10 @@ Proof.
           pose proof H17 H11. apply H18.
         + right. apply H16. 
     }
+    assert (empty_: BBnum_set (BBnow' :: nil) ∩ BBjmp_dest_set (BBnow' :: BBs') = ∅). admit. (*TODO*)
+    rewrite empty_ in H16. tauto.
     
-    rewrite H13 in H16. sets_unfold in H16. tauto.
+    (* rewrite H13 in H16. sets_unfold in H16. tauto. *)
   - sets_unfold in H8. tauto.
   - sets_unfold in H8. tauto.
   - pose proof BBgen_range_list_soundness_correct c1.
@@ -870,8 +873,7 @@ Proof.
         + rewrite H13 in H10. simpl in H10. tauto.
         + rewrite H9 in H11. simpl in H11. tauto.
         }
-    
-    (*集合性质证明*)
+    intros. sets_unfold. unfold not in H10. destruct H10. exists a. apply H11.
 Admitted.
 
  
