@@ -1003,6 +1003,8 @@ Proof.
         reflexivity.
       }
       rewrite H13 in *. 
+
+      (*Specialize Qdif*)
       specialize (Qdif BBs BBnow BBnum BBnow' BBs'_ BBs_wo_last_ 
       BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
       (S BB_next_num) BB_num2 add_prop1 add_prop2 H13).
@@ -1045,25 +1047,31 @@ Proof.
           |}
       |}). reflexivity.
       assert (A7: to_result
-      (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then (S BB_next_num)) =
-    BBs ++ BBnow' :: nil ++ BB_now_then :: nil ++ BBs_then).
+      (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then (S BB_next_num)) = BBs ++ BBnow' :: nil ++ BB_now_then :: nil ++ BBs_then).
       {
-        admit.
+        unfold to_result. pose proof H10. assert (t: BB_num1 = S BB_next_num). reflexivity.
+        rewrite <- t. rewrite H10. rewrite <- app_assoc. simpl. reflexivity.
       }
       assert (A8: to_result
       (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_num2) = BBs ++BBnow' :: nil ++ BB_now_then :: nil ++ BBs_then ++ BB_now_else :: nil ++ BBs_else).
       {
-        admit.
+        unfold to_result. 
+        assert (t: BBs ++ BBnow' :: nil ++ BB_now_then :: nil ++ BBs_then = BBs ++ BBnow' :: BB_now_then :: BBs_then). {
+          simpl. reflexivity.
+        }
+        rewrite <- t. rewrite H4. rewrite <- app_assoc. simpl. reflexivity.
       }
       assert (A9: BB_num2 =
       (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then
          (S BB_next_num)).(next_block_num)). {
-           admit.
+           assert (t: BB_num1 = S BB_next_num). reflexivity.
+           rewrite <- t. apply H7.
          }
-      assert (A10: BB_now_then.(block_num) = BB_then_num). admit.
-      assert (A11: BB_now_else.(block_num) = BB_else_num). admit.
+      assert (A10: BB_now_then.(block_num) = BB_then_num). rewrite H9. reflexivity.
+      assert (A11: BB_now_else.(block_num) = BB_else_num). rewrite H3. reflexivity.
       specialize (Qdif A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11).
       clear H13 A1 A2 A3 A4 A5 A6 A7 A8 A9 A10 A11.
+      (*End of Specialize Qdif =================================*)
 
       assert (BB_now_else.(block_num) = BB_else_num).
       {
