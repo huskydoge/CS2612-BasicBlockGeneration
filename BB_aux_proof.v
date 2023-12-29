@@ -926,6 +926,7 @@ Definition Qb(c: cmd): Prop :=
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
     let res := cmd_BB_gen c BBs BBnow BBnum in
     jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None ->
+    lt BBnow.(block_num) BBnum ->
     (*CAsgn*)
     (exists BBnow' BBcmd,
       res.(BBn) = BBnow' /\
