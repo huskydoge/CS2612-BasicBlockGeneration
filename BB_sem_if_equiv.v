@@ -14,7 +14,7 @@ Require Import Main.cmd_denotations.
 Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
-Require Import Main.BB_aux_proof.
+
 Require Import Coq.Program.Equality.
 Require Import Main.BB_gen_properties.
 Import Denotation.
@@ -22,7 +22,7 @@ Import EDenote.
 Import CDenote.
 Import EmptyEDenote.
 Import BDenote.
-
+Require Import Main.BB_aux_proof.
 
 
 Lemma true_or_false:
@@ -747,8 +747,23 @@ Lemma BB_restrict_sound:
            (BB_list_sem BBs)) x1 x2 -> BB_restrict 
            BBnow BBs x1.(BB_num) x2.(BB_num).
 Proof.
-  (*TODO*)
-Admitted.
+  intros.
+  unfold BDenote_concate in H. cbn[Bnrm] in H.
+  sets_unfold in H. destruct H as [? [? ?]].
+  unfold BB_restrict. repeat split.
+  - unfold BB_jmp_sem in H. cbn[Bnrm] in H.
+    unfold BJump_sem in H. destruct eval_cond_expr.
+    destruct jump_dest_2.
+    + unfold cjmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H2.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H1.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H1.
+  - unfold BB_list_sem in H0. cbn[Bnrm] in H0.
+    unfold BBjmp_dest_set. admit.
+  - sets_unfold. intros. my_destruct H1. admit.
+  - sets_unfold in H1. tauto.
+  - sets_unfold in H1. tauto.  
+Admitted. 
+
 
 
 (*如果BBs1是BBs2的子集，那么语义上也是*)
@@ -757,19 +772,46 @@ Lemma BB_sem_child_prop :
     (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
     Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
 Proof.
-  (*TODO*)
+  intros. induction BBs1.
+  + simpl in H0.  tauto.
+  + induction BBs2. 
+    - pose proof H a. simpl in H1. assert(a=a \/ In a BBs1). left. reflexivity. tauto.
+    - admit. (* TODO *)
 Admitted.
+    
 
-(*两个BB如果跳转信息和num相同，那么jmpsem相同*)
+
+(*两个BB如果跳转信息和num相同，且第二个BB的commands为空，那么jmpsem BB1 = BBsem BB2*)
 Lemma share_BBjmp_info_and_num_means_same:
   forall (BB1 BB2: BasicBlock) (x1 x2: BB_state),
   BB1.(jump_info) = BB2.(jump_info) -> BB1.(block_num) = BB2.(block_num) -> 
   BB2.(commands) = nil ->
   Bnrm (BB_jmp_sem BB1) x1 x2 -> Bnrm (BB_sem BB2) x1 x2.
 Proof.
-  intros. 
-  (*TODO*)
-Admitted.
+  intros. unfold BB_sem. simpl. rewrite H1. simpl. sets_unfold. exists x1. split. reflexivity.
+  unfold BB_jmp_sem in H2. simpl in H2. rewrite <- H0. rewrite <- ! H. apply H2.
+Qed.
+
+(*BB如果没有cmds，那么其语义为其跳转语义*)
+Lemma jmp_sem_eq_BB_sem:
+  forall (BB: BasicBlock) (x1 x2: BB_state),
+  BB.(cmd) = nil -> Bnrm (BB_sem BB) x1 x2 -> Bnrm (BB_jmp_sem BB) x1 x2.
+Proof.
+  intros. unfold BB_sem in H0. simpl in H0. rewrite H in H0. 
+  simpl in H0. sets_unfold in H0. destruct H0 as [? [? ?]]. unfold BB_jmp_sem. cbn [Bnrm].
+  rewrite <- H0 in H1. apply H1.
+Qed.
+
+(*两个BB如果跳转信息和num相同，且第二个BB的commands为空，那么jmpsem BB1 = jmpsem BB2*)
+Lemma share_BBjmp_info_and_num_means_same2:
+  forall (BB1 BB2: BasicBlock) (x1 x2: BB_state),
+  BB1.(jump_info) = BB2.(jump_info) -> BB1.(block_num) = BB2.(block_num) -> 
+  BB2.(commands) = nil ->
+  Bnrm (BB_jmp_sem BB1) x1 x2 -> Bnrm (BB_jmp_sem BB2) x1 x2.
+Proof.
+  intros. unfold BB_sem. pose proof share_BBjmp_info_and_num_means_same BB1 BB2 x1 x2 H H0 H1 H2.
+  pose proof jmp_sem_eq_BB_sem BB2 x1 x2 H1 H3. apply H4.
+Qed.
 
 
 Lemma Q_if:
@@ -809,7 +851,9 @@ Proof.
                       |};
                    |}).
   pose proof Qd_if_sound e c1 c2. rename H1 into Qdif.
+
   unfold Qd_if in Qdif. 
+
   (* Get correct BBs for P c1 *)
   (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_then了*)
@@ -820,11 +864,13 @@ Proof.
   (*此时的BBnow则应该用BB_then了*)
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
+
   unfold P in H. specialize (H (nil) BB_then BB_num1). 
+
   
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
+  destruct P1 as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
   (* Get correct BBnow for P c2 *)
   set (BB_else := {|
     block_num := BB_else_num;
@@ -839,12 +885,14 @@ Proof.
   (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_now_then ++ BBs_then, 注意这里的BB_now_then和BB_then不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_else了*)
 
-  unfold P in H0. 
+  unfold P in P2. 
+
 
   specialize (H0 (nil) BB_else BB_num2).
 
+
   (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
-  destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
+  destruct P2 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
 
   (*接下来要去构造结论中的BBs'和BBnum'
     BBnum'是最终停留在的BB的编号，应该是BBnext的编号
@@ -973,6 +1021,7 @@ Proof.
     (* clear Qdif. *)
     unfold to_result. rewrite H5. rewrite <- app_assoc. simpl.
     simpl in H11. rewrite H2 in H11. rewrite H11.
+
     simpl in BBs_wo_last_. subst BBs_wo_last_.
     tauto.
   + reflexivity.
@@ -992,6 +1041,7 @@ Proof.
         reflexivity.
       }
       rewrite H13 in *. 
+
       specialize (Qdif BBs BBnow BBnum jmp_prop BBnow' BBs'_ BBs_wo_last_ 
       BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
       (S BB_next_num) BB_num2 add_prop1 add_prop2 H13).
@@ -1009,8 +1059,8 @@ Proof.
             jump_dest_2 := None;
             jump_condition := None
           |}
-      |}). reflexivity.
-      assert (BB_else =
+      |}) . reflexivity.
+      assert (A5: BB_else =
       {|
         block_num := BB_else_num;
         commands := nil;
@@ -1022,7 +1072,7 @@ Proof.
             jump_condition := None
           |}
       |}). reflexivity.
-      assert (BBnow' =
+      assert (A6: BBnow' =
       {|
         block_num := BBnow.(block_num);
         commands := BBnow.(cmd);
@@ -1034,6 +1084,7 @@ Proof.
             jump_condition := Some e
           |}
       |}). reflexivity.
+
       assert (lst_prop1: to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then (S BB_next_num)) =
       BB_now_then :: nil ++ BBs_then). {
         unfold to_result. subst BB_num1. pose proof H10. rewrite H10. simpl. reflexivity.
@@ -1062,6 +1113,7 @@ Proof.
 
       specialize (Qdif H15 H16 H14 H17 H18 H19 lst_prop1 lst_prop2 BB_num2_prop BBnowthen_num_prop BBnowelse_num_prop).
       clear H13 H15 H16 H14 H17 H18 H19.
+
 
       assert (BB_now_else.(block_num) = BB_else_num).
       {
@@ -1150,8 +1202,20 @@ Proof.
       (*限制的一些性质*)
       assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). 
       {
-      pose proof BB_restrict_sound BBnow' BBs_wo_last_ x1 x2 H14.
-      admit. (*TODO*) 
+        assert(t: Bnrm (BDenote_concate (BB_jmp_sem BB_jmp) (BB_list_sem BBs_wo_last_)) x1 x2).
+        {
+          unfold BDenote_concate. cbn [Bnrm]. apply sem_start_end_with_2.
+          apply sem_start_end_with in H14. destruct H14. exists x3. destruct H14 as [A1 A2].
+          split.
+          - pose proof share_BBjmp_info_and_num_means_same2 BBnow' BB_jmp x1 x3 as key.
+            assert (A3: BBnow'.(jump_info) = BB_jmp.(jump_info)). rewrite HeqBB_jmp. reflexivity.
+            assert (A4: BBnow'.(block_num) = BB_jmp.(block_num)). rewrite HeqBB_jmp. reflexivity.
+            assert (A5: BB_jmp.(commands) = nil).  rewrite HeqBB_jmp. reflexivity.
+            pose proof key A3 A4 A5 A1 as key2. tauto.
+          - apply A2.
+        }
+      pose proof BB_restrict_sound BB_jmp BBs_wo_last_ x1 x2 t as key.
+      apply key.
       }
       assert (((Rels.id
       ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_)) ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2 :Prop)).
@@ -1264,6 +1328,7 @@ Proof.
           *** rewrite H9. reflexivity.
           *** apply H20.
 
+
     (*test false的情况*)
     ** right. exists a. split. (*test false的情况*)
     -- pose proof BB_false_jmp_iff_test_false_jmp e a. apply H23. apply H21.
@@ -1317,6 +1382,7 @@ Proof.
       *** rewrite H20. subst BB_else. reflexivity.
   - (*反方向*)
     intros. rename H1 into cmd_sem_prop.
+
     exists {| st := a; BB_num := BBnow.(block_num) |}.
     exists {| st := a0; BB_num := BB_next_num |}.
     repeat split; try tauto.
@@ -1332,20 +1398,25 @@ Proof.
       (* Two parts. Initial jump and all the others *)
 
       -- unfold BB_jmp_sem. cbn[Bnrm]. unfold BJump_sem.
+
         subst BBnow'. simpl. destruct e.
         ++ unfold cjmp_sem. cbn[Bnrm]. 
+
             repeat split; subst bs1; subst bs2; try tauto.
             left. simpl. split. tauto. unfold test_true_jmp.
             * unfold test_true in t11. sets_unfold in t11.
               destruct t11 as [t111 t112]. destruct t111 as [x_ [aux1 aux2]]. exists x_. split.
               apply aux1. apply aux2.
+
             * simpl. lia.
+
         ++ unfold cjmp_sem. cbn[Bnrm]. 
           repeat split; subst bs1; subst bs2; try tauto.
           left. simpl. split. tauto. unfold test_true_jmp.
           * unfold test_true in t11. sets_unfold in t11.
           destruct t11 as [t111 t112]. destruct t111 as [x_ [aux1 aux2]]. exists x_. split.
           apply aux1. apply aux2.
+
           * simpl. lia. 
 
       -- my_destruct H.
@@ -1357,6 +1428,7 @@ Proof.
         (* Inconsistency here. *)
     (* test false -> else 分支*)
     + admit.
+
   - admit.  (*出错*)
   - admit. (*出错*)
   - admit. (*无限*)

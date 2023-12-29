@@ -425,10 +425,12 @@ Proof.
   intros. unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0. 
 
 
+
 (* {
   destruct BBdelta. tauto. pose proof length_eq BasicBlock (BBnow :: nil) (BBnow' :: b :: BBdelta) H1. discriminate.
 } 
   rewrite H2. split.
+
   - unfold BB_all_ge. intros. tauto.
   - unfold BB_all_lt. intros. split. 
     + intros. tauto.
@@ -488,10 +490,6 @@ Proof.
     pose proof BBgen_range_single_soundness_correct.
     apply H.
 Qed.
-
-
-
-
 
 
 

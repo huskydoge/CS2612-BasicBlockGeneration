@@ -831,6 +831,7 @@ Proof.
       rewrite BBlist_else_prop. simpl. reflexivity.
     }
 
+
     pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop as else_range.
     clear c1_jmp_prop c2_jmp_prop.
 
@@ -868,6 +869,7 @@ Proof.
           unfold BBnum_set. exists bb2. split.
           tauto. tauto.
         }
+
         pose proof else_range_p1 premise1 as else_range_p1.
         destruct else_range_p1 as [case1 | case2].
         + rewrite restrict in restrict2. rewrite <- restrict2 in case1.
@@ -916,6 +918,7 @@ Proof.
     apply final.
     exists a. tauto.
 
+
 Admitted.
 
  
@@ -950,5 +953,4 @@ Definition Qb(c: cmd): Prop :=
   BBn: BasicBlock; (* current_block_num should be the block num of BBnow, I think *)
   next_block_num: nat (* I think next block should start with the number*)
 }.*)
-
 
