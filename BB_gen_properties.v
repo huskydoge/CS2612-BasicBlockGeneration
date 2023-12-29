@@ -170,6 +170,23 @@ Proof.
 Admitted.
 
 
+
+
+Lemma bbnow_num_lt_next_num:
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
+    (lt BBnow.(block_num) BBnum) -> lt BBnow.(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
+Proof.
+  intros. induction c.
+  - simpl. lia.
+  - cbn [list_cmd_BB_gen].
+    unfold list_cmd_BB_gen.
+    destruct a.
+    + simpl. admit.
+Admitted. (*TODO *)
+
+
+
+
 Lemma Q_if_BBgen_range:
 forall (e: expr) (c1 c2: list cmd),
     P_BBgen_range cmd_BB_gen c1  ->
