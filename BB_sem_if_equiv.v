@@ -1176,8 +1176,7 @@ Proof.
           }
           tauto.
       }
-      assert (((Rels.id
-      ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_)) ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2 :Prop)).
+      assert (((Rels.id ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_)) ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2 :Prop)).
       {
       sets_unfold. right.
       unfold BDenote_concate in H14. cbn [Bnrm] in H14. apply sem_start_end_with in H14.
