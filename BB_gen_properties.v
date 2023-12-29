@@ -223,7 +223,7 @@ Proof.
   clear c1_aux1 c1_aux2 c1_aux3.
   
   specialize (c2_prop then_end_num endnum BBs BB_else_now else_delta).
-  assert (c2_aux1 : jump_kind BB_else_now.(jump_info) = UJump ). admit.
+  assert (c2_aux1 : (BB_else_now.(jump_info).(jump_kind) = UJump /\ BB_else_now.(jump_info).(jump_dest_2) = None)). admit.
   assert (c2_aux2 : endnum = (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num).(next_block_num)). admit.
   assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num) = BBs ++ else_delta)). admit.
   specialize (c2_prop c2_aux1 c2_aux2 c2_aux3).
