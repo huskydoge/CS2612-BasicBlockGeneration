@@ -14,7 +14,7 @@ Require Import Main.cmd_denotations.
 Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
-Require Import Main.BB_aux_proof.
+
 Require Import Coq.Program.Equality.
 Require Import Main.BB_gen_properties.
 Import Denotation.
@@ -22,7 +22,7 @@ Import EDenote.
 Import CDenote.
 Import EmptyEDenote.
 Import BDenote.
-
+Require Import Main.BB_aux_proof.
 
 
 Lemma true_or_false:
@@ -1384,22 +1384,22 @@ Proof.
         ++ unfold cjmp_sem. cbn[Bnrm]. 
           repeat split; subst bs1; subst bs2; try tauto.
           left. simpl. split. tauto. unfold test_true_jmp.
-          * unfold test_true in H1. sets_unfold in H1.
-            my_destruct H1. exists x2. split.
-            apply H1. apply H4.
+          * unfold test_true in t11. sets_unfold in t11.
+          destruct t11 as [t111 t112]. destruct t111 as [x_ [aux1 aux2]]. exists x_. split.
+          apply aux1. apply aux2.
           * simpl. admit. (* 这个理论上肯定成立 *)
 
       -- my_destruct H.
-         destruct H7. clear err_cequiv inf_cequiv. 
+        admit.
+         (* destruct H7. clear err_cequiv inf_cequiv. 
          pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
          destruct H7. clear H7. pose proof H9 H2.
-         my_destruct H7. simpl in H7. clear H9.
+         my_destruct H7. simpl in H7. clear H9. *)
          (* Inconsistency here. *)
-         admit.
 
 
-      admit. (* test true的情况 *)
-    + sets_unfold in H1. my_destruct H1.
+      (* test true的情况 *)
+    + 
       admit. (* test false的情况 *) 
   - admit.  (*出错*)
   - admit. (*出错*)

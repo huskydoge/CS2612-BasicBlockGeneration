@@ -815,10 +815,15 @@ Proof.
       rewrite <- BB_num2_prop. 
       rewrite BBlist_else_prop. simpl. rewrite app_assoc_reverse. reflexivity.
     }
-
+    admit.
+    admit.
+    admit.
+    (*
     clear H9.
     pose proof H14 H15. 
     clear H10 H11 H14 H15.
+    (* pose proof H9 H14 H15. destruct H16 as [? ?].
+    clear H10 H11 H14 H15. *)
     (* pose proof H9 H14 H15. destruct H16 as [? ?].
     clear H10 H11 H14 H15. *)
     
@@ -870,7 +875,7 @@ Proof.
         + rewrite H13 in H10. simpl in H10. tauto.
         + rewrite H9 in H11. simpl in H11. tauto.
         }
-    
+    *)
     (*集合性质证明*)
 Admitted.
 
@@ -904,5 +909,4 @@ Definition Qb(c: cmd): Prop :=
   BBn: BasicBlock; (* current_block_num should be the block num of BBnow, I think *)
   next_block_num: nat (* I think next block should start with the number*)
 }.*)
-
 
