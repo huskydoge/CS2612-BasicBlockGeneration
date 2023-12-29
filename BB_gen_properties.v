@@ -154,14 +154,14 @@ Proof.
   set(else_end_num := (else_res).(next_block_num)).
 
   specialize (c1_prop then_start_num then_end_num BBs BB_then_now then_delta).
-  assert (c1_aux1 : jump_kind BB_then_now.(jump_info) = UJump ). admit.
+  assert (c1_aux1 : jump_kind BB_then_now.(jump_info) = UJump ). tauto.
   assert (c1_aux2 : then_end_num = (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num).(next_block_num)). admit.
   assert (c1_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num) = BBs ++ then_delta)). admit.
   specialize (c1_prop c1_aux1 c1_aux2 c1_aux3).
   clear c1_aux1 c1_aux2 c1_aux3.
 
   specialize (c2_prop then_end_num endnum BBs BB_else_now else_delta).
-  assert (c2_aux1 : jump_kind BB_else_now.(jump_info) = UJump ). admit.
+  assert (c2_aux1 : jump_kind BB_else_now.(jump_info) = UJump ). tauto.
   assert (c2_aux2 : endnum = (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num).(next_block_num)). admit.
   assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num) = BBs ++ else_delta)). admit.
   specialize (c2_prop c2_aux1 c2_aux2 c2_aux3).
