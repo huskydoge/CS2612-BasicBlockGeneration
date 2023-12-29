@@ -36,6 +36,27 @@ Proof.
   - simpl in H. inversion H. apply IHl1. apply H1.
 Qed.
 
+Lemma cut_eq_part_list_l:
+  forall (A: Type) (l1 l2 l3: list A),
+  l1 ++ l2 = l1 ++ l3 -> l2 = l3.
+Proof.
+  intros.
+  induction l1.
+  - simpl in H. inversion H. reflexivity.
+  - simpl in H. inversion H. apply IHl1. apply H1.
+Qed.
+
+
+Lemma cut_eq_part_list_r:
+  forall (A: Type) (l1 l2 l3: list A),
+  l2 ++ l1 = l3 ++ l1 -> l2 = l3.
+Proof.
+  intros.
+  induction l1.
+  - simpl in H. rewrite app_nil_r in H. rewrite app_nil_r in H. apply H.
+  - simpl in H. apply IHl1.
+Admitted.
+
 
 Definition BB_num_set := nat -> Prop.
 
@@ -80,7 +101,7 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
     forall startnum endnum BBs BBnow BBdelta,
     let res := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow startnum) in
     let basicblocks := to_result res in
-    BBnow.(jump_info).(jump_kind) = UJump ->
+    (BBnow.(jump_info).(jump_kind) = UJump /\ BBnow.(jump_info).(jump_dest_2) = None) ->
     endnum = res.(next_block_num)
     -> 
       basicblocks = BBs ++ BBdelta ->
@@ -94,7 +115,7 @@ Definition Q_BBgen_range (c: cmd): Prop :=
     forall startnum endnum BBs BBnow BBdelta,
     let res := (cmd_BB_gen c BBs BBnow startnum) in
     let basicblocks := to_result res in
-    BBnow.(jump_info).(jump_kind) = UJump ->
+    (BBnow.(jump_info).(jump_kind) = UJump /\ BBnow.(jump_info).(jump_dest_2) = None) ->
     endnum = res.(next_block_num) ->
 
      basicblocks = BBs  ++ BBdelta ->
@@ -173,16 +194,16 @@ Proof.
   set(else_res := (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num)).
   set(else_delta := (else_res).(BasicBlocks) ++ (else_res).(BBn)::nil).
   set(else_end_num := (else_res).(next_block_num)).
-
+  
   specialize (c1_prop then_start_num then_end_num BBs BB_then_now then_delta).
-  assert (c1_aux1 : jump_kind BB_then_now.(jump_info) = UJump ). tauto.
+  assert (c1_aux1 : (BB_then_now.(jump_info).(jump_kind) = UJump /\ BB_then_now.(jump_info).(jump_dest_2) = None) ). tauto.
   assert (c1_aux2 : then_end_num = (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num).(next_block_num)). admit.
   assert (c1_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num) = BBs ++ then_delta)). admit.
   specialize (c1_prop c1_aux1 c1_aux2 c1_aux3).
   clear c1_aux1 c1_aux2 c1_aux3.
-
+  
   specialize (c2_prop then_end_num endnum BBs BB_else_now else_delta).
-  assert (c2_aux1 : jump_kind BB_else_now.(jump_info) = UJump ). tauto.
+  assert (c2_aux1 : (BB_else_now.(jump_info).(jump_kind) = UJump /\ BB_else_now.(jump_info).(jump_dest_2) = None) ). tauto.
   assert (c2_aux2 : endnum = (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num).(next_block_num)). admit.
   assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num) = BBs ++ else_delta)). admit.
   specialize (c2_prop c2_aux1 c2_aux2 c2_aux3).
@@ -336,7 +357,25 @@ forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
 Proof.
   intros. unfold Q_BBgen_range. intros. simpl in H0.
-  unfold to_result in H1. simpl in H1. simpl in H1. 
+  unfold to_result in H1. simpl in H1. apply cut_eq_part_list_l in H1. 
+  repeat split.
+  - unfold all_ge. intros. right. rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
+    intros. split.
+    + intros. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
+    + intros. tauto.
+  - unfold all_lt. intros. right. rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
+    intros. split.
+    + intros. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
+    + intros. tauto.
+  - unfold BBjmp_dest_set. sets_unfold. intros. 
+    destruct H2 as [BB [H2 H3]].
+    destruct H3 as [H3 | H3].
+    + right. unfold unit_set. subst BBdelta. simpl in H2. destruct H2. subst BB. simpl in H3. rewrite H3. 
+      tauto. 
+      tauto.
+    + right.
+      unfold unit_set. subst BBdelta. simpl in H2. destruct H2. subst BB. simpl in H3. rewrite H3. 
+   
 Admitted.
 
 Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
