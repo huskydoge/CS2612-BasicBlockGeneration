@@ -770,7 +770,7 @@ Admitted.
     
 
 
-(*两个BB如果跳转信息和num相同，那么jmpsem相同*)
+(*两个BB如果跳转信息和num相同，且第二个BB的commands为空，那么jmpsem BB1 = BBsem BB2*)
 Lemma share_BBjmp_info_and_num_means_same:
   forall (BB1 BB2: BasicBlock) (x1 x2: BB_state),
   BB1.(jump_info) = BB2.(jump_info) -> BB1.(block_num) = BB2.(block_num) -> 
@@ -779,6 +779,27 @@ Lemma share_BBjmp_info_and_num_means_same:
 Proof.
   intros. unfold BB_sem. simpl. rewrite H1. simpl. sets_unfold. exists x1. split. reflexivity.
   unfold BB_jmp_sem in H2. simpl in H2. rewrite <- H0. rewrite <- ! H. apply H2.
+Qed.
+
+(*BB如果没有cmds，那么其语义为其跳转语义*)
+Lemma jmp_sem_eq_BB_sem:
+  forall (BB: BasicBlock) (x1 x2: BB_state),
+  BB.(cmd) = nil -> Bnrm (BB_sem BB) x1 x2 -> Bnrm (BB_jmp_sem BB) x1 x2.
+Proof.
+  intros. unfold BB_sem in H0. simpl in H0. rewrite H in H0. 
+  simpl in H0. sets_unfold in H0. destruct H0 as [? [? ?]]. unfold BB_jmp_sem. cbn [Bnrm].
+  rewrite <- H0 in H1. apply H1.
+Qed.
+
+(*两个BB如果跳转信息和num相同，且第二个BB的commands为空，那么jmpsem BB1 = jmpsem BB2*)
+Lemma share_BBjmp_info_and_num_means_same2:
+  forall (BB1 BB2: BasicBlock) (x1 x2: BB_state),
+  BB1.(jump_info) = BB2.(jump_info) -> BB1.(block_num) = BB2.(block_num) -> 
+  BB2.(commands) = nil ->
+  Bnrm (BB_jmp_sem BB1) x1 x2 -> Bnrm (BB_jmp_sem BB2) x1 x2.
+Proof.
+  intros. unfold BB_sem. pose proof share_BBjmp_info_and_num_means_same BB1 BB2 x1 x2 H H0 H1 H2.
+  pose proof jmp_sem_eq_BB_sem BB2 x1 x2 H1 H3. apply H4.
 Qed.
 
 
@@ -936,7 +957,7 @@ Proof.
   (*assert 2*)
   assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BasicBlocks) =
   BBs ++ (BBnow' :: nil) ++ BBs_wo_last_).
-  {  (*模仿上面的即可 #TODO, hard*)
+  {  (*模仿上面的即可*)
   cbn [cmd_BB_gen]. simpl. 
   subst BB_then_num. subst BB_next_num. subst BB_else_num.
   my_destruct H. my_destruct H0.
@@ -1160,8 +1181,20 @@ Proof.
       (*限制的一些性质*)
       assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). 
       {
-      pose proof BB_restrict_sound BBnow' BBs_wo_last_ x1 x2 H14.
-      admit. (*TODO*) 
+        assert(t: Bnrm (BDenote_concate (BB_jmp_sem BB_jmp) (BB_list_sem BBs_wo_last_)) x1 x2).
+        {
+          unfold BDenote_concate. cbn [Bnrm]. apply sem_start_end_with_2.
+          apply sem_start_end_with in H14. destruct H14. exists x3. destruct H14 as [A1 A2].
+          split.
+          - pose proof share_BBjmp_info_and_num_means_same2 BBnow' BB_jmp x1 x3 as key.
+            assert (A3: BBnow'.(jump_info) = BB_jmp.(jump_info)). rewrite HeqBB_jmp. reflexivity.
+            assert (A4: BBnow'.(block_num) = BB_jmp.(block_num)). rewrite HeqBB_jmp. reflexivity.
+            assert (A5: BB_jmp.(commands) = nil).  rewrite HeqBB_jmp. reflexivity.
+            pose proof key A3 A4 A5 A1 as key2. tauto.
+          - apply A2.
+        }
+      pose proof BB_restrict_sound BB_jmp BBs_wo_last_ x1 x2 t as key.
+      apply key.
       }
       assert (((Rels.id
       ∪ Bnrm (BB_sem_union (BB_jmp :: nil ++ BBs_wo_last_)) ∘ Bnrm (BB_list_sem (BB_jmp :: nil ++ BBs_wo_last_))) x1 x2 :Prop)).
