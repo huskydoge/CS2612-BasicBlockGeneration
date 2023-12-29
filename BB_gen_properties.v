@@ -16,7 +16,7 @@ Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 
 
-Lemma cut_eq_part:
+Lemma cut_eq_part_l:
   forall (A: Type) (a b: A) (l1 l2: list A),
   l1 ++ a :: l2 = l1 ++ b :: l2 -> a = b.
 Proof.
@@ -25,6 +25,17 @@ Proof.
   - simpl in H. inversion H. reflexivity.
   - simpl in H. inversion H. apply IHl1. apply H1.
 Qed.
+
+Lemma cut_eq_part_r:
+  forall (A: Type) (a b: A) (l1 l2: list A),
+  l1 ++ a :: l2 = l1 ++ b :: l2 -> a = b.
+Proof.
+  intros.
+  induction l1.
+  - simpl in H. inversion H. reflexivity.
+  - simpl in H. inversion H. apply IHl1. apply H1.
+Qed.
+
 
 Definition BB_num_set := nat -> Prop.
 
