@@ -643,9 +643,9 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
          jump_condition := Some e
          |};
       |}
-      -> to_result (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1) = BBs ++ BBnow' :: nil ++  BB_now_then::nil ++ BBs_then
-      -> to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_num2) = BBs ++ BBnow'::nil ++ BB_now_then :: nil ++ BBs_then ++ BB_now_else :: nil ++ BBs_else
-      -> BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1).(next_block_num)
+      -> to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then BB_num1) =  BB_now_then::nil ++ BBs_then
+      -> to_result (list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_num2) = BB_now_else :: nil ++ BBs_else
+      -> BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then BB_num1).(next_block_num)
       -> BB_now_then.(block_num) = BB_then_num
       -> BB_now_else.(block_num) = BB_else_num
       
@@ -805,30 +805,30 @@ Proof.
     unfold P_BBgen_range in c1_range, c2_range.
 
     (* Do if part first *)
-    remember ((list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow'::nil) BB_then BB_num1).(next_block_num)) as BB_then_end_num.
-    specialize (c1_range BB_num1 BB_then_end_num (BBs ++ BBnow'::nil) BB_then (BB_now_then::nil ++ BBs_then)).
+    remember ((list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(next_block_num)) as BB_then_end_num.
+    specialize (c1_range BB_num1 BB_then_end_num nil BB_then (BB_now_then::nil ++ BBs_then)).
     assert (c1_jmp_prop: jump_kind BB_then.(jump_info) = UJump /\ jump_dest_2 BB_then.(jump_info) = None). {
       rewrite BB_then_prop. cbn [jump_info]. cbn [jump_kind]. cbn [jump_dest_2]. cbn [jump_condition]. tauto.
     }
 
-    assert (c1_list_prop: to_result (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1) = (BBs ++ BBnow' :: nil) ++ BB_now_then :: nil ++ BBs_then). {
-      rewrite BBlist_then_prop. simpl. rewrite app_assoc_reverse. reflexivity.
+    assert (c1_list_prop: to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then BB_num1) = BB_now_then :: nil ++ BBs_then). {
+      rewrite BBlist_then_prop. simpl. reflexivity.
     }
 
     pose proof c1_range c1_jmp_prop HeqBB_then_end_num c1_list_prop as if_range.
 
     (* Then the second part *)
-    remember ((list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_then_end_num).(next_block_num)) as BB_else_end_num.
+    remember ((list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_then_end_num).(next_block_num)) as BB_else_end_num.
 
-    specialize (c2_range BB_then_end_num BB_else_end_num (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else (BB_now_else::nil ++ BBs_else)).
+    specialize (c2_range BB_then_end_num BB_else_end_num (nil) BB_else (BB_now_else::nil ++ BBs_else)).
     
     assert (c2_jmp_prop: jump_kind BB_else.(jump_info) = UJump /\ jump_dest_2 BB_else.(jump_info) = None). {
       rewrite BB_else_prop. cbn [jump_info]. cbn [jump_kind]. cbn [jump_dest_2]. cbn [jump_condition]. tauto.
     }
-    assert (c2_list_prop: to_result (list_cmd_BB_gen cmd_BB_gen c2 (BBs ++ BBnow' :: BB_now_then :: BBs_then) BB_else BB_then_end_num) =
-    (BBs ++ BBnow' :: BB_now_then :: BBs_then) ++ BB_now_else :: nil ++ BBs_else). {
+    assert (c2_list_prop: to_result (list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_then_end_num) =
+    BB_now_else :: nil ++ BBs_else). {
       rewrite <- BBnum2_prop. 
-      rewrite BBlist_else_prop. simpl. rewrite app_assoc_reverse. reflexivity.
+      rewrite BBlist_else_prop. simpl. reflexivity.
     }
 
     pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop as else_range.
@@ -873,7 +873,7 @@ Proof.
         + rewrite restrict in restrict2. rewrite <- restrict2 in case1.
           assert (lt BB_then_num BB_then_end_num). 
           {
-            pose proof bbnow_num_lt_next_num (BBs ++ BBnow' :: nil) BB_then BB_num1 c1 as lemma1.
+            pose proof bbnow_num_lt_next_num nil BB_then BB_num1 c1 as lemma1.
             assert (temp: (BB_then.(block_num) < BB_num1)%nat).
             subst BB_then. simpl. lia.
             pose proof (lemma1 temp) as lemma1.
@@ -925,6 +925,7 @@ Definition Qb(c: cmd): Prop :=
     嗯，当然你要证明的是语义的变化，所以你要说多出来的commands的语义，和那个c的语义一样 -- by cqx *)
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
     let res := cmd_BB_gen c BBs BBnow BBnum in
+    jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None ->
     (*CAsgn*)
     (exists BBnow' BBcmd,
       res.(BBn) = BBnow' /\

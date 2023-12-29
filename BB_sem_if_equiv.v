@@ -510,7 +510,7 @@ Proof.
     intros. sets_unfold in H. destruct H as [? ?]. apply H.
 Qed.
 
-
+(* BUG Not Used!!!*)
 Lemma Iter_sem_union_sem_included: 
   forall (BBnow: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state) (x0: nat),
     Iter_nrm_BBs_n (BB_sem_union BBs) x0 bs1 bs2 -> Iter_nrm_BBs_n (BB_sem_union (BBnow :: BBs)) x0 bs1 bs2.
@@ -608,8 +608,8 @@ Proof.
   admit. (* TODO *)
 Admitted.
 
-Search EDenote.
 
+(*对于一个CJump的BB，它的jmp语义要么true要么false*)
 Lemma BB_jmp_sem_simplify:
   forall (BB: BasicBlock) (bs1 bs2: BB_state)(e: expr)(dest1 dest2: nat),
   BB.(jump_info) = 
@@ -770,7 +770,7 @@ Lemma Q_if:
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qb (CIf e c1 c2).
 Proof.
   intros.
-  unfold Qb. intros. right. 
+  unfold Qb. intros. rename H1 into jmp_prop. right. 
   (* 这里要和BBgeneration里的情况对齐
   P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
   P c1用于分配的BBnum也是如此，如下：    
@@ -813,7 +813,7 @@ Proof.
   (*此时的BBnow则应该用BB_then了*)
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  unfold P in H. specialize (H (BBs ++ BBnow'::nil) BB_then BB_num1). 
+  unfold P in H. specialize (H (nil) BB_then BB_num1). 
   
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
@@ -834,7 +834,7 @@ Proof.
 
   unfold P in H0. 
 
-  specialize (H0 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
+  specialize (H0 (nil) BB_else BB_num2).
 
   (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
   destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
@@ -903,12 +903,12 @@ Proof.
                 jump_condition := None
               |}
           |} with BB_else.
-    + subst BBs'_ . simpl. unfold to_result. simpl. rewrite H4. simpl. rewrite <- H1. simpl in H10. 
+    + subst BBs'_ . simpl. unfold to_result. simpl. rewrite <- H1. simpl in H10. 
       assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
       {
         rewrite <- app_assoc. simpl. reflexivity.
       }
-      rewrite <- H13. rewrite H10. rewrite <- app_assoc. simpl. rewrite <- app_assoc. simpl. reflexivity. 
+      rewrite H4. rewrite H10. rewrite <- app_assoc. simpl. rewrite <- app_assoc. simpl. reflexivity. 
     + reflexivity.
     + reflexivity.
     + reflexivity.
@@ -919,8 +919,60 @@ Proof.
   (*assert 2*)
   assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BasicBlocks) =
   BBs ++ (BBnow' :: nil) ++ BBs_wo_last_).
-  {  (*模仿上面的即可 #TODO, hard*)
-    admit.
+  {  (*模仿上面的即可*)
+  cbn [cmd_BB_gen]. simpl. 
+  subst BB_then_num. subst BB_next_num. subst BB_else_num.
+  my_destruct H. my_destruct H0.
+  replace (S (S (S BBnum))) with (BB_num1).
+  replace ({|
+  block_num := BBnum;
+  commands := nil;
+  jump_info :=
+    {|
+      jump_kind := UJump;
+      jump_dest_1 := S (S BBnum);
+      jump_dest_2 := None;
+      jump_condition := None
+    |}
+    |}) with (BB_then).
+    replace {|
+    block_num := S (S BBnum);
+    commands := nil;
+    jump_info := BBnow.(jump_info)
+  |} with (BB_next).
+  replace {|
+            block_num := BBnow.(block_num);
+            commands := BBnow.(cmd);
+            jump_info :=
+              {|
+              jump_kind := CJump;
+              jump_dest_1 := BBnum;
+              jump_dest_2 := Some (S BBnum);
+              jump_condition := Some e
+              |}
+            |} with BBnow'.
+  replace {|
+            block_num := S BBnum;
+            commands := nil;
+            jump_info :=
+              {|
+                jump_kind := UJump;
+                jump_dest_1 := S (S BBnum);
+                jump_dest_2 := None;
+                jump_condition := None
+              |}
+          |} with BB_else.
+  + remember (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1).(next_block_num) as BB_then_end_num.
+    (* clear Qdif. *)
+    unfold to_result. rewrite H5. rewrite <- app_assoc. simpl.
+    simpl in H11. rewrite H2 in H11. rewrite H11.
+    simpl in BBs_wo_last_. subst BBs_wo_last_.
+    tauto.
+  + reflexivity.
+  + reflexivity.
+  + reflexivity.
+  + reflexivity.
+  + reflexivity.
   } 
   rename H1 into add_prop1.
   rename H2 into add_prop2. 
@@ -933,9 +985,9 @@ Proof.
         reflexivity.
       }
       rewrite H13 in *. 
-      specialize (Qdif BBs BBnow BBnum BBnow' BBs'_ BBs_wo_last_ 
+      specialize (Qdif BBs BBnow BBnum jmp_prop BBnow' BBs'_ BBs_wo_last_ 
       BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
-      (S BB_next_num) add_prop1 add_prop2 H13).
+      (S BB_next_num) BB_num2 add_prop1 add_prop2 H13).
       assert (S BB_next_num = S BB_next_num). reflexivity.
       assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = S BB_else_num). reflexivity.
 
@@ -975,6 +1027,11 @@ Proof.
             jump_condition := Some e
           |}
       |}). reflexivity.
+      assert (lst_prop1: to_result (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then (S BB_next_num)) =
+      BBs ++ BBnow' :: nil ++ BB_now_then :: nil ++ BBs_then). {
+        unfold to_result. subst BB_num1. pose proof H10. rewrite H10. rewrite <- app_assoc. simpl.
+        simpl in H11. rewrite H2 in H11. rewrite H11. reflexivity.
+      }
       specialize (Qdif H15 H16 H14 H17 H18 H19).
       clear H13 H15 H16 H14 H17 H18 H19.
 
