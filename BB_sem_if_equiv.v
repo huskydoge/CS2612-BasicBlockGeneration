@@ -1270,7 +1270,55 @@ Proof.
           *** rewrite H9. reflexivity.
           *** apply H20.
 
-    ** right. admit. (*test false的情况*)
+    ** right. exists a. split. (*test false的情况*)
+      -- pose proof BB_false_jmp_iff_test_false_jmp e a. apply H23. apply H21.
+      -- sets_unfold. clear key1. (* key1是then分支的情况 *)
+        rename H5 into key1. apply key1. rename H22 into key2.
+        set(bs1_ := {|
+            BB_num := BB_else_num;
+            st := a ;  
+            |}).
+        exists bs1_. exists x2. cbn [Bnrm]. repeat split.
+        *** apply sem_start_end_with in key2.
+            destruct key2 as [bs' [step1 step2]]. clear H14.
+
+            assert (bs' = bs1_). {
+              unfold BB_sem in step1.
+              cbn [Bnrm] in step1.
+              sets_unfold in step1.
+              my_destruct step1.
+              simpl in step1. rewrite HeqBB_jmp in step1. simpl in step1. sets_unfold in step1.
+              pose proof BB_jmp_sem_simplify BB_jmp x3 bs' e BB_then_num BB_else_num. 
+              assert ((BB_jmp.(jump_info) =
+              {|
+                jump_kind := CJump;
+                jump_dest_1 := BB_then_num;
+                jump_dest_2 := Some BB_else_num;
+                jump_condition := Some e
+              |}) /\ Bnrm (BB_jmp_sem BB_jmp) x3 bs'). {
+                split.
+                rewrite HeqBB_jmp. reflexivity.
+                apply H5.
+              }
+              pose proof H14 H22.
+              destruct H23.
+              + pose proof true_or_false_classic2 e a H21.
+                rewrite step1 in H17. rewrite H17 in H23.
+                my_destruct H23. contradiction.
+              + my_destruct H23.
+                rewrite HeqBB_jmp in H25. simpl in H25. assert (bs' = bs1_). 
+                {
+                  rewrite <- step1 in H24. rewrite H17 in H24. pose proof compare_two_BB_state bs' bs1_.
+                  apply H26. split. 
+                  - admit. (* 利用H25即可 *)
+                  - apply H24.
+                }
+                apply H26.
+            }
+
+            (* 这里要理论上会简单一点？else对应的BBs_else本身和BBs_是连在一起的，这里不会再用到aux3了，但可能需要别的引理 *)
+            admit.
+       
   - admit.  (*反方向*)
   - admit.  (*出错*)
   - admit. (*出错*)
