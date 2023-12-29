@@ -78,7 +78,17 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CIf e c1 c2).
 Proof.
- intros.
+  intros.
+  rename H into c1_prop.
+  rename H0 into c2_prop.
+  unfold P_BBgen_range in c1_prop.
+  unfold P_BBgen_range in c2_prop.
+  unfold Q_BBgen_range.
+  intros.
+  rename H into endnum_eq.
+  rename H0 into BBs_eq.
+  specialize (c1_prop startnum endnum BBs BBnow BBnow' BBdelta).
+
   Admitted.
 
 Lemma Q_while_BBgen_range:
