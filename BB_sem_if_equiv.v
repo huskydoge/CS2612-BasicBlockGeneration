@@ -740,23 +740,8 @@ Lemma BB_restrict_sound:
            (BB_list_sem BBs)) x1 x2 -> BB_restrict 
            BBnow BBs x1.(BB_num) x2.(BB_num).
 Proof.
-  intros.
-  unfold BDenote_concate in H. cbn[Bnrm] in H.
-  sets_unfold in H. destruct H as [? [? ?]].
-  unfold BB_restrict. repeat split.
-  - unfold BB_jmp_sem in H. cbn[Bnrm] in H.
-    unfold BJump_sem in H. destruct eval_cond_expr.
-    destruct jump_dest_2.
-    + unfold cjmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H2.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H1.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. my_destruct H. apply H1.
-  - unfold BB_list_sem in H0. cbn[Bnrm] in H0.
-    unfold BBjmp_dest_set. admit.
-  - sets_unfold. intros. my_destruct H1. admit.
-  - sets_unfold in H1. tauto.
-  - sets_unfold in H1. tauto.  
-Admitted. 
-
+  (*TODO*)
+Admitted.
 
 
 (*如果BBs1是BBs2的子集，那么语义上也是*)
@@ -765,10 +750,8 @@ Lemma BB_sem_child_prop :
     (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
     Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
 Proof.
-  intros. 
+  (*TODO*)
 Admitted.
-    
-
 
 (*两个BB如果跳转信息和num相同，那么jmpsem相同*)
 Lemma share_BBjmp_info_and_num_means_same:
@@ -777,10 +760,9 @@ Lemma share_BBjmp_info_and_num_means_same:
   BB2.(commands) = nil ->
   Bnrm (BB_jmp_sem BB1) x1 x2 -> Bnrm (BB_sem BB2) x1 x2.
 Proof.
-  intros. 
-  (*TODO*)
-Admitted.
-
+  intros. unfold BB_sem. simpl. rewrite H1. simpl. sets_unfold. exists x1. split. reflexivity.
+  unfold BB_jmp_sem in H2. simpl in H2. rewrite <- H0. rewrite <- ! H. apply H2.
+Qed.
 
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
@@ -819,7 +801,7 @@ Proof.
                       |};
                    |}).
   pose proof Qd_if_sound e c1 c2. rename H1 into Qdif.
-  unfold Qd_if in Qdif. rename H into P1. rename H0 into P2. 
+  unfold Qd_if in Qdif. 
   (* Get correct BBs for P c1 *)
   (*此时已经生成的 BBs_ := BBs ++ BBnow'::nil ++ BB_then::nil, 注意这里的BB_then和BBnow不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_then了*)
@@ -830,11 +812,11 @@ Proof.
   (*此时的BBnow则应该用BB_then了*)
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  unfold P in P1. specialize (P1 (BBs ++ BBnow'::nil) BB_then BB_num1). 
+  unfold P in H. specialize (H (BBs ++ BBnow'::nil) BB_then BB_num1). 
   
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
-  destruct P1 as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
+  destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
   (* Get correct BBnow for P c2 *)
   set (BB_else := {|
     block_num := BB_else_num;
@@ -849,12 +831,12 @@ Proof.
   (*此时已经生成的 BBs_ := BBs ++ BBnow::nil ++ BB_now_then ++ BBs_then, 注意这里的BB_now_then和BB_then不同！它里面的commands可能由于CAsgn有填充*)
   (*此时的BBnow则应该用BB_else了*)
 
-  unfold P in P2. 
+  unfold P in H0. 
 
-  specialize (P2 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
+  specialize (H0 (BBs ++ BBnow'::nil ++ BB_now_then::nil ++ BBs_then) BB_else BB_num2).
 
   (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
-  destruct P2 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
+  destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
 
   (*接下来要去构造结论中的BBs'和BBnum'
     BBnum'是最终停留在的BB的编号，应该是BBnext的编号
@@ -980,7 +962,7 @@ Proof.
               |}
           |} with BB_else.
   + remember (list_cmd_BB_gen cmd_BB_gen c1 (BBs ++ BBnow' :: nil) BB_then BB_num1).(next_block_num) as BB_then_end_num.
-    (* clear Qdif. *)
+    clear Qdif.
     unfold to_result. rewrite H5. rewrite <- app_assoc. simpl.
     simpl in H11. rewrite H2 in H11. rewrite H11.
     rewrite <- app_assoc. simpl.
@@ -1007,10 +989,11 @@ Proof.
       (*Specialize Qdif*)
       specialize (Qdif BBs BBnow BBnum BBnow' BBs'_ BBs_wo_last_ 
       BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
-      (S BB_next_num) BB_num2 add_prop1 add_prop2 H13).
-      assert (A1: BB_else_num = S BB_then_num). reflexivity. assert (A2: BB_next_num = S BB_else_num). reflexivity.
-      assert (A3: S BB_next_num = S BB_next_num). reflexivity.
-      assert (A4: BB_then =
+      (S BB_next_num) add_prop1 add_prop2 H13).
+      assert (S BB_next_num = S BB_next_num). reflexivity.
+      assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = S BB_else_num). reflexivity.
+
+      assert (BB_then =
       {|
         block_num := BB_then_num;
         commands := nil;
@@ -1021,8 +1004,8 @@ Proof.
             jump_dest_2 := None;
             jump_condition := None
           |}
-      |}) . reflexivity.
-      assert (A5: BB_else =
+      |}). reflexivity.
+      assert (BB_else =
       {|
         block_num := BB_else_num;
         commands := nil;
@@ -1034,7 +1017,7 @@ Proof.
             jump_condition := None
           |}
       |}). reflexivity.
-      assert (A6: BBnow' =
+      assert (BBnow' =
       {|
         block_num := BBnow.(block_num);
         commands := BBnow.(cmd);
