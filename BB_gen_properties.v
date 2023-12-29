@@ -374,9 +374,9 @@ Proof.
       tauto. 
       tauto.
     + right.
-      unfold unit_set. subst BBdelta. simpl in H2. destruct H2. subst BB. simpl in H3. rewrite H3. 
-   
-Admitted.
+      unfold unit_set. subst BBdelta. simpl in H2. destruct H2. subst BB. simpl in H3. destruct H. rewrite H1 in H3.
+      discriminate H3. tauto.
+Qed.
 
 Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
     P_BBgen_range cmd_BB_gen nil.
