@@ -170,8 +170,7 @@ Proof.
 Admitted.
 
 
-
-
+(* Used In aux proof.v *)
 Lemma bbnow_num_lt_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     (lt BBnow.(block_num) BBnum) -> lt BBnow.(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
@@ -184,6 +183,54 @@ Proof.
     + simpl. admit.
 Admitted. (*TODO *)
 
+(*x在 l1 ++ l2中，那么必然在至少其中之一*)
+Lemma In_a_or_b:
+  forall (A: Type) (x: A) (l1 l2: list A),
+  In x (l1 ++ l2) -> In x l1 \/ In x l2.
+Proof.
+  intros.
+  induction l1.
+  - simpl in H. right. apply H.
+  - simpl in H. destruct H.
+    + left. rewrite H. simpl. left. reflexivity.
+    + pose proof IHl1 H. destruct H0.
+      * left. simpl. right. apply H0.
+      * right. apply H0.
+Qed.
+
+Lemma In_sublist_then_in_list_head:
+  forall (A: Type) (x: A) (l1 l2: list A),
+  In x l1 -> In x (l1 ++ l2).
+Proof.
+  intros.
+  induction l1.
+  - simpl in H. tauto.
+  - simpl in H. destruct H.
+    + left. apply H.
+    + right. apply IHl1. apply H.
+Qed.
+
+Lemma In_sublist_then_in_list_middle:
+  forall (A: Type) (x: A) (l1 l2 l3: list A),
+  In x l1 -> In x (l2 ++ l1 ++ l3).
+Proof.
+  intros.
+  induction l2.
+  - simpl. apply In_sublist_then_in_list_head. apply H.
+  - simpl. right. apply IHl2.
+Qed.
+
+Lemma In_sublist_then_in_list_last:
+  forall (A: Type) (x: A) (l1 l2: list A),
+  In x l1 -> In x (l2 ++ l1).
+Proof.
+  intros.
+  induction l2.
+  - simpl. tauto.
+  - simpl. right. apply IHl2.
+Qed.
+
+  
 
 
 
@@ -220,7 +267,7 @@ Proof.
   set(then_end_num := (then_res).(next_block_num)).
   
   set(BB_else_now := {|
-  block_num := (S (S startnum));
+  block_num := (S startnum);
   commands := nil;
   jump_info := {|
     jump_kind := UJump;
@@ -231,6 +278,11 @@ Proof.
   set(else_res := (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num)).
   set(else_delta := (else_res).(BasicBlocks) ++ (else_res).(BBn)::nil).
   set(else_end_num := (else_res).(next_block_num)).
+  set(BB_next := {|
+    block_num := (S (S startnum));
+    commands := nil;
+    jump_info := BBnow.(jump_info);
+    |}).
   
   specialize (c1_prop then_start_num then_end_num BBs BB_then_now then_delta).
   assert (c1_aux1 : (BB_then_now.(jump_info).(jump_kind) = UJump /\ BB_then_now.(jump_info).(jump_dest_2) = None) ). tauto.
@@ -253,9 +305,95 @@ Proof.
   assert (separate_delta_num: 
   BBnum_set (tl BBdelta) ==  BBnum_set then_delta ∪ BBnum_set else_delta ∪ unit_set(S (S startnum))
   ). {
-    split; sets_unfold; intros.
-    - admit.
-    - admit.
+    assert (eq_delta_prop: tl BBdelta = then_delta ++ else_delta ++ BB_next :: nil).
+    {
+      cbn [cmd_BB_gen] in BBs_eq. cbn [BasicBlocks] in BBs_eq. cbn [BBn] in BBs_eq. 
+      rewrite <- app_assoc in BBs_eq. apply app_inv_head in BBs_eq.
+      rewrite <- BBs_eq. simpl. subst BB_next. rewrite app_assoc_reverse.
+      assert (then_eq: to_result
+      (list_cmd_BB_gen cmd_BB_gen c1 nil
+         {|
+           block_num := startnum;
+           commands := nil;
+           jump_info :=
+             {|
+               jump_kind := UJump;
+               jump_dest_1 := S (S startnum);
+               jump_dest_2 := None;
+               jump_condition := None
+             |}
+         |} (S (S (S startnum)))) = then_delta).
+      {
+        reflexivity.
+      }
+      rewrite then_eq. 
+      assert (else_eq: to_result
+      (list_cmd_BB_gen cmd_BB_gen c2 nil
+         {|
+           block_num := S startnum;
+           commands := nil;
+           jump_info :=
+             {|
+               jump_kind := UJump;
+               jump_dest_1 := S (S startnum);
+               jump_dest_2 := None;
+               jump_condition := None
+             |}
+         |}
+         (list_cmd_BB_gen cmd_BB_gen c1 nil
+            {|
+              block_num := startnum;
+              commands := nil;
+              jump_info :=
+                {|
+                  jump_kind := UJump;
+                  jump_dest_1 := S (S startnum);
+                  jump_dest_2 := None;
+                  jump_condition := None
+                |}
+            |} (S (S (S startnum)))).(next_block_num)) = else_delta).
+      {
+        assert (then_res_p: (list_cmd_BB_gen cmd_BB_gen c1 nil
+        {|
+          block_num := startnum;
+          commands := nil;
+          jump_info :=
+            {|
+              jump_kind := UJump;
+              jump_dest_1 := S (S startnum);
+              jump_dest_2 := None;
+              jump_condition := None
+            |}
+        |} (S (S (S startnum)))) = then_res). reflexivity. rewrite then_res_p.
+        reflexivity.
+        }
+      rewrite else_eq. reflexivity.
+    } rewrite eq_delta_prop. clear eq_delta_prop.
+    repeat split; sets_unfold; intros.
+    - destruct H as [x_ [cond1 cond2]].
+      pose proof (In_a_or_b BasicBlock x_ (then_delta ++ else_delta) (BB_next :: nil)).
+      rewrite app_assoc_reverse in H. pose proof H cond1. destruct H0 as [c1_ | c2_].
+      pose proof (In_a_or_b BasicBlock x_ then_delta else_delta c1_).
+      destruct H0 as [c1__ | c2__].
+      * left. left. unfold BBnum_set. exists x_. split. tauto. tauto.
+      * left. right. unfold BBnum_set. exists x_. split. tauto. tauto.
+      * right. unfold unit_set. subst BB_next. simpl in c2_. 
+        destruct c2_ as [c2_ | c2_].
+        ** rewrite <- c2_ in cond2. simpl in cond2. lia.
+        ** tauto. 
+    - destruct H as [[case1 | case2] | case3].
+      * unfold BBnum_set in case1. destruct case1 as [x_ [cond1 cond2]].
+        unfold BBnum_set. exists x_. split. 
+        ** pose proof In_sublist_then_in_list_head BasicBlock x_ then_delta (else_delta ++ BB_next :: nil) cond1. tauto.
+        ** tauto.
+      * unfold BBnum_set in case2. destruct case2 as [x_ [cond1 cond2]].
+        unfold BBnum_set. exists x_. split. 
+        ** pose proof In_sublist_then_in_list_middle BasicBlock x_ else_delta then_delta (BB_next :: nil) cond1. tauto.
+        ** tauto.
+      * unfold BBnum_set. exists BB_next. split.
+        ** assert (In BB_next (BB_next::nil)). simpl. tauto.
+            pose proof In_sublist_then_in_list_last BasicBlock BB_next (BB_next :: nil) (then_delta ++ else_delta) H. rewrite <- app_assoc in H0. tauto.
+        **  unfold unit_set in case3. subst BB_next. cbn [block_num]. lia.
   }
 
   (*拆分BBdelta的jump dest. jumpdest里包含，一个是来自BBnow的预定跳转信息，另一个是BBthennum和BBelsenum*)
