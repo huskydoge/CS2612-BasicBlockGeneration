@@ -230,7 +230,19 @@ Proof.
   - simpl. right. apply IHl2.
 Qed.
 
-  
+(*TODO IMPORTANT!!*)
+Lemma BBgen_head_prop:
+  forall (cmds : list cmd)(BBnow : BasicBlock) (BBnum : nat),
+  let res := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum) in
+  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = BBnow.(block_num).
+Proof.
+  intros.
+  unfold res.
+  unfold list_cmd_BB_gen.
+  induction cmds.
+  - simpl. reflexivity.
+  - admit.
+Admitted.
 
 
 
@@ -401,12 +413,12 @@ Proof.
   BBjmp_dest_set BBdelta == unit_set(BBnow.(jump_info).(jump_dest_1)) ∪ BBjmp_dest_set then_delta ∪ BBjmp_dest_set else_delta ∪ unit_set(startnum) ∪ unit_set(S startnum)
   ). admit.
 
-  assert (head_then: (hd empty_block then_delta).(block_num) = then_start_num).
+  assert (head_then: (hd empty_block then_delta).(block_num) = BB_then_now.(block_num)).
   {  
-    admit.
+    pose proof BBgen_head_prop c1 BB_then_now then_start_num. rewrite <- H. reflexivity.
   }
 
-  assert (head_else: (hd empty_block else_delta).(block_num) = then_end_num).
+  assert (head_else: (hd empty_block else_delta).(block_num) = BB_else_now.(block_num)).
   {  
     admit.
   }
@@ -438,7 +450,7 @@ Proof.
       unfold all_ge in c1_prop1. specialize (c1_prop1 n).
       pose proof In_head_or_body BasicBlock x empty_block then_delta cond1.
       destruct H as [head | tail].
-      ** rewrite head in cond2.  rewrite head_then in cond2. rewrite <- cond2. subst then_start_num. lia.
+      ** rewrite head in cond2.  rewrite head_then in cond2. rewrite <- cond2. subst BB_then_now. cbn [block_num]. lia.
       ** assert(temp: BBnum_set (tl then_delta) n).
           {
             unfold BBnum_set. exists x. split. tauto. tauto.
@@ -450,7 +462,7 @@ Proof.
       unfold all_ge in c2_prop1. specialize (c2_prop1 n).
       pose proof In_head_or_body BasicBlock x empty_block else_delta cond1.
       destruct H as [head | tail].
-      ** rewrite head in cond2. rewrite head_else in cond2. rewrite <- cond2. subst then_end_num. lia. (*使用 c1_prop2*)
+      ** rewrite head in cond2. rewrite head_else in cond2. rewrite <- cond2. subst BB_else_now. cbn [block_num]. lia. (*使用 c1_prop2*)
       ** assert(temp: BBnum_set (tl else_delta) n).
           {
             unfold BBnum_set. exists x. split. tauto. tauto.
