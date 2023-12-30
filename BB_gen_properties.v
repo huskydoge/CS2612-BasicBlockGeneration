@@ -117,8 +117,8 @@ Definition Q_BBgen_range (c: cmd): Prop :=
     let basicblocks := to_result res in
     (BBnow.(jump_info).(jump_kind) = UJump /\ BBnow.(jump_info).(jump_dest_2) = None) ->
     endnum = res.(next_block_num) ->
-
-     basicblocks = BBs  ++ BBdelta ->
+    basicblocks = BBs  ++ BBdelta ->
+    lt BBnow.(block_num) startnum ->
      (
       all_ge (BBnum_set(tl BBdelta)) startnum /\
       all_lt (BBnum_set(tl BBdelta)) endnum /\ 
@@ -263,7 +263,7 @@ Proof.
   simpl. right. apply H.
 Qed.
 
-(*TODO IMPORTANT!!*)
+(*TODO IMPORTANT and HARD, might be Induction !!*)
 Lemma BBgen_head_prop:
   forall (cmds : list cmd)(BBnow : BasicBlock) (BBnum : nat),
   let res := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum) in
@@ -294,6 +294,7 @@ Proof.
   rename H into BBnow_jump_kind.
   rename H0 into endnum_eq.
   rename H1 into BBs_eq.
+  rename H2 into BBnow_lt_startnum.
   unfold to_result in BBs_eq.
   set(then_start_num := S (S (S startnum))). (* S BBnextnum *)
   set(BB_then_now := {|
@@ -587,13 +588,15 @@ Proof.
   (*BBnow < startnum = BBthennum < BBelsenum < BBnextnum < then_end_num < else_endnum = endnum, TODO IMPORTANT*)
   assert (le_chain: lt BBnow.(block_num) startnum /\ lt then_end_num endnum /\ lt startnum then_end_num /\ lt (S (S startnum)) endnum).
   {
-    admit.
+    repeat split.
+    - tauto.
+    - unfold all_ge in c2_prop1. unfold all_lt in c2_prop2. repeat admit.
   }
 
   repeat split.
   (*branch 1: 证明去掉头部的number后， BBdelta的所有num都大于等于startnum*)
+  sets_unfold in separate_delta_num. 
   - left. rename H into A. unfold BBnum_set in A. destruct A as [BB A]. destruct A as [A1 A2].
-    sets_unfold in separate_delta_num. 
     unfold unit_set in separate_delta_num. 
     sets_unfold in separate_delta_num. 
     unfold BBnum_set in separate_delta_num.
@@ -709,7 +712,7 @@ forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
 Proof.
   intros. unfold Q_BBgen_range. intros. simpl in H0.
-  unfold to_result in H1. simpl in H1. apply cut_eq_part_list_l in H1. 
+  unfold to_result in H1. simpl in H1. apply cut_eq_part_list_l in H1. rename H2 into BBnum_lt_startnum.
   repeat split.
   - unfold all_ge. intros. right. rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
     intros. split.
@@ -734,7 +737,7 @@ Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> n
     P_BBgen_range cmd_BB_gen nil.
 Proof.
   intros. unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0. 
-
+  (*TODO FIX IT!*)
 
 
 (* {

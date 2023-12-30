@@ -767,7 +767,7 @@ Proof.
     remember ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num)) as endnum.
     specialize (range_prop BBnum endnum BBs BBnow (BBnow'::nil ++ BBs')). 
     unfold to_result in range_prop.
-    pose proof range_prop jmp_prop Heqendnum BBlist_prop as range_prop. 
+    pose proof range_prop jmp_prop Heqendnum BBlist_prop bbnow_num_lt_BBnum as range_prop. 
     sets_unfold. intros. rename H into key.
     destruct range_prop as [num_range_prop1 [num_range_prop2 jmp_range_prop]].
     assert (key_prop1: (BBs_wo_last ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) = BBs'). {
