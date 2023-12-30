@@ -937,6 +937,12 @@ Proof.
     sets_unfold in premise.
     apply final.
     exists a. tauto.
+  - sets_unfold in H. tauto.
+  - sets_unfold in H. tauto.
+  - admit.
+  - sets_unfold in H. tauto.
+  - sets_unfold in H. tauto.
+Admitted.
 
 
 Admitted.
