@@ -716,14 +716,6 @@ Proof.
           ++ destruct H6. rewrite H6. simpl. tauto.
 Qed.
 
-Lemma option_eq:
-  forall (A: Type) (a b: option A),
-  a = b <->  Some a = Some b.
-Proof.
-  intros. split; intros.
-  - rewrite H. reflexivity.
-  - inversion H. reflexivity.
-Qed.
 
 (*将BB::nil ++ BBs 的jmpdest分离开来*)
 Lemma BBjmp_dest_set_separate:
