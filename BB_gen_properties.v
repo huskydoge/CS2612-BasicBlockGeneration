@@ -193,6 +193,31 @@ Proof.
     + simpl. admit.
 Admitted. (*TODO *)
 
+Lemma bbnum_le_next_num:
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
+    (lt BBnow.(block_num) BBnum) -> le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
+Proof.
+  intros. induction c.
+  - simpl. lia.
+  - cbn [list_cmd_BB_gen].
+    unfold list_cmd_BB_gen.
+    destruct a.
+    + simpl. admit.
+Admitted. (*TODO *)
+
+Lemma bbnum_eq_next_num:
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
+    let res := (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum) in
+    (lt BBnow.(block_num) BBnum) -> (tl (res.(BasicBlocks) ++ res.(BBn) :: nil)) = nil -> BBnum = res.(next_block_num).
+Proof.
+  intros. induction c.
+  - simpl. lia.
+  - cbn [list_cmd_BB_gen].
+    unfold list_cmd_BB_gen.
+    destruct a.
+    + simpl. admit.
+Admitted. (*TODO *)
+
 (*x在 l1 ++ l2中，那么必然在至少其中之一*)
 Lemma In_a_or_b:
   forall (A: Type) (x: A) (l1 l2: list A),
@@ -636,28 +661,55 @@ Proof.
     pose proof BBgen_head_prop c2 BB_else_now then_end_num. rewrite <- H. reflexivity.
   }
 
+  assert (else_prop: (exists n, BBnum_set (tl else_delta) n) -> le then_end_num endnum).
+  {
+    intros. destruct H as [n H]. unfold all_lt in c2_prop2. unfold all_ge in c2_prop1.
+    specialize (c2_prop2 n H). specialize (c2_prop1 n H). lia.
+  }
+  assert (then_prop: (exists n, BBnum_set (tl then_delta) n) -> lt startnum then_end_num).
+  {
+    intros. destruct H as [n H]. unfold all_lt in c1_prop2. unfold all_ge in c1_prop1.
+    specialize (c1_prop2 n H). specialize (c1_prop1 n H). lia.
+  }
+
   (*BBnow < startnum = BBthennum < BBelsenum < BBnextnum < then_end_num <= else_endnum = endnum, TODO IMPORTANT*)
+  assert (le_chain1: lt BBnow.(block_num) startnum). tauto.
+
+  assert (le_chain2: le then_start_num then_end_num). {
+    pose proof bbnum_le_next_num nil BB_then_now then_start_num c1.
+    assert (pre: (BB_then_now.(block_num) < then_start_num)%nat). {
+      unfold then_start_num. subst BB_then_now. cbn [block_num]. lia.
+    }
+    specialize (H pre). subst then_end_num. subst then_res. simpl. lia.
+  }
+  
+
+  assert (le_chain3: lt (S (S startnum)) then_end_num). lia.
+
+  assert (le_chain4: le then_end_num endnum).
+  {
+    pose proof bbnum_le_next_num nil BB_else_now then_end_num c2.
+    assert (pre: (BB_else_now.(block_num) < then_end_num)%nat). {
+      unfold then_end_num. subst BB_else_now. cbn [block_num]. lia.
+    }
+    specialize (H pre). 
+    assert (tricky_eq: endnum = else_end_num). {
+      admit. (*Hard！ 估计又是一条引理，就是cmdBBgen CIf最后的nextblocknum就是else分支的nextblocknum*)
+    }
+    rewrite tricky_eq. tauto.
+  }
+
   assert (le_chain: lt BBnow.(block_num) startnum /\ le then_end_num endnum /\ lt startnum then_end_num /\ lt (S (S startnum)) endnum).
   {
-    assert (else_prop: (exists n, BBnum_set (tl else_delta) n) -> le then_end_num endnum).
-    {
-      intros. destruct H as [n H]. unfold all_lt in c2_prop2. unfold all_ge in c2_prop1.
-      specialize (c2_prop2 n H). specialize (c2_prop1 n H). lia.
-    }
-    assert (then_prop: (exists n, BBnum_set (tl then_delta) n) -> lt startnum then_end_num).
-    {
-      intros. destruct H as [n H]. unfold all_lt in c1_prop2. unfold all_ge in c1_prop1.
-      specialize (c1_prop2 n H). specialize (c1_prop1 n H). lia.
-    }
     repeat split.
     - tauto.
-    - unfold all_ge in c2_prop1. unfold all_lt in c2_prop2.
-      destruct (tl else_delta).
-      + admit.
-      + admit. 
-    - admit.
-    - admit.
+    - tauto.
+    - lia.
+    - lia.
   }
+
+  clear le_chain1 le_chain2 le_chain3 le_chain4.
+
 
   repeat split.
   (*branch 1: 证明去掉头部的number后， BBdelta的所有num都大于等于startnum*)
