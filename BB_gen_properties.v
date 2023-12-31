@@ -637,9 +637,8 @@ Proof.
           {
             unfold BBnum_set. exists x. split. tauto. tauto.
           }
-          specialize (c2_prop1 temp). destruct c2_prop1 as [c2_prop1 | c2_prop1].
+          specialize (c2_prop1 temp). 
           *** lia. (* c2_prop1和c1_prop2 *)
-          *** pose proof c2_prop1. sets_unfold in H. specialize (H n). tauto.
     + lia.
   (*branch 2: 证明去掉头部的number后， BBdelta的所有num都小于endnum*) 
   - admit.
