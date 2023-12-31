@@ -594,12 +594,22 @@ Proof.
   (*BBnow < startnum = BBthennum < BBelsenum < BBnextnum < then_end_num <= else_endnum = endnum, TODO IMPORTANT*)
   assert (le_chain: lt BBnow.(block_num) startnum /\ le then_end_num endnum /\ lt startnum then_end_num /\ lt (S (S startnum)) endnum).
   {
+    assert (else_prop: (exists n, BBnum_set (tl else_delta) n) -> le then_end_num endnum).
+    {
+      intros. destruct H as [n H]. unfold all_lt in c2_prop2. unfold all_ge in c2_prop1.
+      specialize (c2_prop2 n H). specialize (c2_prop1 n H). lia.
+    }
+    assert (then_prop: (exists n, BBnum_set (tl then_delta) n) -> lt startnum then_end_num).
+    {
+      intros. destruct H as [n H]. unfold all_lt in c1_prop2. unfold all_ge in c1_prop1.
+      specialize (c1_prop2 n H). specialize (c1_prop1 n H). lia.
+    }
     repeat split.
     - tauto.
     - unfold all_ge in c2_prop1. unfold all_lt in c2_prop2.
       destruct (tl else_delta).
       + admit.
-      + admit.
+      + admit. 
     - admit.
     - admit.
   }
