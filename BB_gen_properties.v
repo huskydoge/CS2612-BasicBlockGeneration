@@ -168,7 +168,6 @@ Lemma add_BBs_in_generation_reserves_BB:
   = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
 Proof.
   intros.
-   
 Admitted.
 
 
@@ -264,6 +263,48 @@ Proof.
   simpl. right. apply H.
 Qed.
 
+
+Lemma append_nil_r : forall A (l : list A),
+  l ++ nil = l.
+Proof.
+  intros A l.
+  induction l as [| x xs IH].
+  - (* l = nil *)
+    simpl. reflexivity.
+  - (* l = x :: xs *)
+    simpl. rewrite IH. reflexivity.
+Qed.
+
+(* 这里理论上是要求l1不为空的 *)
+Lemma hd_A_and_B_is_hd_A:
+  forall (l1 l2: list BasicBlock),
+  hd empty_block (l1 ++ l2) = hd empty_block l1.
+Proof.
+  intros. induction l2.
+  - simpl. rewrite append_nil_r. tauto.
+  - simpl. unfold hd. destruct l1.
+    + simpl.
+Admitted.
+
+
+Lemma BBgen_head_prop_aux:
+  forall (c: cmd) (BBnow: BasicBlock) (BBnum: nat),
+  let res := (cmd_BB_gen c nil BBnow BBnum) in
+  (hd empty_block res.(BasicBlocks)).(block_num) = BBnow.(block_num).
+Proof.
+  intros. destruct c.
+  - unfold cmd_BB_gen in res. subst res. simpl. 
+Admitted.
+
+Lemma BBgen_head_is_first_cmd_gen_head:
+  forall (a: cmd) (cmds : list cmd) (BBnow : BasicBlock) (BBnum : nat),
+  let res := (list_cmd_BB_gen cmd_BB_gen (a :: cmds) nil BBnow BBnum) in
+  let res' := (cmd_BB_gen a nil BBnow BBnum) in
+  (hd empty_block res.(BasicBlocks)).(block_num) = (hd empty_block res'.(BasicBlocks)).(block_num).
+Proof.
+  Admitted.
+
+
 (*TODO IMPORTANT and HARD, might be Induction !!*)
 Lemma BBgen_head_prop:
   forall (cmds : list cmd)(BBnow : BasicBlock) (BBnum : nat),
@@ -271,12 +312,16 @@ Lemma BBgen_head_prop:
   (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = BBnow.(block_num).
 Proof.
   intros.
-  unfold res.
-  unfold list_cmd_BB_gen.
+  unfold res. 
   induction cmds.
   - simpl. reflexivity.
-  - admit.
-Admitted.
+  - unfold res in IHcmds.
+    rewrite hd_A_and_B_is_hd_A.
+    rewrite hd_A_and_B_is_hd_A in IHcmds.
+    rewrite BBgen_head_is_first_cmd_gen_head.
+    rewrite BBgen_head_prop_aux.
+    tauto.
+Qed.
 
 
 Lemma Q_if_BBgen_range:
@@ -349,7 +394,7 @@ Proof.
   assert (c1_aux2 : then_end_num = (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num).(next_block_num)). subst then_end_num. subst then_res. pose proof add_BBs_in_generation_retains_next_block_num c1 BBs BB_then_now then_start_num. apply H.
 
   assert (c1_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num) = BBs ++ then_delta)). pose proof add_BBs_in_generation_reserves_BB c1 BBs BB_then_now then_start_num. unfold to_result in H. unfold to_result. subst then_delta. subst then_res. apply H. 
-  
+
   specialize (c1_prop c1_aux1 c1_aux2 c1_aux3).
   clear c1_aux1 c1_aux2 c1_aux3.
   
