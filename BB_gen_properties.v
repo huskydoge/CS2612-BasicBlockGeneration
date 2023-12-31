@@ -81,11 +81,12 @@ Definition BB_all_ge (BBs: list BasicBlock)(num: nat): Prop :=
 Definition BB_all_lt (BBs: list BasicBlock)(num: nat): Prop :=
     forall BB, In BB BBs -> Nat.lt BB.(block_num) num \/ BBs = nil.
 
+(*BUG emm这里定义的时候其实应该加一个括号才对，但是emm，不改似乎不会影响证明*)
 Definition all_ge (natset: nat -> Prop)(num: nat): Prop :=
-    forall n, natset n -> Nat.le num n \/ natset == ∅.
+    (forall n, natset n -> Nat.le num n).
   
 Definition all_lt (natset: nat -> Prop)(num: nat): Prop :=
-    forall n, natset n -> Nat.lt n num \/ natset == ∅.
+    (forall n, natset n -> Nat.lt n num).
 
 (*定义自然数区间*)
 Definition section (startnum endnum: nat) : nat -> Prop :=
@@ -590,13 +591,18 @@ Proof.
   {
     repeat split.
     - tauto.
-    - unfold all_ge in c2_prop1. unfold all_lt in c2_prop2. repeat admit.
+    - unfold all_ge in c2_prop1. unfold all_lt in c2_prop2.
+      destruct (tl else_delta).
+      + admit.
+      + admit.
+    - admit.
+    - admit.
   }
 
   repeat split.
   (*branch 1: 证明去掉头部的number后， BBdelta的所有num都大于等于startnum*)
   sets_unfold in separate_delta_num. 
-  - left. rename H into A. unfold BBnum_set in A. destruct A as [BB A]. destruct A as [A1 A2].
+  - unfold all_ge. intros. rename H into A. unfold BBnum_set in A. destruct A as [BB A]. destruct A as [A1 A2].
     unfold unit_set in separate_delta_num. 
     sets_unfold in separate_delta_num. 
     unfold BBnum_set in separate_delta_num.
@@ -611,7 +617,8 @@ Proof.
     clear temp.
     destruct separate_delta_num as [[case1 | case2] | case3 ]. 
     + destruct case1 as [x [cond1 cond2]].
-      unfold all_ge in c1_prop1. specialize (c1_prop1 n).
+      unfold all_ge in c1_prop1. 
+      specialize (c1_prop1 n).
       pose proof In_head_or_body BasicBlock x empty_block then_delta cond1.
       destruct H as [head | tail].
       ** rewrite head in cond2.  rewrite head_then in cond2. rewrite <- cond2. subst BB_then_now. cbn [block_num]. lia.
@@ -619,9 +626,8 @@ Proof.
           {
             unfold BBnum_set. exists x. split. tauto. tauto.
           }
-          specialize (c1_prop1 temp). destruct c1_prop1 as [c1_prop1 | c1_prop1].
-          *** lia.
-          *** pose proof c1_prop1. sets_unfold in H. specialize (H n). tauto.
+          specialize (c1_prop1 temp). lia.
+          
     + destruct case2 as [x [cond1 cond2]].
       unfold all_ge in c2_prop1. specialize (c2_prop1 n).
       pose proof In_head_or_body BasicBlock x empty_block else_delta cond1.
