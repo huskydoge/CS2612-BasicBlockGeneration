@@ -286,24 +286,98 @@ Proof.
     + simpl.
 Admitted.
 
+Definition P_BBgen_head_prop (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results)(cmds: list cmd): Prop :=
+  forall BBnum BBnow BBs,
+  let res := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) in
+  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = (hd empty_block (BBs ++ BBnow::nil)).(block_num).
 
-Lemma BBgen_head_prop_aux:
-  forall (c: cmd) (BBnow: BasicBlock) (BBnum: nat),
-  let res := (cmd_BB_gen c nil BBnow BBnum) in
-  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = BBnow.(block_num).
+Definition Q_BBgen_head_prop (c: cmd): Prop :=
+  forall BBnum BBnow BBs,
+  let res := (cmd_BB_gen c BBs BBnow BBnum) in
+  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = (hd empty_block (BBs ++ BBnow::nil)).(block_num).
+
+
+Lemma Q_Asgn_BBgen_head_prop:
+  forall (x: var_name) (e: expr),
+    Q_BBgen_head_prop (CAsgn x e).
 Proof.
-  intros. destruct c.
-  - unfold cmd_BB_gen in res. subst res. simpl. tauto.
-  - rewrite hd_A_and_B_is_hd_A.  
+  intros.
+  unfold Q_BBgen_head_prop. intros.
+  unfold cmd_BB_gen. simpl. induction BBs.
+  - simpl. tauto.
 Admitted.
 
-Lemma BBgen_head_is_first_cmd_gen_head:
-  forall (a: cmd) (cmds : list cmd) (BBnow : BasicBlock) (BBnum : nat),
-  let res := (list_cmd_BB_gen cmd_BB_gen (a :: cmds) nil BBnow BBnum) in
-  let res' := (cmd_BB_gen a nil BBnow BBnum) in
-  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = (hd empty_block (res'.(BasicBlocks) ++ res'.(BBn)::nil)).(block_num).
+Lemma Q_if_BBgen_head_prop:
+  forall (e: expr) (c1 c2: list cmd),
+      P_BBgen_head_prop cmd_BB_gen c1  ->
+      P_BBgen_head_prop cmd_BB_gen c2  ->
+      Q_BBgen_head_prop (CIf e c1 c2).
+Proof.
+  intros.
+  unfold Q_BBgen_head_prop. intros.
+  rewrite hd_A_and_B_is_hd_A.
+  cbn[cmd_BB_gen]. simpl.
+  remember (
+    (list_cmd_BB_gen cmd_BB_gen c1
+               (BBs ++
+                {|
+                block_num := BBnow.(block_num);
+                commands := BBnow.(cmd);
+                jump_info := {|
+                             jump_kind := CJump;
+                             jump_dest_1 := BBnum;
+                             jump_dest_2 := Some (S BBnum);
+                             jump_condition := Some e |} |} :: nil)
+               {|
+               block_num := BBnum;
+               commands := nil;
+               jump_info := {|
+                            jump_kind := UJump;
+                            jump_dest_1 := S (S BBnum);
+                            jump_dest_2 := None;
+                            jump_condition := None |} |} 
+               (S (S (S BBnum))))
+  ) as BBs_then.
+  remember (
+    {|
+      block_num := S BBnum;
+      commands := nil;
+      jump_info := {|
+                  jump_kind := UJump;
+                  jump_dest_1 := S (S BBnum);
+                  jump_dest_2 := None;
+                  jump_condition := None |} |}
+  ) as BBnow_then.
+  unfold to_result. 
+  unfold P_BBgen_head_prop in H0.
+  specialize (H0 BBs_then.(next_block_num) BBnow_then (BBs_then.(BasicBlocks) ++ BBs_then.(BBn) :: nil)).
+  rewrite H0.
+Admitted.
+
+Lemma Q_while_BBgen_head_prop:
+  forall (e: expr) (pre body: list cmd),
+      P_BBgen_head_prop cmd_BB_gen pre  ->
+      P_BBgen_head_prop cmd_BB_gen body  ->
+      Q_BBgen_head_prop (CWhile pre e body).
 Proof.
   Admitted.
+
+Lemma P_BBgen_head_prop_nil:
+  forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
+    P_BBgen_head_prop cmd_BB_gen nil.
+Proof.
+  Admitted.
+
+Lemma P_BBgen_head_prop_cons:
+  forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results) (c: cmd) (cmds: list cmd),
+    Q_BBgen_head_prop c ->
+    P_BBgen_head_prop cmd_BB_gen cmds ->
+    P_BBgen_head_prop cmd_BB_gen (c :: cmds).
+Proof.
+  Admitted.
+
+(*TODO 后面应该补上sound的具体情况 *)
+
 
 
 (*TODO IMPORTANT and HARD, might be Induction !!*)
@@ -317,11 +391,7 @@ Proof.
   induction cmds.
   - simpl. reflexivity.
   - unfold res in IHcmds.
-    rewrite BBgen_head_is_first_cmd_gen_head.
-    rewrite BBgen_head_prop_aux.
-    tauto.
-Qed.
-
+Admitted.
 
 Lemma Q_if_BBgen_range:
 forall (e: expr) (c1 c2: list cmd),
