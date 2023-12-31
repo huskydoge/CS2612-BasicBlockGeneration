@@ -290,7 +290,7 @@ Admitted.
 Lemma BBgen_head_prop_aux:
   forall (c: cmd) (BBnow: BasicBlock) (BBnum: nat),
   let res := (cmd_BB_gen c nil BBnow BBnum) in
-  (hd empty_block res.(BasicBlocks)).(block_num) = BBnow.(block_num).
+  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = BBnow.(block_num).
 Proof.
   intros. destruct c.
   - unfold cmd_BB_gen in res. subst res. simpl. 
