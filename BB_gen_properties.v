@@ -293,14 +293,15 @@ Lemma BBgen_head_prop_aux:
   (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = BBnow.(block_num).
 Proof.
   intros. destruct c.
-  - unfold cmd_BB_gen in res. subst res. simpl. 
+  - unfold cmd_BB_gen in res. subst res. simpl. tauto.
+  - rewrite hd_A_and_B_is_hd_A.  
 Admitted.
 
 Lemma BBgen_head_is_first_cmd_gen_head:
   forall (a: cmd) (cmds : list cmd) (BBnow : BasicBlock) (BBnum : nat),
   let res := (list_cmd_BB_gen cmd_BB_gen (a :: cmds) nil BBnow BBnum) in
   let res' := (cmd_BB_gen a nil BBnow BBnum) in
-  (hd empty_block res.(BasicBlocks)).(block_num) = (hd empty_block res'.(BasicBlocks)).(block_num).
+  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = (hd empty_block (res'.(BasicBlocks) ++ res'.(BBn)::nil)).(block_num).
 Proof.
   Admitted.
 
@@ -316,8 +317,6 @@ Proof.
   induction cmds.
   - simpl. reflexivity.
   - unfold res in IHcmds.
-    rewrite hd_A_and_B_is_hd_A.
-    rewrite hd_A_and_B_is_hd_A in IHcmds.
     rewrite BBgen_head_is_first_cmd_gen_head.
     rewrite BBgen_head_prop_aux.
     tauto.
