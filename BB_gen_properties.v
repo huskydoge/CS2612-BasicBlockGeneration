@@ -585,8 +585,8 @@ Proof.
     pose proof BBgen_head_prop c2 BB_else_now then_end_num. rewrite <- H. reflexivity.
   }
 
-  (*BBnow < startnum = BBthennum < BBelsenum < BBnextnum < then_end_num < else_endnum = endnum, TODO IMPORTANT*)
-  assert (le_chain: lt BBnow.(block_num) startnum /\ lt then_end_num endnum /\ lt startnum then_end_num /\ lt (S (S startnum)) endnum).
+  (*BBnow < startnum = BBthennum < BBelsenum < BBnextnum < then_end_num <= else_endnum = endnum, TODO IMPORTANT*)
+  assert (le_chain: lt BBnow.(block_num) startnum /\ le then_end_num endnum /\ lt startnum then_end_num /\ lt (S (S startnum)) endnum).
   {
     repeat split.
     - tauto.
