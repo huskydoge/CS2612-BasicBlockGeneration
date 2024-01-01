@@ -16,6 +16,15 @@ Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 
 
+Lemma cut_nil_r:
+  forall (A: Type) (x y:  A),
+  x::nil = y::nil <-> x = y.
+Proof.
+  intros. split; intros.
+  - inversion H. reflexivity.
+  - rewrite H. reflexivity.
+Qed.
+
 Lemma cut_eq_part_l:
   forall (A: Type) (a b: A) (l1 l2: list A),
   l1 ++ a :: l2 = l1 ++ b :: l2 -> a = b.
@@ -55,6 +64,16 @@ Proof.
   induction l1.
   - simpl in H. rewrite app_nil_r in H. rewrite app_nil_r in H. apply H.
   - simpl in H. admit.
+Admitted.
+
+Lemma cut_eq_part_list_r':
+  forall (A: Type) (l1 l2 l3: list A),
+  l2 = l3 -> l2 ++ l1 = l3 ++ l1.
+Proof.
+  intros.
+  induction l1.
+  - simpl. rewrite app_nil_r. rewrite app_nil_r. apply H.
+  - simpl. admit.
 Admitted.
 
 
@@ -266,155 +285,122 @@ Qed.
 
 (* ======================================================================================================================================= *)
 
-Definition Q_add_BBs_in_generation_reserves_BB(c: cmd): Prop :=
-  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+(*对于一个cmd，它产生的Basicblocks的结果等于传入的BBs ++ 新生成的，新生成的部分可以用(cmd_BB_gen c nil BBnow BBnum) 来表示*)
+Lemma Q_add_BBs_in_generation_reserves_BB_sound(c: cmd):
+forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
   to_result (cmd_BB_gen c BBs BBnow BBnum) = BBs ++ to_result (cmd_BB_gen c nil BBnow BBnum).
-
-Definition P_add_BBs_in_generation_reserves_BB(cmds: list cmd): Prop :=
-  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
-  to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
-
-Lemma Q_asgn_add_BBs_in_generation_reserves_BB:
-  forall (x: var_name) (e: expr),
-  Q_add_BBs_in_generation_reserves_BB (CAsgn x e).
 Proof.
   intros.
-  unfold Q_add_BBs_in_generation_reserves_BB.
-  intros.
-  unfold cmd_BB_gen.
-  simpl.
-  reflexivity.
-Qed.
-
-Lemma Q_if_add_BBs_in_generation_reserves_BB:
-  forall (e: expr) (c1 c2: list cmd),
-  P_add_BBs_in_generation_reserves_BB c1 -> 
-  P_add_BBs_in_generation_reserves_BB c2 -> 
-  Q_add_BBs_in_generation_reserves_BB (CIf e c1 c2).
-Proof.
-  intros.
-  unfold Q_add_BBs_in_generation_reserves_BB.
-  intros.
-  cbn [cmd_BB_gen].
-  unfold to_result. cbn [BasicBlocks]. cbn [BBn].
-  apply app_assoc_reverse.
-Qed.
-
-Lemma Q_while_add_BBs_in_generation_reserves_BB:
-  forall (e: expr) (c1 c2: list cmd),
-  P_add_BBs_in_generation_reserves_BB c1 -> P_add_BBs_in_generation_reserves_BB c2 -> Q_add_BBs_in_generation_reserves_BB (CWhile c1 e c2).
-Proof.
-  intros.
-  unfold Q_add_BBs_in_generation_reserves_BB.
-  intros.
-  cbn [cmd_BB_gen].
-  unfold to_result. cbn [BasicBlocks]. cbn [BBn].
-  apply app_assoc_reverse.
-Qed.
-
-
-Lemma P_nil_add_BBs_in_generation_reserves_BB: 
-  (P_add_BBs_in_generation_reserves_BB nil).
-Proof.
-  intros.
-  unfold P_add_BBs_in_generation_reserves_BB.
-  intros.
-  unfold to_result. cbn [BasicBlocks]. cbn [BBn].
-  reflexivity.
-Qed.
-
-Lemma P_cons_add_BBs_in_generation_reserves_BB: 
-  forall (c: cmd) (cmds: list cmd),
-  Q_add_BBs_in_generation_reserves_BB c ->
-  P_add_BBs_in_generation_reserves_BB cmds  ->
-  P_add_BBs_in_generation_reserves_BB (c :: cmds).
-Proof.
-  intros.
-  unfold P_add_BBs_in_generation_reserves_BB.
-  intros.
-  unfold to_result. 
-  assert ((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow BBnum).(BasicBlocks) = BBs ++
-  (list_cmd_BB_gen cmd_BB_gen (c :: cmds) nil BBnow BBnum).(BasicBlocks)).
-  {
-    unfold Q_add_BBs_in_generation_reserves_BB in H.
-    specialize (H BBs BBnow BBnum).
-    unfold P_add_BBs_in_generation_reserves_BB in H0.
-    specialize (H0 (cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks) (cmd_BB_gen c BBs BBnow BBnum).(BBn) (cmd_BB_gen c BBs BBnow BBnum).(next_block_num)).
-    cbn [list_cmd_BB_gen].
-    unfold to_result in *.
-    remember (cmd_BB_gen c BBs BBnow BBnum) as c_res.
-    remember (cmd_BB_gen c nil BBnow BBnum) as c_res_nil.
-    remember ((list_cmd_BB_gen cmd_BB_gen cmds c_res.(BasicBlocks) c_res.(BBn) c_res.(next_block_num))) as cmds_res.
-    remember ((list_cmd_BB_gen cmd_BB_gen cmds nil c_res.(BBn) c_res.(next_block_num))) as cmds_res_nil.
-    pose proof H as key1.
-    pose proof H0 as key2.
-    cbn [list_cmd_BB_gen].
-    assert (eq_prop: c_res.(BBn) = c_res_nil.(BBn)).
+  destruct c.
+  - simpl. reflexivity.
+  - unfold to_result. 
+    assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil = (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BBn) :: nil).
     {
-      rewrite Heqc_res. rewrite Heqc_res_nil. 
-      pose proof eq_BBn BBs BBnow BBnum c. tauto.
+      reflexivity.
     }
-    rewrite eq_prop in key1. simpl in key1.
-    rewrite app_assoc in key1. 
-    pose proof cut_eq_part_list_r BasicBlock (c_res_nil.(BBn) :: nil) c_res.(BasicBlocks) (BBs ++ c_res_nil.(BasicBlocks)) key1 as cut_eq1.
-    rewrite cut_eq1 in key2.
-    
-  }
-Admitted.
-
-Section add_BBs_in_generation_reserves_BB_sound.
-Variable add_BBs_in_generation_reserves_BB_sound: forall (c: cmd),  Q_add_BBs_in_generation_reserves_BB c.
-
-Fixpoint list_add_BBs_in_generation_reserves_BB_sound (cmds: list cmd): P_add_BBs_in_generation_reserves_BB cmds:=
-  match cmds with
-  | nil => P_nil_add_BBs_in_generation_reserves_BB
-  | c :: cmds0 => P_cons_add_BBs_in_generation_reserves_BB c cmds0 (add_BBs_in_generation_reserves_BB_sound c) (list_add_BBs_in_generation_reserves_BB_sound cmds0)
-  end.
-
-End add_BBs_in_generation_reserves_BB_sound.
-
-Fixpoint add_BBs_in_generation_reserves_BB_sound (c: cmd): Q_add_BBs_in_generation_reserves_BB c :=
-  match c with
-  | CAsgn x e => Q_asgn_add_BBs_in_generation_reserves_BB x e
-  | CIf e cmds1 cmds2 =>
-      Q_if_add_BBs_in_generation_reserves_BB e cmds1 cmds2
-        (list_add_BBs_in_generation_reserves_BB_sound add_BBs_in_generation_reserves_BB_sound cmds1)
-        (list_add_BBs_in_generation_reserves_BB_sound add_BBs_in_generation_reserves_BB_sound cmds2)
-  | CWhile cmds1 e cmds2 =>
-      Q_while_add_BBs_in_generation_reserves_BB e cmds1 cmds2
-        (list_add_BBs_in_generation_reserves_BB_sound add_BBs_in_generation_reserves_BB_sound cmds1)
-        (list_add_BBs_in_generation_reserves_BB_sound add_BBs_in_generation_reserves_BB_sound cmds2)
-  end.
-
-
-Lemma add_BBs_in_generation_reserves_BB_correct:
-  forall (c: cmd),
-  Q_add_BBs_in_generation_reserves_BB c.
-Proof.
-  apply add_BBs_in_generation_reserves_BB_sound.
+    rewrite H.
+    assert (eq: (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++
+    (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks)).
+    {
+      unfold cmd_BB_gen.
+      simpl.
+      reflexivity.
+    }
+    rewrite eq. apply app_assoc_reverse.
+  - unfold to_result.
+    assert ((cmd_BB_gen (CWhile pre e body) BBs BBnow BBnum).(BBn) :: nil = (cmd_BB_gen (CWhile pre e body) nil BBnow BBnum).(BBn) :: nil).
+    {
+      reflexivity.
+    }
+    rewrite H.
+    assert (eq: (cmd_BB_gen (CWhile pre e body) BBs BBnow BBnum).(BasicBlocks) = BBs ++
+    (cmd_BB_gen (CWhile pre e body) nil BBnow BBnum).(BasicBlocks)).
+    {
+      unfold cmd_BB_gen.
+      simpl.
+      reflexivity.
+    }
+    rewrite eq. apply app_assoc_reverse.
 Qed.
-
-Lemma list_add_BBs_in_generation_reserves_BB_correct:
-  forall (cmds: list cmd),
-  P_add_BBs_in_generation_reserves_BB cmds.
-Proof.
-  apply list_add_BBs_in_generation_reserves_BB_sound.
-  apply add_BBs_in_generation_reserves_BB_sound.
-Qed.
-
 
 (*这里说的是，在生成基本块的时候，BBs ++ 不传BBs得到的结果 = 传BBs的结果；BBs是已经产生的基本块列表*)
 Lemma add_BBs_in_generation_reserves_BB:
-  forall (cmds : list cmd) (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
-  to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) 
-  = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
+forall (cmds: list cmd)(BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+  to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
 Proof.
-  intros.
-  pose proof (list_add_BBs_in_generation_reserves_BB_correct cmds).
-  unfold P_add_BBs_in_generation_reserves_BB in H.
-  specialize (H BBs BBnow BBnum).
-  apply H.
+  intros. revert BBs BBnow BBnum.
+  induction cmds.
+  - simpl. reflexivity.
+  - intros. cbn [list_cmd_BB_gen].
+    assert (eq_prop_BBn: (cmd_BB_gen a BBs BBnow BBnum).(BBn) = (cmd_BB_gen a nil BBnow BBnum).(BBn)).
+    {
+      apply eq_BBn2.
+    }
+    rewrite eq_prop_BBn.
+    assert (eq_prop_next_block_num: (cmd_BB_gen a BBs BBnow BBnum).(next_block_num) = (cmd_BB_gen a nil BBnow BBnum).(next_block_num)).
+    {
+      apply eq_next_block_num2.
+    }
+    rewrite eq_prop_next_block_num.
+    unfold to_result in IHcmds.
+    assert (IH_prop: (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn) :: nil = (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).(BBn) :: nil).
+    {
+      apply cut_nil_r. apply eq_BBn_list.
+    }
+    pose proof (IHcmds ((cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks)) (cmd_BB_gen a nil BBnow BBnum).(BBn) (cmd_BB_gen a nil BBnow BBnum).(next_block_num)) as key1.
+    assert (IH_prop2: ((list_cmd_BB_gen cmd_BB_gen cmds (cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks)
+    (cmd_BB_gen a nil BBnow BBnum).(BBn) (cmd_BB_gen a nil BBnow BBnum).(next_block_num)).(BBn) :: nil) = (list_cmd_BB_gen cmd_BB_gen cmds nil (cmd_BB_gen a nil BBnow BBnum).(BBn)
+    (cmd_BB_gen a nil BBnow BBnum).(next_block_num)).(BBn) :: nil).
+    {
+      apply cut_nil_r. apply eq_BBn_list.
+    }
+    rewrite IH_prop2 in key1.
+ 
+    pose proof (cut_eq_part_list_r BasicBlock ((list_cmd_BB_gen cmd_BB_gen cmds nil (cmd_BB_gen a nil BBnow BBnum).(BBn)
+    (cmd_BB_gen a nil BBnow BBnum).(next_block_num)).(BBn) :: nil) ((list_cmd_BB_gen cmd_BB_gen cmds (cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks)
+    (cmd_BB_gen a nil BBnow BBnum).(BBn) (cmd_BB_gen a nil BBnow BBnum).(next_block_num)).(BasicBlocks)) ((cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks) ++
+    (list_cmd_BB_gen cmd_BB_gen cmds nil (cmd_BB_gen a nil BBnow BBnum).(BBn)
+       (cmd_BB_gen a nil BBnow BBnum).(next_block_num)).(BasicBlocks))).
+    rewrite app_assoc in key1. pose proof H key1 as key. clear H IH_prop2.
+    unfold to_result. rewrite key.
+    remember (cmd_BB_gen a nil BBnow BBnum) as a_nil_res.
+    remember (cmd_BB_gen a BBs BBnow BBnum) as a_res.
+    pose proof (IHcmds a_nil_res.(BasicBlocks) a_nil_res.(BBn) a_nil_res.(next_block_num)) as key3.
+    assert(eq2: (list_cmd_BB_gen cmd_BB_gen cmds a_nil_res.(BasicBlocks) a_nil_res.(BBn)
+    a_nil_res.(next_block_num)).(BBn) :: nil =  (list_cmd_BB_gen cmd_BB_gen cmds nil a_nil_res.(BBn) a_nil_res.(next_block_num)).(BBn) :: nil).
+    {
+      apply cut_nil_r. apply eq_BBn_list.
+    }
+    rewrite eq2 in key3.
+    pose proof (cut_eq_part_list_r BasicBlock ((list_cmd_BB_gen cmd_BB_gen cmds nil a_nil_res.(BBn) a_nil_res.(next_block_num)).(BBn) :: nil) (list_cmd_BB_gen cmd_BB_gen cmds a_nil_res.(BasicBlocks) a_nil_res.(BBn)
+    a_nil_res.(next_block_num)).(BasicBlocks) (a_nil_res.(BasicBlocks) ++
+    (list_cmd_BB_gen cmd_BB_gen cmds nil a_nil_res.(BBn) a_nil_res.(next_block_num)).(BasicBlocks))).
+    rewrite app_assoc in key3. pose proof H key3 as key4. clear H eq2. clear key3. rename key4 into key2.
+    rewrite key2.
+    rewrite app_assoc_reverse.
+    rewrite app_assoc_reverse.
+    assert (eq3: a_res.(BasicBlocks) = BBs ++ a_nil_res.(BasicBlocks)).
+    {
+      rewrite Heqa_res. rewrite Heqa_nil_res.
+      pose proof Q_add_BBs_in_generation_reserves_BB_sound a BBs BBnow BBnum as key3.
+      unfold to_result in key3.
+      assert(eq3: (cmd_BB_gen a BBs BBnow BBnum).(BBn) :: nil  = (cmd_BB_gen a nil BBnow BBnum).(BBn) :: nil).
+      {
+        apply cut_nil_r. apply eq_BBn2.
+      }
+      rewrite eq3 in key3. 
+      pose proof (cut_eq_part_list_r BasicBlock ((cmd_BB_gen a nil BBnow BBnum).(BBn) :: nil) (cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks) (BBs ++ (cmd_BB_gen a nil BBnow BBnum).(BasicBlocks))).
+      rewrite app_assoc in key3. pose proof H key3 as key4. clear H eq3. clear key3. rename key4 into key3.
+      tauto.
+    }
+    rewrite eq3.
+    rewrite app_assoc_reverse.
+    pose proof (IHcmds (BBs ++ a_nil_res.(BasicBlocks)) a_nil_res.(BBn) a_nil_res.(next_block_num)) as key3.
+    pose proof eq_BBn_list (BBs ++ a_nil_res.(BasicBlocks)) a_nil_res.(BasicBlocks) a_nil_res.(BBn) a_nil_res.(next_block_num) cmds.
+    rewrite H.
+    reflexivity.
 Qed.
+
 
 
 (* ======================================================================================================================================= *)
@@ -1229,11 +1215,11 @@ Qed.
 Lemma Q_asgn_BBgen_range:
 forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
-Proof.
+Proof. (*TODO*)
   intros. unfold Q_BBgen_range. intros. simpl in H0.
   unfold to_result in H1. simpl in H1. apply cut_eq_part_list_l in H1. rename H2 into BBnum_lt_startnum.
   repeat split.
-  - unfold all_ge. intros. right. rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
+  - unfold all_ge. intros.  rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
     intros. split.
     + intros. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
     + intros. tauto.
