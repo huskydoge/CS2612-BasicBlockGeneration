@@ -591,43 +591,6 @@ Lemma Q_if_BBgen_head_prop:
 Proof.
   intros.
   unfold Q_BBgen_head_prop. intros.
-  rewrite hd_A_and_B_is_hd_A.
-  cbn[cmd_BB_gen]. simpl.
-  remember (
-    (list_cmd_BB_gen cmd_BB_gen c1
-               (BBs ++
-                {|
-                block_num := BBnow.(block_num);
-                commands := BBnow.(cmd);
-                jump_info := {|
-                             jump_kind := CJump;
-                             jump_dest_1 := BBnum;
-                             jump_dest_2 := Some (S BBnum);
-                             jump_condition := Some e |} |} :: nil)
-               {|
-               block_num := BBnum;
-               commands := nil;
-               jump_info := {|
-                            jump_kind := UJump;
-                            jump_dest_1 := S (S BBnum);
-                            jump_dest_2 := None;
-                            jump_condition := None |} |} 
-               (S (S (S BBnum))))
-  ) as BBs_then.
-  remember (
-    {|
-      block_num := S BBnum;
-      commands := nil;
-      jump_info := {|
-                  jump_kind := UJump;
-                  jump_dest_1 := S (S BBnum);
-                  jump_dest_2 := None;
-                  jump_condition := None |} |}
-  ) as BBnow_then.
-  unfold to_result. 
-  unfold P_BBgen_head_prop in H0.
-  specialize (H0 BBs_then.(next_block_num) BBnow_then (BBs_then.(BasicBlocks) ++ BBs_then.(BBn) :: nil)).
-  rewrite H0.
 Admitted.
 
 Lemma Q_while_BBgen_head_prop:
@@ -1219,14 +1182,10 @@ Proof. (*TODO*)
   intros. unfold Q_BBgen_range. intros. simpl in H0.
   unfold to_result in H1. simpl in H1. apply cut_eq_part_list_l in H1. rename H2 into BBnum_lt_startnum.
   repeat split.
-  - unfold all_ge. intros.  rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
-    intros. split.
-    + intros. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
-    + intros. tauto.
-  - unfold all_lt. intros. right. rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
-    intros. split.
-    + intros. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
-    + intros. tauto.
+  - unfold all_ge. intros. unfold BBnum_set in H2. destruct H2 as [? [? ?]]. 
+    rewrite <- H1 in H2. unfold tl in H2. unfold In in H2. tauto.
+  - unfold all_lt. intros. unfold BBnum_set in H2. destruct H2 as [? [? ?]]. 
+    rewrite <- H1 in H2. unfold tl in H2. unfold In in H2. tauto.
   - unfold BBjmp_dest_set. sets_unfold. intros. 
     destruct H2 as [BB [H2 H3]].
     destruct H3 as [H3 | H3].
