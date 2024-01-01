@@ -1208,6 +1208,10 @@ Lemma P_BBgen_con:
     P_BBgen_range cmd_BB_gen cmds ->
     P_BBgen_range cmd_BB_gen (c::cmds).
 Proof.
+  intros.
+  unfold P_BBgen_range in H0.
+  unfold P_BBgen_range.
+  intros.
 Admitted.
 
 Section BB_gen_range_sound.
