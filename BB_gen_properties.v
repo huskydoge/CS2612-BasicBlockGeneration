@@ -422,7 +422,7 @@ Proof.
 
 
 
-(*TODO IMPORTANT *)
+(*TODO IMPORTANT：第一个Block的num就是BBnow的blocknum *)
 Lemma BBgen_head_prop:
   forall (cmds : list cmd)(BBnow : BasicBlock) (BBnum : nat),
   let res := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum) in
@@ -436,12 +436,41 @@ Proof.
 Admitted.
 (*END: BBgen Head =========================================================================================================================================================================================*)
 
+
 (*对于CIf而言，其nextblocknum等于else分支得到的nextblocknum*)
 Lemma CIf_next_block_num_eq_else_next_block_num:
   forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat),
-    (cmd_BB_gen (CIf e c1 c2 ) BBs BBnow BBnum).(next_block_num) = (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow BBnum).(next_block_num).
+    let BB_now_then := 
+      {|
+      block_num := BBnum;
+      commands := nil;
+      jump_info :=
+        {|
+          jump_kind := UJump;
+          jump_dest_1 := S (S BBnum);
+          jump_dest_2 := None;
+          jump_condition := None;
+        |}
+      |} in
+    let else_start_num := (list_cmd_BB_gen cmd_BB_gen c1 nil BB_now_then (S(S (S BBnum)))).(next_block_num) in
+    let BB_now_else := 
+      {|
+      block_num := S BBnum;
+      commands := nil;
+      jump_info :=
+        {|
+          jump_kind := UJump;
+          jump_dest_1 := S (S BBnum);
+          jump_dest_2 := None;
+          jump_condition := None;
+        |}
+      |} in
+    (cmd_BB_gen (CIf e c1 c2 ) BBs BBnow BBnum).(next_block_num) = (list_cmd_BB_gen cmd_BB_gen c2 nil BB_now_else else_start_num).(next_block_num).
 Proof.
-Admitted.
+  intros.
+  cbn [cmd_BB_gen]. cbn [next_block_num].
+  subst else_start_num. subst BB_now_then. subst BB_now_else. reflexivity.
+Qed.
 
 
 (*Start: Main =============================================================================================================================================================================================*)
