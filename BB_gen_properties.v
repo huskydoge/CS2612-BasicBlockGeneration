@@ -161,38 +161,30 @@ Proof.
 Qed.
 
 
+(*这里说的是，在生成基本块的时候，BBs ++ 不传BBs得到的结果 = 传BBs的结果；BBs是已经产生的基本块列表*)
 Lemma add_BBs_in_generation_reserves_BB:
   forall (cmds : list cmd) (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
 
   to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) 
   = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
 Proof.
-  intros.
+  intros. (* TODO @LYZ*)
 Admitted.
 
 
+(*这里说的是，在生成基本块的时候，无论是否传BBs，只要BBnum一样，那么最后的next_block_num都一样*)
 Lemma add_BBs_in_generation_retains_next_block_num:
   forall (cmds : list cmd) (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
     (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).(next_block_num) =
     (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(next_block_num).
 Proof.
   intros.
+  (* TODO @LYZ*)
 Admitted.
 
 
-(* Used In aux proof.v *)
-Lemma bbnow_num_lt_next_num:
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
-    (lt BBnow.(block_num) BBnum) -> lt BBnow.(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
-Proof.
-  intros. induction c.
-  - simpl. lia.
-  - cbn [list_cmd_BB_gen].
-    unfold list_cmd_BB_gen.
-    destruct a.
-    + simpl. admit.
-Admitted. (*TODO *)
 
+(*如果传入的BBnow的num小于BBnum（似乎不需要用到），那么BBnum的num小于等于next_block_num*)
 Lemma bbnum_le_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     (lt BBnow.(block_num) BBnum) -> le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
@@ -203,8 +195,21 @@ Proof.
     unfold list_cmd_BB_gen.
     destruct a.
     + simpl. admit.
-Admitted. (*TODO *)
+Admitted. (*TODO @LYZ*)
 
+
+(* Used In aux proof.v *)
+(*如果传入的BBnow的num小于BBnum，那么BBnow的num小于next_block_num*)
+Lemma bbnow_num_lt_next_num:
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
+    (lt BBnow.(block_num) BBnum) -> lt BBnow.(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
+Proof.
+  intros.
+  pose proof (bbnum_le_next_num BBs BBnow BBnum c H).
+  lia.
+Qed. 
+
+(*如果生成的res.(BasicBlocks) ++ res.(BBn) :: nil中仅有一个元素，那么BBnum等于next_block_num*)
 Lemma bbnum_eq_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     let res := (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum) in
@@ -216,7 +221,10 @@ Proof.
     unfold list_cmd_BB_gen.
     destruct a.
     + simpl. admit.
-Admitted. (*TODO *)
+Admitted. (*TODO @LYZ *)
+
+
+(*START：列表集合的一些性质 ==================================================================================================================================================================================================================== *)
 
 (*x在 l1 ++ l2中，那么必然在至少其中之一*)
 Lemma In_a_or_b:
@@ -233,6 +241,7 @@ Proof.
       * right. apply H0.
 Qed.
 
+(*x在 l1 ++ l2 ++ l3 中，那么必然在至少其中之一*)
 Lemma In_a_or_b_or_c:
   forall (A: Type) (x: A) (l1 l2 l3: list A),
   In x (l1 ++ l2 ++ l3) -> In x l1 \/ In x l2 \/ In x l3.
@@ -247,6 +256,7 @@ Proof.
       * right. apply H0.
 Qed.
 
+(*x在 l1 中，那么必然在l1 ++ l2中 *)
 Lemma In_sublist_then_in_list_head:
   forall (A: Type) (x: A) (l1 l2: list A),
   In x l1 -> In x (l1 ++ l2).
@@ -259,16 +269,7 @@ Proof.
     + right. apply IHl1. apply H.
 Qed.
 
-Lemma In_sublist_then_in_list_middle:
-  forall (A: Type) (x: A) (l1 l2 l3: list A),
-  In x l1 -> In x (l2 ++ l1 ++ l3).
-Proof.
-  intros.
-  induction l2.
-  - simpl. apply In_sublist_then_in_list_head. apply H.
-  - simpl. right. apply IHl2.
-Qed.
-
+(*x在 l1 中，那么必然在l2 ++ l1中 *)
 Lemma In_sublist_then_in_list_last:
   forall (A: Type) (x: A) (l1 l2: list A),
   In x l1 -> In x (l2 ++ l1).
@@ -276,6 +277,17 @@ Proof.
   intros.
   induction l2.
   - simpl. tauto.
+  - simpl. right. apply IHl2.
+Qed.
+
+(*在l1中，那么必然在l2 ++ l1 ++ l3中 *)
+Lemma In_sublist_then_in_list_middle:
+  forall (A: Type) (x: A) (l1 l2 l3: list A),
+  In x l1 -> In x (l2 ++ l1 ++ l3).
+Proof.
+  intros.
+  induction l2.
+  - simpl. apply In_sublist_then_in_list_head. apply H.
   - simpl. right. apply IHl2.
 Qed.
 
@@ -288,7 +300,6 @@ Proof.
   simpl. right. apply H.
 Qed.
 
-
 Lemma append_nil_r : forall A (l : list A),
   l ++ nil = l.
 Proof.
@@ -300,16 +311,25 @@ Proof.
     simpl. rewrite IH. reflexivity.
 Qed.
 
-(* 这里理论上是要求l1不为空的 *)
-Lemma hd_A_and_B_is_hd_A:
+(* 如果l1不为空，那么l1 ++ l2的第一个元素等于l1的第一个元素 *)
+Lemma hd_A_and_B_is_hd_A_if_A_not_nil:
   forall (l1 l2: list BasicBlock),
-  hd empty_block (l1 ++ l2) = hd empty_block l1.
+  l1 <> nil -> hd empty_block (l1 ++ l2) = hd empty_block l1.
 Proof.
   intros. induction l2.
   - simpl. rewrite append_nil_r. tauto.
   - simpl. unfold hd. destruct l1.
-    + simpl.
-Admitted.
+    + tauto.
+    + reflexivity.
+Qed.
+
+
+
+(*END：列表集合的一些性质 =============================================================================================================================================================== *)
+
+
+
+
 
 Definition P_BBgen_head_prop (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results)(cmds: list cmd): Prop :=
   forall BBnum BBnow BBs,
@@ -822,7 +842,33 @@ Proof.
           *** lia. (* c2_prop1和c1_prop2 *)
     + lia.
   (*branch 2: 证明去掉头部的number后， BBdelta的所有num都小于endnum*) 
-  - admit.
+  - unfold all_lt. intros. sets_unfold in separate_delta_num.
+    unfold unit_set in separate_delta_num.
+    specialize (separate_delta_num n). destruct separate_delta_num as [separate_delta_num _].
+    specialize (separate_delta_num H). clear H.
+    destruct separate_delta_num as [[case1 | case2] | case3].
+    + destruct case1 as [x [cond1 cond2]].
+      unfold all_lt in c1_prop2. specialize (c1_prop2 n).
+      (*如果一个元素在一个列表里，它要么是这个列表的第一个，要么就在后续部分里*)
+      pose proof In_head_or_body BasicBlock x empty_block then_delta cond1.
+      destruct H as [head | tail].
+      ** rewrite head in cond2. rewrite head_then in cond2. rewrite <- cond2. subst BB_then_now. cbn [block_num]. lia.
+      ** assert(temp: BBnum_set (tl then_delta) n).
+          {
+            unfold BBnum_set. exists x. split. tauto. tauto.
+          }
+          specialize (c1_prop2 temp). lia.
+    + destruct case2 as [x [cond1 cond2]].
+      unfold all_lt in c2_prop2. specialize (c2_prop2 n).
+      pose proof In_head_or_body BasicBlock x empty_block else_delta cond1.
+      destruct H as [head | tail].
+      ** rewrite head in cond2. rewrite head_else in cond2. rewrite <- cond2. subst BB_else_now. cbn [block_num]. lia.
+      ** assert(temp: BBnum_set (tl else_delta) n).
+          {
+            unfold BBnum_set. exists x. split. tauto. tauto.
+          }
+          specialize (c2_prop2 temp). lia.
+    + lia.
   (*branch 3: 证明BBdelta的所有jump dest都在[startnum, endnum] ∪ 预定跳转信息里*)
   - clear c1_prop1 c1_prop2 c2_prop1 c2_prop2.
     sets_unfold. intros. rename H into A. unfold BBjmp_dest_set in A. destruct A as [BB A]. destruct A as [A1 A2]. 
