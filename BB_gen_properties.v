@@ -1167,14 +1167,10 @@ Proof. (*TODO*)
   intros. unfold Q_BBgen_range. intros. simpl in H0.
   unfold to_result in H1. simpl in H1. apply cut_eq_part_list_l in H1. rename H2 into BBnum_lt_startnum.
   repeat split.
-  - unfold all_ge. intros.  rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
-    intros. split.
-    + intros. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
-    + intros. tauto.
-  - unfold all_lt. intros. right. rewrite <- H1. simpl. unfold BBnum_set. sets_unfold.
-    intros. split.
-    + intros. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
-    + intros. tauto.
+  - unfold all_ge. intros. unfold BBnum_set in H2. destruct H2 as [? [? ?]]. 
+    rewrite <- H1 in H2. unfold tl in H2. unfold In in H2. tauto.
+  - unfold all_lt. intros. unfold BBnum_set in H2. destruct H2 as [? [? ?]]. 
+    rewrite <- H1 in H2. unfold tl in H2. unfold In in H2. tauto.
   - unfold BBjmp_dest_set. sets_unfold. intros. 
     destruct H2 as [BB [H2 H3]].
     destruct H3 as [H3 | H3].
