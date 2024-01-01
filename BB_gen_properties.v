@@ -323,14 +323,11 @@ Proof.
     + reflexivity.
 Qed.
 
-
-
 (*END：列表集合的一些性质 =============================================================================================================================================================== *)
 
 
 
-
-
+(*START: BBgen Head ==============================================================================================================================*)
 Definition P_BBgen_head_prop (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results)(cmds: list cmd): Prop :=
   forall BBnum BBnow BBs,
   let res := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) in
@@ -425,7 +422,7 @@ Proof.
 
 
 
-(*TODO IMPORTANT and HARD, might be Induction !!*)
+(*TODO IMPORTANT *)
 Lemma BBgen_head_prop:
   forall (cmds : list cmd)(BBnow : BasicBlock) (BBnum : nat),
   let res := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum) in
@@ -437,6 +434,17 @@ Proof.
   - simpl. reflexivity.
   - unfold res in IHcmds.
 Admitted.
+(*END: BBgen Head =========================================================================================================================================================================================*)
+
+(*对于CIf而言，其nextblocknum等于else分支得到的nextblocknum*)
+Lemma CIf_next_block_num_eq_else_next_block_num:
+  forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat),
+    (cmd_BB_gen (CIf e c1 c2 ) BBs BBnow BBnum).(next_block_num) = (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow BBnum).(next_block_num).
+Proof.
+Admitted.
+
+
+(*Start: Main =============================================================================================================================================================================================*)
 
 Lemma Q_if_BBgen_range:
 forall (e: expr) (c1 c2: list cmd),
@@ -512,14 +520,16 @@ Proof.
   specialize (c1_prop c1_aux1 c1_aux2 c1_aux3).
   clear c1_aux1 c1_aux2 c1_aux3.
   
-  specialize (c2_prop then_end_num endnum BBs BB_else_now else_delta).
+  specialize (c2_prop then_end_num endnum nil BB_else_now else_delta).
   assert (c2_aux1 : (BB_else_now.(jump_info).(jump_kind) = UJump /\ BB_else_now.(jump_info).(jump_dest_2) = None)). tauto.
 
-  assert (c2_aux2 : endnum = (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num).(next_block_num)). admit.
+  assert (c2_aux2 : endnum = (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num).(next_block_num)). {
+    pose proof CIf_next_block_num_eq_else_next_block_num e c1 c2 BBs BBnow startnum. subst endnum. tauto.
+  }
 
-  assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 BBs BB_else_now then_end_num) = BBs ++ else_delta)). subst else_delta. subst else_res. unfold to_result. pose proof add_BBs_in_generation_reserves_BB c2 BBs BB_else_now then_end_num. unfold to_result in H. apply H.
+  assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num) = else_delta)). subst else_delta. subst else_res. unfold to_result. pose proof add_BBs_in_generation_reserves_BB c2 nil BB_else_now then_end_num. unfold to_result in H. apply H.
   specialize (c2_prop c2_aux1 c2_aux2 c2_aux3).
-  clear c2_aux1 c2_aux2 c2_aux3.
+  clear c2_aux1 c2_aux3.
 
   destruct c1_prop as [c1_prop1 [c1_prop2 c1_prop3]].
   destruct c2_prop as [c2_prop1 [c2_prop2 c2_prop3]].
@@ -761,7 +771,7 @@ Proof.
     specialize (c1_prop2 n H). specialize (c1_prop1 n H). lia.
   }
 
-  (*BBnow < startnum = BBthennum < BBelsenum < BBnextnum < then_end_num <= else_endnum = endnum, TODO IMPORTANT*)
+(*BBnow < startnum = BBthennum < BBelsenum < BBnextnum < then_end_num <= else_endnum = endnum ============================================================================*)
   assert (le_chain1: lt BBnow.(block_num) startnum). tauto.
 
   assert (le_chain2: le then_start_num then_end_num). {
@@ -783,16 +793,16 @@ Proof.
     }
     specialize (H pre). 
     assert (tricky_eq: endnum = else_end_num). {
-      admit. (*Hard！ 估计又是一条引理，就是cmdBBgen CIf最后的nextblocknum就是else分支的nextblocknum*)
+    tauto.
     }
-    rewrite tricky_eq. tauto.
+    rewrite tricky_eq. subst else_end_num. subst else_res. simpl. lia.
   }
 
   assert (le_chain: lt BBnow.(block_num) startnum /\ le then_end_num endnum /\ lt startnum then_end_num /\ lt (S (S startnum)) endnum).
   {
     repeat split.
     - tauto.
-    - tauto.
+    - lia.
     - lia.
     - lia.
   }
@@ -993,7 +1003,6 @@ Lemma P_BBgen_con:
 Proof.
 Admitted.
 
-
 Section BB_gen_range_sound.
 
 Variable cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
@@ -1019,7 +1028,6 @@ Fixpoint BB_gen_range_soundness (c: cmd): Q_BBgen_range c :=
         (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds1)
         (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds2)
   end.
-
 
 Lemma BBgen_range_single_soundness_correct:
     forall (c: cmd),
