@@ -413,8 +413,9 @@ Lemma add_BBs_in_generation_retains_next_block_num:
     (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(next_block_num).
 Proof.
   intros.
-  (* TODO @LYZ*)
-Admitted.
+  pose proof eq_next_block_num_list nil BBs BBnow BBnum cmds.
+  tauto.
+Qed.
 
 
 (*如果传入的BBnow的num小于BBnum（似乎不需要用到），那么BBnum的num小于等于next_block_num*)
