@@ -323,7 +323,7 @@ Proof.
     rewrite eq. apply app_assoc_reverse.
 Qed.
 
-(*这里说的是，在生成基本块的时候，BBs ++ 不传BBs得到的结果 = 传BBs的结果；BBs是已经产生的基本块列表*)
+(* 对于一串cmds，在生成基本块的时候，BBs ++ 不传BBs得到的结果 = 传BBs的结果；BBs是已经产生的基本块列表*)
 Lemma add_BBs_in_generation_reserves_BB:
 forall (cmds: list cmd)(BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
   to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
@@ -415,7 +415,6 @@ Proof.
   intros.
   (* TODO @LYZ*)
 Admitted.
-
 
 
 (*如果传入的BBnow的num小于BBnum（似乎不需要用到），那么BBnum的num小于等于next_block_num*)
@@ -561,100 +560,20 @@ Qed.
 
 
 
+
 (*START: BBgen Head ==============================================================================================================================*)
-Definition P_BBgen_head_prop (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results)(cmds: list cmd): Prop :=
-  forall BBnum BBnow BBs,
-  let res := (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) in
-  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = (hd empty_block (BBs ++ BBnow::nil)).(block_num).
-
-Definition Q_BBgen_head_prop (c: cmd): Prop :=
-  forall BBnum BBnow BBs,
-  let res := (cmd_BB_gen c BBs BBnow BBnum) in
-  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = (hd empty_block (BBs ++ BBnow::nil)).(block_num).
-
-
-Lemma Q_Asgn_BBgen_head_prop:
-  forall (x: var_name) (e: expr),
-    Q_BBgen_head_prop (CAsgn x e).
+Lemma BBgen_head_prop_single_cmd:
+  forall (c : cmd)(BBnow : BasicBlock) (BBnum : nat),
+  let res := (cmd_BB_gen c nil BBnow BBnum) in
+  (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = BBnow.(block_num).
 Proof.
   intros.
-  unfold Q_BBgen_head_prop. intros.
-  unfold cmd_BB_gen. simpl. induction BBs.
-  - simpl. tauto.
-Admitted.
-
-Lemma Q_if_BBgen_head_prop:
-  forall (e: expr) (c1 c2: list cmd),
-      P_BBgen_head_prop cmd_BB_gen c1  ->
-      P_BBgen_head_prop cmd_BB_gen c2  ->
-      Q_BBgen_head_prop (CIf e c1 c2).
-Proof.
-  intros.
-  unfold Q_BBgen_head_prop. intros.
-  rewrite hd_A_and_B_is_hd_A.
-  cbn[cmd_BB_gen]. simpl.
-  remember (
-    (list_cmd_BB_gen cmd_BB_gen c1
-               (BBs ++
-                {|
-                block_num := BBnow.(block_num);
-                commands := BBnow.(cmd);
-                jump_info := {|
-                             jump_kind := CJump;
-                             jump_dest_1 := BBnum;
-                             jump_dest_2 := Some (S BBnum);
-                             jump_condition := Some e |} |} :: nil)
-               {|
-               block_num := BBnum;
-               commands := nil;
-               jump_info := {|
-                            jump_kind := UJump;
-                            jump_dest_1 := S (S BBnum);
-                            jump_dest_2 := None;
-                            jump_condition := None |} |} 
-               (S (S (S BBnum))))
-  ) as BBs_then.
-  remember (
-    {|
-      block_num := S BBnum;
-      commands := nil;
-      jump_info := {|
-                  jump_kind := UJump;
-                  jump_dest_1 := S (S BBnum);
-                  jump_dest_2 := None;
-                  jump_condition := None |} |}
-  ) as BBnow_then.
-  unfold to_result. 
-  unfold P_BBgen_head_prop in H0.
-  specialize (H0 BBs_then.(next_block_num) BBnow_then (BBs_then.(BasicBlocks) ++ BBs_then.(BBn) :: nil)).
-  rewrite H0.
-Admitted.
-
-Lemma Q_while_BBgen_head_prop:
-  forall (e: expr) (pre body: list cmd),
-      P_BBgen_head_prop cmd_BB_gen pre  ->
-      P_BBgen_head_prop cmd_BB_gen body  ->
-      Q_BBgen_head_prop (CWhile pre e body).
-Proof.
-  Admitted.
-
-Lemma P_BBgen_head_prop_nil:
-  forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
-    P_BBgen_head_prop cmd_BB_gen nil.
-Proof.
-  Admitted.
-
-Lemma P_BBgen_head_prop_cons:
-  forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results) (c: cmd) (cmds: list cmd),
-    Q_BBgen_head_prop c ->
-    P_BBgen_head_prop cmd_BB_gen cmds ->
-    P_BBgen_head_prop cmd_BB_gen (c :: cmds).
-Proof.
-  Admitted.
-
-(*TODO 后面应该补上sound的具体情况 *)
-
-
+  unfold res. 
+  destruct c.
+  - simpl. reflexivity.
+  - unfold cmd_BB_gen. simpl. reflexivity.
+  - unfold cmd_BB_gen. simpl. reflexivity.
+Qed.
 
 (*TODO IMPORTANT：第一个Block的num就是BBnow的blocknum *)
 Lemma BBgen_head_prop:
