@@ -160,16 +160,264 @@ Proof.
   - inversion H. reflexivity.
 Qed.
 
+(* ======================================================================================================================================= *)
+
+(*对于一个cmd，无论它是否传入已经生成的BBs，在其他情况相同的情况下，其拿到的BBn都是一样的*)
+Lemma eq_BBn:
+  forall (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat)(c: cmd),
+  (cmd_BB_gen c BBs BBnow BBnum).(BBn) = (cmd_BB_gen c nil BBnow BBnum).(BBn).
+Proof.
+  intros.
+  unfold cmd_BB_gen.
+  destruct c.
+  - simpl. reflexivity.
+  - cbn [BBn]. reflexivity.
+  - cbn [BBn]. reflexivity.
+Qed.
+
+(*对于一个cmd，无论传入的BBs如何，在其他情况相同的情况下，其拿到的BBn都是一样的*)
+Lemma eq_BBn2:
+  forall (BBs1 BBs2: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat)(c: cmd),
+  (cmd_BB_gen c BBs1 BBnow BBnum).(BBn) = (cmd_BB_gen c BBs2 BBnow BBnum).(BBn).
+Proof.
+  intros.
+  unfold cmd_BB_gen.
+  destruct c.
+  - simpl. reflexivity.
+  - cbn [BBn]. reflexivity.
+  - cbn [BBn]. reflexivity.
+Qed.
+
+(*对于一个cmd，无论它是否传入已经生成的BBs，在其他情况相同的情况下，其拿到的nextblocknum都是一样的*)
+Lemma eq_next_block_num:
+  forall (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat)(c: cmd),
+  (cmd_BB_gen c BBs BBnow BBnum).(next_block_num) = (cmd_BB_gen c nil BBnow BBnum).(next_block_num).
+Proof.
+  intros.
+  unfold cmd_BB_gen.
+  destruct c.
+  - simpl. reflexivity.
+  - cbn [next_block_num]. reflexivity.
+  - cbn [next_block_num]. reflexivity.
+Qed.
+
+(*对于一个cmd，无论传入的BBs如何，在其他情况相同的情况下，其拿到的nextblocknum都是一样的*)
+Lemma eq_next_block_num2:
+  forall (BBs1 BBs2: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat)(c: cmd),
+  (cmd_BB_gen c BBs1 BBnow BBnum).(next_block_num) = (cmd_BB_gen c BBs2 BBnow BBnum).(next_block_num).
+Proof.
+  intros.
+  unfold cmd_BB_gen.
+  destruct c.
+  - simpl. reflexivity.
+  - cbn [next_block_num]. reflexivity.
+  - cbn [next_block_num]. reflexivity.
+Qed.
+
+(*(*对于一个cmd list，无论传入的BBs如何，在其他情况相同的情况下，其拿到的BBn都是一样的*)*)
+Lemma eq_BBn_list:
+  forall (BBs1 BBs2: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat)(c: list cmd),
+  (list_cmd_BB_gen cmd_BB_gen c BBs1 BBnow BBnum).(BBn) = (list_cmd_BB_gen cmd_BB_gen c BBs2 BBnow BBnum).(BBn).
+Proof.
+  intros. revert BBs1. revert BBs2. revert BBnow. revert BBnum.
+  induction c.
+  - simpl. reflexivity.
+  - intros. cbn [list_cmd_BB_gen].
+    assert (eq_prop_BBn: (cmd_BB_gen a BBs1 BBnow BBnum).(BBn) = (cmd_BB_gen a BBs2 BBnow BBnum).(BBn)).
+    {
+      apply eq_BBn2.
+    }
+    rewrite eq_prop_BBn.
+    assert (eq_prop_next_block_num: (cmd_BB_gen a BBs1 BBnow BBnum).(next_block_num) = (cmd_BB_gen a BBs2 BBnow BBnum).(next_block_num)).
+    {
+      apply eq_next_block_num2.
+    }
+    rewrite eq_prop_next_block_num.
+    specialize (IHc (cmd_BB_gen a BBs2 BBnow BBnum).(next_block_num) (cmd_BB_gen a BBs2 BBnow BBnum).(BBn)).
+    specialize (IHc (cmd_BB_gen a BBs2 BBnow BBnum).(BasicBlocks)).
+    specialize (IHc (cmd_BB_gen a BBs1 BBnow BBnum).(BasicBlocks)).
+    tauto.
+Qed.
+
+(*(*对于一个cmd list，无论传入的BBs如何，在其他情况相同的情况下，其拿到的nextblocknum都是一样的*)*)
+Lemma eq_next_block_num_list:
+  forall (BBs1 BBs2: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat)(c: list cmd),
+  (list_cmd_BB_gen cmd_BB_gen c BBs1 BBnow BBnum).(next_block_num) = (list_cmd_BB_gen cmd_BB_gen c BBs2 BBnow BBnum).(next_block_num).
+Proof.
+  intros. revert BBs1. revert BBs2. revert BBnow. revert BBnum.
+  induction c.
+  - simpl. reflexivity.
+  - intros. cbn [list_cmd_BB_gen].
+    assert (eq_prop_BBn: (cmd_BB_gen a BBs1 BBnow BBnum).(BBn) = (cmd_BB_gen a BBs2 BBnow BBnum).(BBn)).
+    {
+      apply eq_BBn2.
+    }
+    rewrite eq_prop_BBn.
+    assert (eq_prop_next_block_num: (cmd_BB_gen a BBs1 BBnow BBnum).(next_block_num) = (cmd_BB_gen a BBs2 BBnow BBnum).(next_block_num)).
+    {
+      apply eq_next_block_num2.
+    }
+    rewrite eq_prop_next_block_num.
+    specialize (IHc (cmd_BB_gen a BBs2 BBnow BBnum).(next_block_num) (cmd_BB_gen a BBs2 BBnow BBnum).(BBn)).
+    specialize (IHc (cmd_BB_gen a BBs2 BBnow BBnum).(BasicBlocks)).
+    specialize (IHc (cmd_BB_gen a BBs1 BBnow BBnum).(BasicBlocks)).
+    tauto.
+Qed.
+
+(* ======================================================================================================================================= *)
+
+Definition Q_add_BBs_in_generation_reserves_BB(c: cmd): Prop :=
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+  to_result (cmd_BB_gen c BBs BBnow BBnum) = BBs ++ to_result (cmd_BB_gen c nil BBnow BBnum).
+
+Definition P_add_BBs_in_generation_reserves_BB(cmds: list cmd): Prop :=
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+  to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
+
+Lemma Q_asgn_add_BBs_in_generation_reserves_BB:
+  forall (x: var_name) (e: expr),
+  Q_add_BBs_in_generation_reserves_BB (CAsgn x e).
+Proof.
+  intros.
+  unfold Q_add_BBs_in_generation_reserves_BB.
+  intros.
+  unfold cmd_BB_gen.
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma Q_if_add_BBs_in_generation_reserves_BB:
+  forall (e: expr) (c1 c2: list cmd),
+  P_add_BBs_in_generation_reserves_BB c1 -> 
+  P_add_BBs_in_generation_reserves_BB c2 -> 
+  Q_add_BBs_in_generation_reserves_BB (CIf e c1 c2).
+Proof.
+  intros.
+  unfold Q_add_BBs_in_generation_reserves_BB.
+  intros.
+  cbn [cmd_BB_gen].
+  unfold to_result. cbn [BasicBlocks]. cbn [BBn].
+  apply app_assoc_reverse.
+Qed.
+
+Lemma Q_while_add_BBs_in_generation_reserves_BB:
+  forall (e: expr) (c1 c2: list cmd),
+  P_add_BBs_in_generation_reserves_BB c1 -> P_add_BBs_in_generation_reserves_BB c2 -> Q_add_BBs_in_generation_reserves_BB (CWhile c1 e c2).
+Proof.
+  intros.
+  unfold Q_add_BBs_in_generation_reserves_BB.
+  intros.
+  cbn [cmd_BB_gen].
+  unfold to_result. cbn [BasicBlocks]. cbn [BBn].
+  apply app_assoc_reverse.
+Qed.
+
+
+Lemma P_nil_add_BBs_in_generation_reserves_BB: 
+  (P_add_BBs_in_generation_reserves_BB nil).
+Proof.
+  intros.
+  unfold P_add_BBs_in_generation_reserves_BB.
+  intros.
+  unfold to_result. cbn [BasicBlocks]. cbn [BBn].
+  reflexivity.
+Qed.
+
+Lemma P_cons_add_BBs_in_generation_reserves_BB: 
+  forall (c: cmd) (cmds: list cmd),
+  Q_add_BBs_in_generation_reserves_BB c ->
+  P_add_BBs_in_generation_reserves_BB cmds  ->
+  P_add_BBs_in_generation_reserves_BB (c :: cmds).
+Proof.
+  intros.
+  unfold P_add_BBs_in_generation_reserves_BB.
+  intros.
+  unfold to_result. 
+  assert ((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow BBnum).(BasicBlocks) = BBs ++
+  (list_cmd_BB_gen cmd_BB_gen (c :: cmds) nil BBnow BBnum).(BasicBlocks)).
+  {
+    unfold Q_add_BBs_in_generation_reserves_BB in H.
+    specialize (H BBs BBnow BBnum).
+    unfold P_add_BBs_in_generation_reserves_BB in H0.
+    specialize (H0 (cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks) (cmd_BB_gen c BBs BBnow BBnum).(BBn) (cmd_BB_gen c BBs BBnow BBnum).(next_block_num)).
+    cbn [list_cmd_BB_gen].
+    unfold to_result in *.
+    remember (cmd_BB_gen c BBs BBnow BBnum) as c_res.
+    remember (cmd_BB_gen c nil BBnow BBnum) as c_res_nil.
+    remember ((list_cmd_BB_gen cmd_BB_gen cmds c_res.(BasicBlocks) c_res.(BBn) c_res.(next_block_num))) as cmds_res.
+    remember ((list_cmd_BB_gen cmd_BB_gen cmds nil c_res.(BBn) c_res.(next_block_num))) as cmds_res_nil.
+    pose proof H as key1.
+    pose proof H0 as key2.
+    cbn [list_cmd_BB_gen].
+    assert (eq_prop: c_res.(BBn) = c_res_nil.(BBn)).
+    {
+      rewrite Heqc_res. rewrite Heqc_res_nil. 
+      pose proof eq_BBn BBs BBnow BBnum c. tauto.
+    }
+    rewrite eq_prop in key1. simpl in key1.
+    rewrite app_assoc in key1. 
+    pose proof cut_eq_part_list_r BasicBlock (c_res_nil.(BBn) :: nil) c_res.(BasicBlocks) (BBs ++ c_res_nil.(BasicBlocks)) key1 as cut_eq1.
+    rewrite cut_eq1 in key2.
+    
+  }
+Admitted.
+
+Section add_BBs_in_generation_reserves_BB_sound.
+Variable add_BBs_in_generation_reserves_BB_sound: forall (c: cmd),  Q_add_BBs_in_generation_reserves_BB c.
+
+Fixpoint list_add_BBs_in_generation_reserves_BB_sound (cmds: list cmd): P_add_BBs_in_generation_reserves_BB cmds:=
+  match cmds with
+  | nil => P_nil_add_BBs_in_generation_reserves_BB
+  | c :: cmds0 => P_cons_add_BBs_in_generation_reserves_BB c cmds0 (add_BBs_in_generation_reserves_BB_sound c) (list_add_BBs_in_generation_reserves_BB_sound cmds0)
+  end.
+
+End add_BBs_in_generation_reserves_BB_sound.
+
+Fixpoint add_BBs_in_generation_reserves_BB_sound (c: cmd): Q_add_BBs_in_generation_reserves_BB c :=
+  match c with
+  | CAsgn x e => Q_asgn_add_BBs_in_generation_reserves_BB x e
+  | CIf e cmds1 cmds2 =>
+      Q_if_add_BBs_in_generation_reserves_BB e cmds1 cmds2
+        (list_add_BBs_in_generation_reserves_BB_sound add_BBs_in_generation_reserves_BB_sound cmds1)
+        (list_add_BBs_in_generation_reserves_BB_sound add_BBs_in_generation_reserves_BB_sound cmds2)
+  | CWhile cmds1 e cmds2 =>
+      Q_while_add_BBs_in_generation_reserves_BB e cmds1 cmds2
+        (list_add_BBs_in_generation_reserves_BB_sound add_BBs_in_generation_reserves_BB_sound cmds1)
+        (list_add_BBs_in_generation_reserves_BB_sound add_BBs_in_generation_reserves_BB_sound cmds2)
+  end.
+
+
+Lemma add_BBs_in_generation_reserves_BB_correct:
+  forall (c: cmd),
+  Q_add_BBs_in_generation_reserves_BB c.
+Proof.
+  apply add_BBs_in_generation_reserves_BB_sound.
+Qed.
+
+Lemma list_add_BBs_in_generation_reserves_BB_correct:
+  forall (cmds: list cmd),
+  P_add_BBs_in_generation_reserves_BB cmds.
+Proof.
+  apply list_add_BBs_in_generation_reserves_BB_sound.
+  apply add_BBs_in_generation_reserves_BB_sound.
+Qed.
+
 
 (*这里说的是，在生成基本块的时候，BBs ++ 不传BBs得到的结果 = 传BBs的结果；BBs是已经产生的基本块列表*)
 Lemma add_BBs_in_generation_reserves_BB:
   forall (cmds : list cmd) (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
-
   to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum) 
   = BBs ++ to_result (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).
 Proof.
-  intros. (* TODO @LYZ*)
-Admitted.
+  intros.
+  pose proof (list_add_BBs_in_generation_reserves_BB_correct cmds).
+  unfold P_add_BBs_in_generation_reserves_BB in H.
+  specialize (H BBs BBnow BBnum).
+  apply H.
+Qed.
+
+
+(* ======================================================================================================================================= *)
 
 
 (*这里说的是，在生成基本块的时候，无论是否传BBs，只要BBnum一样，那么最后的next_block_num都一样*)
