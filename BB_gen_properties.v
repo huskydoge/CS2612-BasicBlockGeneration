@@ -63,7 +63,7 @@ Proof.
   intros.
   induction l1.
   - simpl in H. rewrite app_nil_r in H. rewrite app_nil_r in H. apply H.
-  - simpl in H. admit.
+  - simpl in H. admit. (*TODO*)
 Admitted.
 
 Lemma cut_eq_part_list_r':
@@ -73,7 +73,7 @@ Proof.
   intros.
   induction l1.
   - simpl. rewrite app_nil_r. rewrite app_nil_r. apply H.
-  - simpl. admit.
+  - simpl. admit. (*TODO*)
 Admitted.
 
 
@@ -418,7 +418,19 @@ Proof.
 Qed.
 
 
-(*如果传入的BBnow的num小于BBnum（似乎不需要用到），那么BBnum的num小于等于next_block_num*)
+(*如果传入的BBnow的num小于BBnum（似乎不需要用到），那么BBnum的num小于等于next_block_num ====================================================================================================== *)
+(*要写成互递归了，因为要拿到c1中间的结果进行比较*)
+
+Lemma bbnum_le_next_num_single_cmd:
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    (lt BBnow.(block_num) BBnum) -> le BBnum (cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
+Proof.
+  intros. destruct c.
+  - simpl. lia.
+  - cbn [cmd_BB_gen]. simpl. admit.
+  - admit.
+Admitted.
+
 Lemma bbnum_le_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     (lt BBnow.(block_num) BBnum) -> le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
@@ -430,6 +442,8 @@ Proof.
     destruct a.
     + simpl. admit.
 Admitted. (*TODO @LYZ*)
+
+(*END:  ====================================================================================================== *)
 
 
 (* Used In aux proof.v *)
@@ -443,7 +457,19 @@ Proof.
   lia.
 Qed. 
 
-(*如果生成的res.(BasicBlocks) ++ res.(BBn) :: nil中仅有一个元素，那么BBnum等于next_block_num*)
+(*如果生成的res.(BasicBlocks) ++ res.(BBn) :: nil中仅有一个元素，那么BBnum等于next_block_num ===================================================================================================*)
+
+Lemma bbnum_eq_next_num_single_cmd:
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    let res := (cmd_BB_gen c BBs BBnow BBnum) in
+    (lt BBnow.(block_num) BBnum) -> (tl (res.(BasicBlocks) ++ res.(BBn) :: nil)) = nil -> BBnum = res.(next_block_num).
+Proof.
+  intros. destruct c.
+  - simpl. lia.
+  - cbn [cmd_BB_gen]. simpl. admit.
+  - admit.
+Admitted.
+
 Lemma bbnum_eq_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     let res := (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum) in
@@ -456,6 +482,8 @@ Proof.
     destruct a.
     + simpl. admit.
 Admitted. (*TODO @LYZ *)
+
+(* END ===================================================================================================*)
 
 
 (*START：列表集合的一些性质 ==================================================================================================================================================================================================================== *)
@@ -1202,6 +1230,10 @@ Lemma P_BBgen_con:
     P_BBgen_range cmd_BB_gen cmds ->
     P_BBgen_range cmd_BB_gen (c::cmds).
 Proof.
+  intros.
+  unfold P_BBgen_range in H0.
+  unfold P_BBgen_range.
+  intros.
 Admitted.
 
 Section BB_gen_range_sound.
