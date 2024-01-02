@@ -390,6 +390,20 @@ Proof.
 Qed.
 
 
+(*证明对于BBsemunion而言，BBsemunion(BBs1 + BBs2) = BBsemunion(BBs2 + BBs1)*)
+Lemma BB_sem_union_sym:
+  forall (BBs1 BBs2: list BasicBlock) (bs1 bs2: BB_state),
+  (Bnrm (BB_sem_union (BBs1 ++ BBs2)) bs1 bs2) <-> (Bnrm (BB_sem_union (BBs2 ++ BBs1)) bs1 bs2).
+Proof.
+  intros.
+  split; intros.
+  - pose proof separate_sem_union BBs1 BBs2.
+    apply H0 in H. apply separate_sem_union. sets_unfold. sets_unfold in H. tauto.
+  - pose proof separate_sem_union BBs2 BBs1.
+    apply H0 in H. apply separate_sem_union. sets_unfold. sets_unfold in H. tauto.
+Qed.
+
+
 (*
 对于两个BBlist，如果:
 1. BBs1和BBs2不交
@@ -398,7 +412,7 @@ Qed.
 4. (bs1,bs2)在BBs1++BBs2的语义里
 => 那么bs2不在BBs2中
 *)
-Lemma BBs1_num_not_in_BBs2: 
+Lemma BBs1_num_not_in_BBs2_l: 
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
   (BBnum_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
   not (BBnum_set BBs2 (BB_num bs1))->
@@ -413,6 +427,37 @@ Proof.
     pose proof BB_num_change_from_BBsA_to_BBsB BBs1 BBs2 bs1 bs2.
     pose proof H3 H2 H0. apply H4.
   }
+  unfold not. intros.
+  sets_unfold in H1. specialize (H1 (BB_num bs2)).
+  destruct H1 as [? ?]. clear H5. apply H1.
+  split. apply H3. apply H4.
+Qed.
+
+
+(*
+! 与上一个引理方向相反
+对于两个BBlist，如果:
+1. BBs1和BBs2不交
+2. bs1不在BBs2中
+3. BBs1中的block跳不到BBs2中
+4. (bs1,bs2)在BBs2 ++ BBs1的语义里
+=> 那么bs2不在BBs2中
+*)
+Lemma BBs1_num_not_in_BBs2_r:
+  forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
+  (BBnum_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
+  not (BBnum_set BBs2 (BB_num bs1))->
+  (BBjmp_dest_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
+  ((Bnrm (BB_sem_union (BBs2 ++ BBs1)) bs1 bs2) : Prop) 
+  -> not (BBnum_set BBs2 (BB_num bs2)).
+Proof.
+  intros. sets_unfold.
+  assert(BBjmp_dest_set BBs1 (BB_num bs2)).
+  {
+    pose proof BB_num_change_from_BBsA_to_BBsB BBs1 BBs2 bs1 bs2.
+    pose proof BB_sem_union_sym BBs1 BBs2 bs1 bs2. apply H4 in H2. 
+    pose proof H3 H2 H0. tauto.
+  } 
   unfold not. intros.
   sets_unfold in H1. specialize (H1 (BB_num bs2)).
   destruct H1 as [? ?]. clear H5. apply H1.
@@ -449,8 +494,8 @@ Proof.
 Qed.
 
 
-(* 切第二刀，把then和else切开来*)
-Lemma separate_step_aux3:
+(* 切第二刀，把then和else切开来，拿到then*)
+Lemma separate_then_from_BBdelta:
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
   (BBnum_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
   not ((BB_num bs1) ∈ (BBnum_set BBs2))  ->
@@ -474,7 +519,7 @@ Proof.
   pose proof sem_start_end_with (Bnrm (BB_sem_union (BBs1 ++ BBs2))) (Iter_nrm_BBs_n (BB_sem_union (BBs1 ++ BBs2)) x) bs1 bs2 H3.
   rewrite H4.
   pose proof sem_start_end_with_2 (Bnrm (BB_sem_union BBs1)) (Iter_nrm_BBs_n (BB_sem_union BBs1) x) bs1 bs2.
-  apply H6. (*?????*)
+  apply H6. 
   clear H6 H3 H4.
   destruct H5. destruct H3 as [? ?].
   exists x0.
@@ -486,12 +531,55 @@ Proof.
      pose proof H7 H0 H6. tauto.
   ++ specialize (IHx x0). 
      apply IHx.
-     -- pose proof BBs1_num_not_in_BBs2 BBs1 BBs2 bs1 x0.
+     -- pose proof BBs1_num_not_in_BBs2_l BBs1 BBs2 bs1 x0.
         pose proof H5 H H0 H1 H3.
         apply H6.
      -- apply H4. 
 Qed.
 
+(* 切第二刀，把then和else切开来，拿到else*)
+Lemma separate_else_from_BBdelta:
+  forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
+  (BBnum_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
+  not ((BB_num bs1) ∈ (BBnum_set BBs2))  ->
+  (BBjmp_dest_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
+  (BB_num bs2) ∈ (BBjmp_dest_set BBs1) ->
+  Bnrm (BB_list_sem (BBs2 ++ BBs1)) bs1 bs2 ->
+  Bnrm (BB_list_sem (BBs1)) bs1 bs2.
+Proof.
+  unfold BB_list_sem. simpl. intros.
+  sets_unfold in H3.
+  sets_unfold.
+  destruct H3.
+  exists x. revert bs1 H0 H3.
+  induction x; intros.
+  - tauto.
+  - assert (forall (BBs: list BasicBlock), Iter_nrm_BBs_n (BB_sem_union (BBs)) (S x) =(Bnrm (BB_sem_union (BBs))   ∘ Iter_nrm_BBs_n (BB_sem_union (BBs)) (x))).
+  {
+    reflexivity.
+  }
+  rewrite H4 in H3.
+  pose proof sem_start_end_with (Bnrm (BB_sem_union (BBs2 ++ BBs1))) (Iter_nrm_BBs_n (BB_sem_union (BBs2 ++ BBs1)) x) bs1 bs2 H3.
+  rewrite H4.
+  pose proof sem_start_end_with_2 (Bnrm (BB_sem_union BBs1)) (Iter_nrm_BBs_n (BB_sem_union BBs1) x) bs1 bs2.
+  apply H6. 
+  clear H6 H3 H4.
+  destruct H5. destruct H3 as [? ?].
+  exists x0.
+  split.
+  ++ pose proof separate_sem_union BBs2 BBs1.
+     specialize (H5 bs1 x0). destruct H5 as [? ?]. clear H6.
+     pose proof H5 H3. sets_unfold in H6. destruct H6 as [? | ?].
+     pose proof BB_start_not_in_BBs_if_no_num_set BBs2 bs1 x0.
+     pose proof H7 H0 H6. tauto.
+     apply H6.
+  ++ specialize (IHx x0). 
+     apply IHx.
+     -- pose proof BBs1_num_not_in_BBs2_r BBs1 BBs2 bs1 x0.
+        pose proof H5 H H0 H1 H3.
+        apply H6.
+     -- apply H4. 
+Qed.
 
 (* 在反向证明的时候将BBthen从BBs中切分出来 *)
 Lemma separate_step_inv_BBthen_BBs:
@@ -1379,7 +1467,7 @@ Proof.
 
               (*第二刀*)
               (*这里需要加入四条分离性质*)
-              pose proof (separate_step_aux3 (BB_now_then::nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) bs1_ x2).
+              pose proof (separate_then_from_BBdelta (BB_now_then::nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) bs1_ x2).
               assert (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅ ). tauto.
               assert ( ~ BB_num bs1_ ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). {
                 subst bs1_. simpl. 
