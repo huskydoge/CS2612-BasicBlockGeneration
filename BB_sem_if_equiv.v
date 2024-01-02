@@ -56,6 +56,14 @@ Lemma true_or_false_classic2:
 Proof.
 Admitted.
 
+(*集合的交对称*)
+Lemma sym_cap:
+  forall (A: Type) (s1 s2: A -> Prop),
+  s1 ∩ s2 == s2 ∩ s1.
+Proof.
+  intros.
+  sets_unfold. tauto.
+Qed.
 
 Lemma separate_sem_union_aux1:
   forall (BB: BasicBlock) (BBs: list BasicBlock),
@@ -582,6 +590,7 @@ Proof.
 Qed.
 
 
+(*BB_true_jmp和cmd语义中的test_true_jmp的等价性*)
 Lemma BB_true_jmp_iff_test_true_jmp:
   forall (e: expr) (a: state),
   (test_true_jmp (eval_expr e)) a <-> (test_true (eval_expr e)) a a.
@@ -600,7 +609,7 @@ Proof.
       * apply H1.
 Qed.
 
-
+(*BB_false_jmp和cmd语义中的test_false_jmp的等价性*)
 Lemma BB_false_jmp_iff_test_false_jmp:
   forall (e: expr) (a: state),
   (test_false_jmp (eval_expr e)) a <-> (test_false (eval_expr e)) a a.
@@ -614,6 +623,7 @@ Proof.
 Qed.
 
 
+(*如果(bs1, bs2)在BBs的语义中，那么自然也在BBnow::BBs的语义中*)
 Lemma Iter_sem_union_sem_included: 
   forall (BBnow: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state) (x0: nat),
     Iter_nrm_BBs_n (BB_sem_union BBs) x0 bs1 bs2 -> Iter_nrm_BBs_n (BB_sem_union (BBnow :: BBs)) x0 bs1 bs2.
@@ -1277,7 +1287,7 @@ Proof.
       pose proof separate_step_aux1.
       specialize (H22 x1 x2 BB_jmp BBs_wo_last_).
       (*这里需要加入两条分离性质*)
-      destruct Qdif as [separate_prop1 [separate_prop2 separate_prop3]].
+      destruct Qdif as [separate_prop1 [separate_prop2 [separate_prop3 separate_prop4]]].
       assert (separate_property BB_jmp BBs_wo_last_).
       {
         unfold separate_property.  unfold separate_property in separate_prop1.
@@ -1515,7 +1525,7 @@ Proof.
       *** apply sem_start_end_with in key2.
           destruct key2 as [bs' [step1 step2]]. clear H14.
 
-          assert (bs' = bs1_). {
+          assert (eq_bs: bs' = bs1_). {
             unfold BB_sem in step1.
             cbn [Bnrm] in step1.
             sets_unfold in step1.
@@ -1548,9 +1558,40 @@ Proof.
               }
               apply H26.
           }
+          rewrite <- eq_bs.
+          unfold BBs_wo_last_ in step2.
+          (* 切分else *)
 
-          (* 这里要理论上会简单一点？else对应的BBs_else本身和BBs_是连在一起的，这里不会再用到aux3了，但可能需要别的引理 *)
+          pose proof separate_else_from_BBdelta (BB_now_else :: nil ++ BBs_else) (BB_now_then :: nil ++ BBs_then) bs1_ x2 as final.
+          pose proof sym_cap nat (BBnum_set (BB_now_then :: nil ++ BBs_then)) (BBnum_set (BB_now_else :: nil ++ BBs_else)) as set_eq.
+          rewrite set_eq in separate_prop2.
+          specialize (final separate_prop2).
+          assert (pre1: ~ BB_num bs1_ ∈ BBnum_set (BB_now_then :: nil ++ BBs_then)).
+          {
+            subst bs1_. simpl. 
+            assert (BBnum_set (BB_now_else :: nil ++ BBs_else) BB_else_num) as H_BB_else_num_aux1.
+            unfold BBnum_set. exists BB_now_else. split.
+            unfold In. left. tauto. apply BBnowelse_num_prop.
+            unfold not. intros. sets_unfold in H15. 
+            admit.
+          }
+          specialize (final pre1 separate_prop4).
+          assert (pre2: BB_num x2 ∈ BBjmp_dest_set (BB_now_else :: nil ++ BBs_else)).
+          {
           admit.
+          }
+          rewrite eq_bs in step2.
+          specialize (final pre2 step2).
+          assert (now_else_eq: BB_now_else = {|
+            block_num := BB_else_num;
+            commands := BB_cmds_else;
+            jump_info := BB_now_else.(jump_info)
+          |}). {
+            apply compare_two_BasicBlock. repeat split.
+            - simpl. rewrite H3. reflexivity.
+            - simpl. rewrite H2. reflexivity.          
+          }
+          rewrite now_else_eq in final. rewrite eq_bs. tauto.
       *** apply H18.
       *** rewrite H20. subst BB_else. reflexivity.
   - (*反方向*)

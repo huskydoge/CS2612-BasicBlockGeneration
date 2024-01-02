@@ -99,6 +99,18 @@ Proof.
   - intros. destruct BB1. destruct BB2. simpl in H. destruct H as [? [? ?]]. rewrite H. rewrite H0. rewrite H1. tauto.
 Qed.
 
+Lemma compare_two_BBstate:
+  forall (bs1 bs2: BB_state),
+  bs1 = bs2 <->
+  bs1.(BB_num) = bs2.(BB_num) /\ bs1.(st) = bs2.(st).
+Proof.
+  intros.
+  split.
+  - intros. rewrite H. split; reflexivity.
+  - intros. destruct H. destruct bs1, bs2. simpl in *.
+    subst. reflexivity.
+Qed.
+
 Lemma unfold_once:
   forall (BBs: list BasicBlock),
 (BB_list_sem BBs).(Bnrm) == Rels.id ∪ (BB_sem_union BBs).(Bnrm) ∘ (BB_list_sem BBs).(Bnrm).
@@ -509,7 +521,7 @@ Lemma No_err_and_inf_for_expr:
   (exists i : int64, EDenote.nrm (eval_expr e) (st bs) i).
 Admitted.
 
-  (*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
+(*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
 Lemma cannot_start_with:
   forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
   ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
@@ -667,7 +679,8 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       ->
       (separate_property BBnow' BBs_wo_last) (*分离性质1*)
       /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅ ) (*分离性质3*)
-      /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅). (*分离性质5*)
+      /\ (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) (*分离性质5*)
+      /\ (BBjmp_dest_set (BB_now_else :: nil ++ BBs_else) ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅). (*分离性质6*)
  
 
 (*如果在BBs里，那么一定在BBs ++ tl里*)
@@ -1036,7 +1049,10 @@ Proof.
       
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
-Qed.
+  - admit.
+  - admit.  
+  - admit.
+Admitted.
 
 
 
