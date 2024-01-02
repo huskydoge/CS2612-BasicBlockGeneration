@@ -109,7 +109,7 @@ Definition all_lt (natset: nat -> Prop)(num: nat): Prop :=
 
 (*定义自然数区间*)
 Definition section (startnum endnum: nat) : nat -> Prop :=
-  fun BBnum => Nat.le startnum BBnum /\ Nat.le BBnum endnum.
+  fun BBnum => Nat.le startnum BBnum /\ Nat.lt BBnum endnum.
 
 Definition unit_set (BBnum: nat): BB_num_set :=
   fun BBnum' => BBnum' = BBnum.
