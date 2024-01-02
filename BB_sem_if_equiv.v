@@ -1645,37 +1645,75 @@ Proof.
     remember ({| BB_num := BB_next_num; st := a0 |}) as bs2.
     unfold cmd_sem in cmd_sem_prop. sets_unfold in cmd_sem_prop.
     destruct cmd_sem_prop as [t1 | t2].
+    
     (* test true -> then 分支*)
-    + sets_unfold in t1. destruct t1 as [i [t11 t12]].
-      exists {| st := a; BB_num := BB_then.(block_num) |}. split.
+    + exists {| st := a; BB_num := BB_then.(block_num) |}. split.
 
       (* Two parts. Initial jump and all the others *)
 
-      -- unfold BB_jmp_sem. cbn[Bnrm]. unfold BJump_sem.
-        subst BBnow'. simpl. destruct e.
-        ++ unfold cjmp_sem. cbn[Bnrm]. 
+      -- sets_unfold in t1. destruct t1 as [i [t11 t12]].
+         unfold BB_jmp_sem. cbn[Bnrm]. unfold BJump_sem.
+         subst BBnow'. simpl. destruct e.
+         ++ unfold cjmp_sem. cbn[Bnrm]. 
             repeat split; subst bs1; subst bs2; try tauto.
             left. simpl. split. tauto. unfold test_true_jmp.
             * unfold test_true in t11. sets_unfold in t11.
               destruct t11 as [t111 t112]. destruct t111 as [x_ [aux1 aux2]]. exists x_. split.
               apply aux1. apply aux2.
             * simpl. lia.
-        ++ unfold cjmp_sem. cbn[Bnrm]. 
-          repeat split; subst bs1; subst bs2; try tauto.
-          left. simpl. split. tauto. unfold test_true_jmp.
-          * unfold test_true in t11. sets_unfold in t11.
-          destruct t11 as [t111 t112]. destruct t111 as [x_ [aux1 aux2]]. exists x_. split.
-          apply aux1. apply aux2.
-          * simpl. lia. 
+         ++ unfold cjmp_sem. cbn[Bnrm]. 
+            repeat split; subst bs1; subst bs2; try tauto.
+            left. simpl. split. tauto. unfold test_true_jmp.
+            * unfold test_true in t11. sets_unfold in t11.
+            destruct t11 as [t111 t112]. destruct t111 as [x_ [aux1 aux2]]. exists x_. split.
+            apply aux1. apply aux2.
+            * simpl. lia. 
 
       -- my_destruct H. cbn[Bnrm]. sets_unfold.
          subst BBs_wo_last_. 
          pose proof separate_step_inv_BBthen_BBs (BB_now_then :: nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) {| BB_num := BB_then.(block_num); st := a |} bs2.
-         admit.
-         
 
+         assert (BBnum_set (BB_now_then :: nil ++ BBs_then)
+         ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) as inv_sep_1. admit.
          
-         
+         assert ( ~
+         BB_num {| BB_num := BB_then.(block_num); st := a |}
+         ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)) as inv_sep_2. admit.
+
+         assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)
+         ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) as inv_sep_3. admit.
+
+         assert (BB_num bs2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)) as inv_sep_4. admit.
+
+         pose proof H7 inv_sep_1 inv_sep_2 inv_sep_3 inv_sep_4. apply H8.
+
+         clear H8. destruct H5. clear err_cequiv. clear inf_cequiv.
+         sets_unfold in nrm_cequiv. 
+         specialize (nrm_cequiv a a0). destruct nrm_cequiv as [nrm_cequiv_forward nrm_cequiv_inv]. clear nrm_cequiv_forward.
+
+         assert ((cmd_list_sem cmd_sem c1).(nrm) a a0). {
+            admit. (*TODO 显然的，找不到条件了*)
+         }
+
+         pose proof nrm_cequiv_inv H5 as H_then_equiv.
+         destruct H_then_equiv as [? [? [? [? [? [? ?]]]]]].
+         cbn[Bnrm] in H8. 
+        
+         rewrite H3 in H11. rewrite <- H11. rewrite <- H9.
+         subst bs2. subst BB_then. simpl in H12.
+         assert (x1 = {| BB_num := BB_num x1; st := st x1 |}) as t4.
+         {
+            destruct x1. simpl. tauto.
+         }
+
+         assert (x2 = {| BB_num := BB_next_num; st := a0 |}) as t5.
+         {
+            rewrite <- H12. rewrite <- H10.
+            destruct x2. simpl. tauto.
+         }
+        
+         rewrite <- t4. rewrite <- t5.
+         admit. (*TODO H8和这个不匹配 *)
 
          (* destruct H7. clear err_cequiv inf_cequiv. 
          pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
