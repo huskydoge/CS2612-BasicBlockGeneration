@@ -400,12 +400,11 @@ Proof.
     pose proof H3 H2 H0. apply H4.
   }
   unfold not. intros.
-  assert(BB_num bs2 ∈( BBjmp_dest_set BBs1 ∩ BBnum_set BBs2)).
-  {
-    split. tauto. tauto.
-  }
+  sets_unfold in H1. specialize (H1 (BB_num bs2)).
+  destruct H1 as [? ?]. clear H5. apply H1.
+  split. apply H3. apply H4.
   (*TODO*)
-Admitted.
+Qed.
 
 
 
@@ -739,9 +738,17 @@ Lemma BB_restrict_sound:
            (BB_list_sem BBs)) x1 x2 -> BB_restrict 
            BBnow BBs x1.(BB_num) x2.(BB_num).
 Proof.
-  (*TODO*)
+  intros. unfold BB_restrict.
+  unfold BDenote_concate in H. cbn[Bnrm] in H. sets_unfold in H.
+  destruct H as [? [? ?]]. repeat split.
+  - unfold BB_jmp_sem in H. cbn[Bnrm] in H. unfold BJump_sem in H.
+    destruct eval_cond_expr. destruct jump_dest_2.
+    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?]. apply H1.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. apply H1.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. apply H1.
+  - unfold BBjmp_dest_set. unfold BB_list_sem in H0. cbn[Bnrm] in H0.
 Admitted.
-
+     
 
 (*如果BBs1是BBs2的子集，那么语义上也是*)
 Lemma BB_sem_child_prop :
@@ -749,7 +756,9 @@ Lemma BB_sem_child_prop :
     (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
     Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
 Proof.
-  (*TODO*)
+  intros. induction BBs1.
+  - simpl in H0. tauto.
+  - admit.
 Admitted.
 
 
@@ -767,9 +776,10 @@ Lemma share_BBjmp_info_and_num_means_same:
   BB2.(commands) = nil ->
   Bnrm (BB_jmp_sem BB1) x1 x2 -> Bnrm (BB_sem BB2) x1 x2.
 Proof.
-  intros. 
-  (*TODO*)
-Admitted.
+  intros. unfold BB_sem. simpl.
+  rewrite H1. sets_unfold. exists x1. split. unfold BAsgn_list_sem. sets_unfold. simpl. tauto.
+  rewrite <- H. rewrite <- H0. apply H2. 
+Qed.
 
 
 Lemma Q_if:
@@ -1399,7 +1409,8 @@ Proof.
           apply aux1. apply aux2.
           * simpl. lia. 
 
-      -- my_destruct H. admit.
+      -- my_destruct H. cbn[Bnrm].
+
          (* destruct H7. clear err_cequiv inf_cequiv. 
          pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
          destruct H7. clear H7. pose proof H9 H2.
