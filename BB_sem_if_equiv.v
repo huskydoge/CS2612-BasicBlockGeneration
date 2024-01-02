@@ -1475,7 +1475,6 @@ Proof.
     destruct cmd_sem_prop as [t1 | t2].
     (* test true -> then 分支*)
     + sets_unfold in t1. destruct t1 as [i [t11 t12]].
-      unfold BDenote_concate. cbn[Bnrm]. sets_unfold. 
       exists {| st := a; BB_num := BB_then.(block_num) |}. split.
 
       (* Two parts. Initial jump and all the others *)
@@ -1497,7 +1496,8 @@ Proof.
           apply aux1. apply aux2.
           * simpl. lia. 
 
-      -- my_destruct H. cbn[Bnrm]. admit.
+      -- my_destruct H. cbn[Bnrm]. sets_unfold.
+         subst BBs_wo_last_.
 
          (* destruct H7. clear err_cequiv inf_cequiv. 
          pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
