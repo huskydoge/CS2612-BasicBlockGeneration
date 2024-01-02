@@ -540,6 +540,7 @@ Proof.
 Qed.
 
 
+
 (*IMPORTANT*)
 (* 对于所有的BBnow，BBs，和两个BBstate，如果：
 1. BBnow和BBs满足分离性质 (separate_property)
@@ -665,7 +666,8 @@ Proof.
          }
          rewrite H8 in H7. unfold BB_jmp_sem in H7. subst BBnow'. simpl in H7. unfold BB_jmp_sem. apply H7. 
          (* 这里x其实已经不在BBnow'中而在BBs中了，需要以此来缩小H6的范围 *)
-         unfold separate_property in H3. admit.
+         unfold separate_property in H3.
+         admit.
       -- unfold BB_restrict in H4. destruct H4 as [key1 [key2 key3]].
          (* bs1的num等于BBnow'的num，但是BBnow'的num和BBs的num不相交，
             所以不可能有办法，让bs1从BBs的语义出发 *)
