@@ -929,10 +929,103 @@ Proof.
     exists a. tauto.
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
-  - admit.  (*TODO *)
+  - intros. sets_unfold. 
+    pose proof BBgen_range_list_soundness_correct c1 as c1_range.
+    pose proof BBgen_range_list_soundness_correct c2 as c2_range.
+    unfold P_BBgen_range in c1_range, c2_range.
+
+    (* Do if part first *)
+    remember ((list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(next_block_num)) as BB_then_end_num.
+    specialize (c1_range BB_num1 BB_then_end_num nil BB_then (BB_now_then::nil ++ BBs_then)).
+    assert (c1_jmp_prop: jump_kind BB_then.(jump_info) = UJump /\ jump_dest_2 BB_then.(jump_info) = None). {
+      rewrite BB_then_prop. cbn [jump_info]. cbn [jump_kind]. cbn [jump_dest_2]. cbn [jump_condition]. tauto.
+    }
+
+    assert (c1_list_prop: to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then BB_num1) = BB_now_then :: nil ++ BBs_then). {
+      rewrite BBlist_then_prop. simpl. reflexivity.
+    }
+
+    pose proof c1_range c1_jmp_prop HeqBB_then_end_num c1_list_prop as if_range.
+
+    (* Then the second part *)
+    remember ((list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_then_end_num).(next_block_num)) as BB_else_end_num.
+
+    specialize (c2_range BB_then_end_num BB_else_end_num (nil) BB_else (BB_now_else::nil ++ BBs_else)).
+    
+    assert (c2_jmp_prop: jump_kind BB_else.(jump_info) = UJump /\ jump_dest_2 BB_else.(jump_info) = None). {
+      rewrite BB_else_prop. cbn [jump_info]. cbn [jump_kind]. cbn [jump_dest_2]. tauto.
+    }
+
+    assert (c2_list_prop: to_result (list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_then_end_num) =
+    BB_now_else :: nil ++ BBs_else). {
+      rewrite <- BBnum2_prop. 
+      rewrite BBlist_else_prop. simpl. reflexivity.
+    }
+
+
+    pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop as else_range.
+    clear c1_jmp_prop c2_jmp_prop.
+
+    rename H into GOAL.
+    destruct if_range as [if_range_p1 [if_range_p2 if_range_p3 ]].
+    destruct else_range as [else_range_p1 [else_range_p2 else_range_p3 ]].
+    clear if_range_p1 if_range_p2 c1_list_prop c2_list_prop c1_range c2_range.
+    unfold section in if_range_p3. unfold section in else_range_p3.
+    sets_unfold in if_range_p3. sets_unfold in else_range_p3.
+    specialize (if_range_p3 a). specialize (else_range_p3 a).
+    destruct GOAL as [in_then_set in_else_set].
+    pose proof if_range_p3 in_then_set as key. clear if_range_p3. 
+    destruct key as [case1 | case2].
+    + unfold BBnum_set in in_else_set.
+      destruct in_else_set as [bb_else [pos_else restrict_else]].
+      destruct pos_else as [head | tail].
+      * rewrite <- head in restrict_else. rewrite BBnowelse_blocknum_prop in restrict_else.
+        rewrite <- restrict_else in case1. destruct case1 as [subcase1 subcase2].
+        lia.
+      * unfold all_ge in else_range_p1. specialize (else_range_p1 a). unfold BBnum_set in else_range_p1.
+        assert (pre: (exists BB : BasicBlock,
+        In BB (tl (BB_now_else :: nil ++ BBs_else)) /\ BB.(block_num) = a)).
+        {
+        exists bb_else.
+        split.
+        - tauto.
+        - tauto.
+        }
+        specialize (else_range_p1 pre). lia.
+    + unfold unit_set in case2. subst BB_then. cbn [jump_info] in case2. cbn[jump_dest_1] in case2.
+      destruct in_else_set as [bb_else [pos_else restrict_else]].
+      destruct pos_else as [head | tail].
+      * rewrite <- head in restrict_else. rewrite case2 in restrict_else. rewrite BBnowelse_blocknum_prop in restrict_else.
+        lia.
+      * unfold all_ge in else_range_p1. specialize (else_range_p1 a). unfold BBnum_set in else_range_p1.
+        assert (pre: (exists BB : BasicBlock,
+        In BB (tl (BB_now_else :: nil ++ BBs_else)) /\ BB.(block_num) = a)).
+        {
+        exists bb_else.
+        split.
+        - tauto.
+        - tauto.
+        }
+        specialize (else_range_p1 pre). 
+        rewrite case2 in else_range_p1. 
+        rewrite HeqBB_then_end_num in else_range_p1.
+        rewrite BBnum1_prop in else_range_p1.
+        set(temp_block := {|
+        block_num := BB_then_num;
+        commands := nil;
+        jump_info :=
+          {| jump_kind := UJump; jump_dest_1 := BB_next_num; jump_dest_2 := None; jump_condition := None |}
+        |}).
+        
+        pose proof (bbnum_le_next_num nil temp_block (S BB_next_num) c1).
+        assert (pre_: lt temp_block.(block_num) (S BB_next_num)). {
+          subst temp_block. simpl. lia.
+        }
+        specialize (H pre_). subst temp_block. simpl in H. lia.
+      
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
-Admitted.
+Qed.
 
 
 
