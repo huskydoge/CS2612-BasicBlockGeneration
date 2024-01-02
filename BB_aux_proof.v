@@ -42,6 +42,17 @@ Proof.
   - left. exists x. split. apply H. apply H0.
 Qed.
 
+Lemma as_a_part_then_in:
+  forall (A: Type) (a: A) (l1 l2: list A),
+  l1 ++ a::nil = l2 -> In a l2.
+Proof.
+  intros A a l1 l2 H.
+  rewrite <- H.
+  apply in_app_iff.
+  right. simpl. left. tauto.
+Qed.
+  
+
 Ltac my_destruct H :=
   match type of H with 
   | exists _, _ => destruct H as [? H]; my_destruct H 

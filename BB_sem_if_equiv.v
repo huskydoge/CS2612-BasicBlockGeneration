@@ -1253,12 +1253,19 @@ Proof.
               assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅). tauto.
               assert (BB_num x2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)). {
                 rewrite H20. sets_unfold. unfold BBjmp_dest_set. 
-                destruct BBs_then in H.
+                pose proof H as key.
+                destruct BBs_then eqn:? in key.
                 - exists BB_now_then.
-                  split. unfold In. left. tauto. destruct H as [? ?].
-                  rewrite H. subst BB_then. left. simpl. tauto.
+                  split. unfold In. left. tauto. clear key1. destruct key as [key1 key2].
+                  rewrite key1. subst BB_then. left. simpl. tauto.
                 - exists (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(BBn). split.
-                  + admit. (* H10，这里有点tricky *)
+                  + pose proof H10 as list_prop. remember (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(BBn) as cur_bbn.
+                    simpl in list_prop.
+                    assert (tmp_pre: BB_now_then :: nil ++ BBs_then = BB_now_then :: BBs_then).
+                    simpl. reflexivity.
+                    rewrite tmp_pre.
+                    pose proof as_a_part_then_in BasicBlock cur_bbn (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(BasicBlocks) (BB_now_then :: BBs_then) list_prop as in_prop .
+                    tauto.
                   + rewrite H12. subst BB_then. simpl. left. tauto.
               }
               pose proof (H5 H14 H22 H23 H24). clear H14 H22 H23 H24 H5.
