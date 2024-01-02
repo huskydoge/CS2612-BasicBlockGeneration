@@ -29,12 +29,12 @@ Lemma Q_while:
   P pre (cmd_BB_gen) -> P body (cmd_BB_gen) -> Qb (CWhile pre e body).
 Proof.
   intros. unfold Qb. intros. 
-  (* get lemmas and select the right target *)
+(* get lemmas and select the right target *)
   rename H1 into jmp_prop. rename H2 into BBnow_num_prop. rename H3 into BBnow_not_jmp_toself.  right.
-  (* get correct numbers *)
-  set(BB_pre_num := BBnum). set(BB_body_num := S(BB_pre_num)). set(BB_next_num := S(BB_body_num)). set(BB_num2 := S(BB_next_num)).
-  (* set basic basicblocks *)
-  set(BB_pre := {|block_num := BB_pre_num;
+(* get correct numbers *)
+  set(BB_pre_num := BBnum). set(BB_body_num := S(BB_pre_num)). set(BB_next_num := S(BB_body_num)). set(BB_num1 := S(BB_next_num)).
+(* set basic basicblocks *)
+  remember( {|block_num := BB_pre_num;
                    commands := nil;
                    jump_info := {|
                       jump_kind := CJump;
@@ -42,8 +42,8 @@ Proof.
                       jump_dest_2 := Some BB_next_num; 
                       jump_condition := Some e
                       |};
-                   |}).
-  set(BB_body := {|block_num := BB_body_num;
+                   |}) as BB_pre.
+  remember ( {|block_num := BB_body_num;
                  commands := nil;
                  jump_info := {|
                     jump_kind := UJump;
@@ -51,12 +51,12 @@ Proof.
                     jump_dest_2 := None; 
                     jump_condition := None
                     |};
-                 |}).
-  set(BB_next := {|block_num := BB_next_num;
+                 |}) as BB_body. 
+  remember({|block_num := BB_next_num;
                  commands := nil;
                  jump_info := BBnow.(jump_info)
-                 |}).
-  set(BBnow' := {|block_num := BBnow.(block_num);
+                 |}) as BB_next.
+  remember({|block_num := BBnow.(block_num);
                    commands := BBnow.(commands);
                    jump_info := {|
                       jump_kind := UJump;
@@ -64,9 +64,44 @@ Proof.
                       jump_dest_2 := None; 
                       jump_condition := None
                       |};
-                   |}).
+                   |}) as BBnow'. 
 (* set and fill correct parameters *)
-  set(BBs_wo_last := to_result(list_cmd_BB_gen cmd_BB_gen body nil BB_body BB_num2)). 
-  set(BBs' := BBs_wo_last ++ BB_next :: nil).
+  remember(list_cmd_BB_gen cmd_BB_gen pre nil BB_pre BB_num1) as BB_pre_generated_results.
+  set(BB_num2 := BB_pre_generated_results.(next_block_num)).
+  remember(list_cmd_BB_gen cmd_BB_gen body nil BB_body BB_num2) as BB_body_generated_results.
+  remember(to_result(BB_pre_generated_results)++to_result(BB_body_generated_results)) as BBs_wo_last. 
+  remember(BBs_wo_last ++ BB_next :: nil) as BBs'.
   exists BBnow'. exists BBs'. exists BB_next_num. exists BBs_wo_last.
+
+(*assert 1*)
+  assert ((cmd_BB_gen (CWhile pre e body) BBs BBnow BB_pre_num).(BasicBlocks) ++
+  (cmd_BB_gen (CWhile pre e body) BBs BBnow BB_pre_num).(BBn) :: nil =
+  BBs ++ (BBnow' :: nil) ++ BBs').
+  {
+  cbn[cmd_BB_gen]. simpl. 
+  subst BB_pre_num. subst BB_body_num. subst BB_next_num. subst BB_num1.
+  rewrite <- HeqBBnow'.  rewrite <- HeqBB_pre. 
+  rewrite <- HeqBB_pre_generated_results. subst BB_num2. rewrite <- HeqBB_body.
+  rewrite <- HeqBB_body_generated_results. rewrite <- HeqBBs_wo_last. rewrite <- HeqBB_next. 
+  rewrite HeqBBs'. 
+  rewrite <- app_assoc. reflexivity.
+  }
+
+(*assert 2*)
+assert ((cmd_BB_gen (CWhile pre e body) BBs BBnow BB_pre_num).(BasicBlocks) = BBs ++ (BBnow' :: nil) ++ BBs_wo_last).
+  {
+  cbn[cmd_BB_gen]. simpl.
+   subst BB_pre_num. subst BB_body_num. subst BB_next_num. subst BB_num1.
+  rewrite <- HeqBBnow'.  rewrite <- HeqBB_pre. 
+  rewrite <- HeqBB_pre_generated_results. subst BB_num2. rewrite <- HeqBB_body.
+  rewrite <- HeqBB_body_generated_results. rewrite HeqBBs_wo_last. reflexivity.
+  }
+
+(*assert 3*)
+assert(((cmd_BB_gen (CWhile pre e body) BBs BBnow BB_pre_num).(BBn)).(block_num) = BB_next_num).
+  {
+  cbn[cmd_BB_gen]. simpl. subst BB_pre_num. subst BB_next_num. reflexivity.
+  }
+ 
+  
 Admitted.
