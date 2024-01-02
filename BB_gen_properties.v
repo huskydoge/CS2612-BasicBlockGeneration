@@ -573,6 +573,17 @@ Proof.
     simpl. rewrite IH. reflexivity.
 Qed.
 
+Lemma append_nil_l : forall A (l : list A),
+  nil ++ l = l.
+Proof.
+  intros A l.
+  induction l as [| x xs IH].
+  - (* l = nil *)
+    simpl. reflexivity.
+  - (* l = x :: xs *)
+    simpl. rewrite <- IH. reflexivity.
+Qed.
+
 (* 如果l1不为空，那么l1 ++ l2的第一个元素等于l1的第一个元素 *)
 Lemma hd_A_and_B_is_hd_A_if_A_not_nil:
   forall (l1 l2: list BasicBlock),
@@ -604,6 +615,8 @@ Proof.
   - unfold cmd_BB_gen. simpl. reflexivity.
 Qed.
 
+
+
 (*TODO IMPORTANT：第一个Block的num就是BBnow的blocknum *)
 Lemma BBgen_head_prop:
   forall (cmds : list cmd)(BBnow : BasicBlock) (BBnum : nat),
@@ -614,8 +627,17 @@ Proof.
   unfold res. 
   induction cmds.
   - simpl. reflexivity.
-  - unfold res in IHcmds.
+  - unfold res in IHcmds. cbn [list_cmd_BB_gen].
+    pose proof BBgen_head_prop_single_cmd a BBnow BBnum as H_BBgen_cmd.
+    simpl in H_BBgen_cmd.
+    pose proof add_BBs_in_generation_reserves_BB cmds ((cmd_BB_gen a nil BBnow BBnum).(BasicBlocks)) (cmd_BB_gen a nil BBnow BBnum).(BBn) (cmd_BB_gen a nil BBnow BBnum).(next_block_num) as BBs_simpl.
+    unfold to_result in BBs_simpl. rewrite BBs_simpl.
+    clear BBs_simpl.
+
+
+   
 Admitted.
+
 (*END: BBgen Head =========================================================================================================================================================================================*)
 
 
