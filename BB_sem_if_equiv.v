@@ -272,8 +272,8 @@ Proof.
     apply H2.
 Qed.
 
-(* TODO find a name for it! *)
-Lemma no_name1:
+(* 如果一个nat在BBnum_set (BBs1 ++ BBs2)中，那么它一定在BBs1中或BBs2中 *)
+Lemma in_add_means_in_cup:
   forall (BBs1 BBs2 : list BasicBlock) (n: nat),
   BBnum_set (BBs1 ++ BBs2) (n) -> BBnum_set (BBs2) (n) \/ BBnum_set (BBs1) n.
 Proof.
@@ -377,7 +377,7 @@ Proof.
     pose proof classic (~ BBnum_set BBs1 (BB_num bs1)). destruct H2.
     - unfold not in H2. 
       assert (~ BBnum_set (BBs1 ++ BBs2) (BB_num bs1)). {
-        unfold not. intros. apply no_name1 in H3. 
+        unfold not. intros. apply in_add_means_in_cup in H3. 
         destruct H3. tauto. tauto.
       }
       pose proof H1 H3 H. tauto.
@@ -637,8 +637,23 @@ Proof.
       sets_unfold. sets_unfold in H6. destruct H6 as [? ?].
       exists x0. pose proof Iter_sem_union_sem_included BBnow' BBs x bs2 x0. simpl. apply H7. apply H6.
   - intros. sets_unfold in H5. destruct H5 as [? | ?].
-    + unfold BDenote_concate. cbn[Bnrm]. sets_unfold. exists bs1. admit. 
-      (*TODO 这里感觉有点怪 *)
+    rename H5 into eq.
+    + unfold BDenote_concate. cbn[Bnrm]. sets_unfold. exists bs1.
+      rename H4 into contradict_point.
+      rename H3 into contradict_point1. 
+      unfold BB_restrict in contradict_point. destruct contradict_point as [p1 [p2 p3]].
+      unfold separate_property in contradict_point1. sets_unfold in contradict_point1.
+      specialize (contradict_point1 bs1.(BB_num)). 
+      assert (contra_pre: BBnum_set (BBnow' :: nil) (BB_num bs1) /\ BBjmp_dest_set (BBnow' :: BBs) (BB_num bs1)).
+      {
+        split.
+        + unfold BBnum_set. exists BBnow'. split. simpl. tauto. rewrite p1. tauto.
+        + rewrite eq. unfold BBjmp_dest_set in p2. destruct p2 as [var [cond1 cond2]].
+          unfold BBjmp_dest_set. exists var. split.
+          *  simpl. tauto. 
+          * tauto.
+      }
+      tauto.
     + unfold BDenote_concate. cbn[Bnrm]. sets_unfold. destruct H5 as [? [? ?]].
       exists x. unfold BB_sem_union in H5. cbn[Bnrm] in H5.
       sets_unfold in H5. destruct H5 as [? | ?].
