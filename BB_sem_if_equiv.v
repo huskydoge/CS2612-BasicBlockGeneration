@@ -1766,7 +1766,81 @@ Proof.
         }
         rewrite bb_eq in H8. apply H8.
     (* test false -> else 分支*)
-    + admit.
+    + exists {| st := a; BB_num := BB_else.(block_num) |}. split.
+
+    (* Two parts. Initial jump and all the others *)
+
+    -- sets_unfold in t2. destruct t2 as [i [t21 t22]].
+       unfold BB_jmp_sem. cbn[Bnrm]. unfold BJump_sem.
+       subst BBnow'. simpl. destruct e.
+       ++ unfold cjmp_sem. cbn[Bnrm]. 
+          repeat split; subst bs1; subst bs2; try tauto.
+          right. simpl. split. tauto. unfold test_false_jmp.
+          * unfold test_false in t21. sets_unfold in t21.
+            destruct t21 as [t211 t212]. apply t211.
+          * simpl. lia.
+       ++ unfold cjmp_sem. cbn[Bnrm]. 
+          repeat split; subst bs1; subst bs2; try tauto.
+          right. simpl. split. tauto. unfold test_false_jmp.
+          * unfold test_false in t21. sets_unfold in t21.
+          destruct t21 as [t211 t212]. apply t211.
+          * simpl. lia. 
+
+    -- my_destruct H0. cbn[Bnrm]. sets_unfold.
+       subst BBs_wo_last_. 
+       pose proof separate_step_inv_BBelse_BBs (BB_now_else :: nil ++ BBs_else) (BB_now_then :: nil ++ BBs_then) {| BB_num := BB_else.(block_num); st := a |} bs2.
+
+       assert ( BBnum_set (BB_now_else :: nil ++ BBs_else)
+       ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅) as inv_sep_1. admit.
+       
+       assert (~
+       BB_num {| BB_num := BB_else.(block_num); st := a |}
+       ∈ BBnum_set (BB_now_then :: nil ++ BBs_then)) as inv_sep_2. admit.
+
+       assert (BBjmp_dest_set (BB_now_else :: nil ++ BBs_else)
+       ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅) as inv_sep_3. admit.
+
+       assert (BB_num bs2 ∈ BBjmp_dest_set (BB_now_else :: nil ++ BBs_else)) as inv_sep_4. admit.
+
+       pose proof H7 inv_sep_1 inv_sep_2 inv_sep_3 inv_sep_4. apply H8.
+
+       clear H8. destruct H5. clear err_cequiv. clear inf_cequiv.
+       sets_unfold in nrm_cequiv. 
+       specialize (nrm_cequiv a a0). destruct nrm_cequiv as [nrm_cequiv_forward nrm_cequiv_inv]. clear nrm_cequiv_forward.
+
+       assert ((cmd_list_sem cmd_sem c2).(nrm) a a0). {
+          admit. (*TODO 显然的，找不到条件了*)
+       }
+
+       pose proof nrm_cequiv_inv H5 as H_else_equiv.
+       destruct H_else_equiv as [? [? [? [? [? [? ?]]]]]].
+       cbn[Bnrm] in H8. 
+      
+       rewrite H3 in H11. rewrite <- H11. rewrite <- H9.
+       subst bs2. subst BB_else. simpl in H12.
+       assert (x1 = {| BB_num := BB_num x1; st := st x1 |}) as t4.
+       {
+          destruct x1. simpl. tauto.
+       }
+
+       assert (x2 = {| BB_num := BB_next_num; st := a0 |}) as t5.
+       {
+          rewrite <- H12. rewrite <- H10.
+          destruct x2. simpl. tauto.
+       }
+      
+       rewrite <- t4. rewrite <- t5.
+       assert (bb_eq: 
+       {|
+          block_num := BB_now_else.(block_num);
+          commands := BB_cmds_else;
+          jump_info := BB_now_else.(jump_info)
+        |} = BB_now_else). 
+      {
+       apply compare_two_BasicBlock. repeat split.
+        - simpl. rewrite H2. reflexivity.
+      }
+      rewrite bb_eq in H8. apply H8.
   - admit.  (*出错*)
   - admit. (*出错*)
   - admit. (*无限*)
