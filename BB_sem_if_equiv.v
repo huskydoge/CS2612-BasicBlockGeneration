@@ -1694,13 +1694,108 @@ Proof.
       *** apply H18.
       *** rewrite H20. subst BB_else. reflexivity.
   - (*反方向*)
+    
     intros. rename H1 into cmd_sem_prop.
+
+(* ! Begin Qdif性质引入，对H编号没有任何影响  ======================================================================================== *  )
+
+    pose proof H0 as backup1. pose proof H as backup2.
+    my_destruct H0. my_destruct H.
+    assert (BB_then_num = BBnum). {
+      reflexivity.
+    }
+    rewrite H13 in *. 
+    specialize (Qdif BBs BBnow BBnum jmp_prop BBnow' BBs'_ BBs_wo_last_ 
+    BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
+    (S BB_next_num) BB_num2 add_prop1 add_prop2 H13).
+    assert (S BB_next_num = S BB_next_num). reflexivity.
+    assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = S BB_else_num). reflexivity.
+
+    assert (BB_then =
+    {|
+      block_num := BB_then_num;
+      commands := nil;
+      jump_info :=
+        {|
+          jump_kind := UJump;
+          jump_dest_1 := BB_next_num;
+          jump_dest_2 := None;
+          jump_condition := None
+        |}
+    |}). reflexivity.
+    assert (BB_else =
+    {|
+      block_num := BB_else_num;
+      commands := nil;
+      jump_info :=
+        {|
+          jump_kind := UJump;
+          jump_dest_1 := BB_next_num;
+          jump_dest_2 := None;
+          jump_condition := None
+        |}
+    |}). reflexivity.
+    assert (BBnow' =
+    {|
+      block_num := BBnow.(block_num);
+      commands := BBnow.(cmd);
+      jump_info :=
+        {|
+          jump_kind := CJump;
+          jump_dest_1 := BB_then_num;
+          jump_dest_2 := Some BB_else_num;
+          jump_condition := Some e
+        |}
+    |}). reflexivity.
+    assert (lst_prop1: to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then (S BB_next_num)) =
+    BB_now_then :: nil ++ BBs_then). {
+      unfold to_result. subst BB_num1. pose proof H10. rewrite H10. simpl. reflexivity.
+    }
+
+    assert (lst_prop2: to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else BB_num2) =
+    BB_now_else :: nil ++ BBs_else). {
+      unfold to_result. rewrite H4. simpl. reflexivity.
+    
+    }
+
+    assert (BB_num2_prop: BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then (S BB_next_num)).(next_block_num)).
+    {
+      subst BB_num1.  rewrite H7. simpl. reflexivity.
+    }
+
+    assert (BBnowthen_num_prop: BB_now_then.(block_num) = BB_then_num).
+    {
+      rewrite H9. simpl. reflexivity.
+    }
+
+    assert (BBnowelse_num_prop: BB_now_else.(block_num) = BB_else_num).
+    {
+      rewrite H3. simpl. reflexivity.
+    }
+
+    specialize (
+      Qdif H15 H16 H14 H17 H18 H19 
+      lst_prop1 lst_prop2 BB_num2_prop BBnowthen_num_prop BBnowelse_num_prop
+      BBnow_num_prop BBnow_not_jmp_toself).
+    clear H13 H15 H16 H14 H17 H18 H19. 
+    rename H1 into BBnum3_prop. rename H2 into BB_else_cmds_prop.
+    rename H3 into BB_else_block_num_prop. rename H4 into BB_else_list_prop.
+    rename H5 into BCequiv_else_prop. rename H6 into BBelse_jmp_info. 
+    rename H7 into BBnum2_prop.
+    rename H8 into BB_then_cmds_prop.
+    rename H9 into BB_then_block_num_prop. rename H10 into BB_then_list_prop.
+    rename H11 into BCequive_then_prop. rename H12 into BBthen_jmp_info.
+    clear H0 H. rename backup1 into H0. rename backup2 into H. 
+(* ! End Qdif性质引入，对H编号没有任何影响  ======================================================================================== *  )
+
     exists {| st := a; BB_num := BBnow.(block_num) |}.
     exists {| st := a0; BB_num := BB_next_num |}.
     repeat split; try tauto.
     remember ({| BB_num := BBnow.(block_num); st := a |} ) as bs1.
     remember ({| BB_num := BB_next_num; st := a0 |}) as bs2.
     unfold cmd_sem in cmd_sem_prop. sets_unfold in cmd_sem_prop.
+
+    
     destruct cmd_sem_prop as [t1 | t2].
     
     (* test true -> then 分支*)
@@ -1731,7 +1826,9 @@ Proof.
          pose proof separate_step_inv_BBthen_BBs (BB_now_then :: nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) {| BB_num := BB_then.(block_num); st := a |} bs2.
 
          assert (BBnum_set (BB_now_then :: nil ++ BBs_then)
-         ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) as inv_sep_1. admit.
+         ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) as inv_sep_1. {
+          admit.
+         }
          
          assert ( ~
          BB_num {| BB_num := BB_then.(block_num); st := a |}
