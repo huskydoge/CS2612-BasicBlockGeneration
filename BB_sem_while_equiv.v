@@ -107,7 +107,8 @@ Proof.
   + tauto.
   + tauto.
   (*BB推cmd*)
-  + admit. 
+  + intros. rename H1 into main_prop.
+    destruct main_prop as [bs1 [bs2 [sem_cons [ st_cond1 [st_cond2 [num_cond1 num_cond2]]]]]].
   (*cmd推BB*)
   + admit.
 
