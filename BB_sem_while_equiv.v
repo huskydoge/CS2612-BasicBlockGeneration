@@ -29,11 +29,11 @@ Lemma Q_while:
   P pre (cmd_BB_gen) -> P body (cmd_BB_gen) -> Qb (CWhile pre e body).
 Proof.
   intros. unfold Qb. intros. 
-(* get lemmas and select the right target *)
+  (* get lemmas and select the right target *)
   rename H1 into jmp_prop. rename H2 into BBnow_num_prop. rename H3 into BBnow_not_jmp_toself.  right.
-(* get correct numbers *)
+  (* get correct numbers *)
   set(BB_pre_num := BBnum). set(BB_body_num := S(BB_pre_num)). set(BB_next_num := S(BB_body_num)). set(BB_num2 := S(BB_next_num)).
-(* set basic basicblocks *)
+  (* set basic basicblocks *)
   set(BB_pre := {|block_num := BB_pre_num;
                    commands := nil;
                    jump_info := {|

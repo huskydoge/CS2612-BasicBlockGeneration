@@ -769,10 +769,11 @@ Proof.
   destruct H as [? [? ?]]. repeat split.
   - unfold BB_jmp_sem in H. cbn[Bnrm] in H. unfold BJump_sem in H.
     destruct eval_cond_expr. destruct jump_dest_2.
-    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?]. apply H1.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. apply H1.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. apply H1.
-  - unfold BBjmp_dest_set. unfold BB_list_sem in H0. cbn[Bnrm] in H0.
+    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?]. tauto.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
+  - unfold BBjmp_dest_set. admit. 
+  - admit. 
   (*TODO*)
 Admitted.
      
