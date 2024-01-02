@@ -655,7 +655,7 @@ Proof.
       }
       tauto.
     + unfold BDenote_concate. cbn[Bnrm]. sets_unfold. destruct H5 as [? [? ?]].
-      exists x. unfold BB_sem_union in H5. cbn[Bnrm] in H5.
+      exists x. 
       sets_unfold in H5. destruct H5 as [? | ?].
       -- split. unfold BB_sem in H5. cbn[Bnrm] in H5. sets_unfold in H5.
          destruct H5 as [? [? ?]].
@@ -665,8 +665,21 @@ Proof.
          rewrite H8 in H7. unfold BB_jmp_sem in H7. subst BBnow'. simpl in H7. unfold BB_jmp_sem. apply H7. 
          (* 这里x其实已经不在BBnow'中而在BBs中了，需要以此来缩小H6的范围 *)
          unfold separate_property in H3. admit.
-      -- unfold BB_restrict in H4. destruct H4 as [? [? ?]].
-         admit. (* H4和H5是显然矛盾的 *)
+      -- unfold BB_restrict in H4. destruct H4 as [key1 [key2 key3]].
+         (* bs1的num等于BBnow'的num，但是BBnow'的num和BBs的num不相交，
+            所以不可能有办法，让bs1从BBs的语义出发 *)
+         pose proof cannot_start_with bs1 x (nil ++ BBs).
+         assert (pre1: ~ BBnum_set (nil ++ BBs) (BB_num bs1)).
+          {
+            unfold not. intros. sets_unfold in key3. specialize (key3 (BB_num bs1)).
+            assert (contra: BBnum_set (BBnow' :: nil) (BB_num bs1) /\ BBnum_set BBs (BB_num bs1)). {
+              split.
+              - unfold BBnum_set. exists BBnow'. split. simpl. tauto. rewrite key1. tauto.
+              - tauto.
+            }
+            tauto.
+          }
+          tauto.
 Admitted.
 
 
