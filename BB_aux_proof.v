@@ -183,6 +183,53 @@ Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(en
 *)
 
 
+(*
+对于所有的BBnow，BBs，和两个BB_state, 如果：
+x1和x2在(BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs))这个语义里，即BBnow的jmp语义和BBs的语义的连接
+=> 那么BBnow BBs x1.(BB_num) x2.(BB_num) 
+*)
+Lemma BB_restrict_sound:
+    forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x1 x2: BB_state),
+    Bnrm (BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)) x1 x2 
+    -> BBs <> nil -> 
+    BB_restrict BBnow BBs x1.(BB_num) x2.(BB_num).
+Proof.
+  intros. unfold BB_restrict.
+  unfold BDenote_concate in H. cbn[Bnrm] in H. sets_unfold in H.
+  destruct H as [? [? ?]]. repeat split.
+  - unfold BB_jmp_sem in H. cbn[Bnrm] in H. unfold BJump_sem in H.
+    destruct eval_cond_expr. destruct jump_dest_2.
+    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?]. tauto.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
+  - unfold BBjmp_dest_set. admit. 
+  - admit. 
+  (*! TODO*)
+Admitted.
+     
+
+(*如果BBs1是BBs2的子集，那么语义上也是*)
+Lemma BB_sem_child_prop:
+  forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2 : BB_state),
+    (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
+    Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
+Proof.
+  intros. induction BBs1.
+  - simpl in H0. tauto.
+  - admit.
+  (*TODO!*)
+Admitted.
+
+(*如果BBs1是BBs2的子集，那么任意多步的语义上也是*)
+Lemma BB_list_sem_child_prop:
+  forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2 : BB_state),
+      (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
+      Bnrm (BB_list_sem BBs1) bs1 bs2 -> Bnrm (BB_list_sem BBs2) bs1 bs2.
+Proof.
+  (*TODO*)
+Admitted.
+
+
 
 (* Important !*)
 

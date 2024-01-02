@@ -991,49 +991,7 @@ Proof.
     + my_destruct H. exists x. split. simpl. tauto. apply H0.
 Qed.
     
-(*
-对于所有的BBnow，BBs，和两个BB_state, 如果：
-x1和x2在(BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs))这个语义里，即BBnow的jmp语义和BBs的语义的连接
-=> 那么BBnow BBs x1.(BB_num) x2.(BB_num) 
-*)
-Lemma BB_restrict_sound:
-    forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x1 x2: BB_state),
-    Bnrm (BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)) x1 x2 
-    -> BBs <> nil -> 
-    BB_restrict BBnow BBs x1.(BB_num) x2.(BB_num).
-Proof.
-  intros. unfold BB_restrict.
-  unfold BDenote_concate in H. cbn[Bnrm] in H. sets_unfold in H.
-  destruct H as [? [? ?]]. repeat split.
-  - unfold BB_jmp_sem in H. cbn[Bnrm] in H. unfold BJump_sem in H.
-    destruct eval_cond_expr. destruct jump_dest_2.
-    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?]. tauto.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
-  - unfold BBjmp_dest_set. admit. 
-  - admit. 
-  (*TODO*)
-Admitted.
-     
 
-(*如果BBs1是BBs2的子集，那么语义上也是*)
-Lemma BB_sem_child_prop :
-  forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2 : BB_state),
-    (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
-    Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
-Proof.
-  intros. induction BBs1.
-  - simpl in H0. tauto.
-  - admit.
-Admitted.
-
-
-Lemma BB_list_sem_child_prop:
-  forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2 : BB_state),
-      (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
-      Bnrm (BB_list_sem BBs1) bs1 bs2 -> Bnrm (BB_list_sem BBs2) bs1 bs2.
-Proof.
-Admitted.
 
 (*两个BB如果跳转信息和num相同，那么jmpsem相同*)
 Lemma share_BBjmp_info_and_num_means_same:
@@ -1698,6 +1656,7 @@ Proof.
     intros. rename H1 into cmd_sem_prop.
 
 (* ! Begin Qdif性质引入，对H编号没有任何影响  ======================================================================================== *)
+(* ! ======================================================================================== *)
 
     pose proof H0 as backup1. pose proof H as backup2.
     my_destruct H0. my_destruct H.
@@ -1822,70 +1781,97 @@ Proof.
             * simpl. lia. 
 
       -- my_destruct H. cbn[Bnrm]. sets_unfold.
-         subst BBs_wo_last_. 
-         pose proof separate_step_inv_BBthen_BBs (BB_now_then :: nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) {| BB_num := BB_then.(block_num); st := a |} bs2.
+        subst BBs_wo_last_. 
+        pose proof separate_step_inv_BBthen_BBs (BB_now_then :: nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) {| BB_num := BB_then.(block_num); st := a |} bs2.
 
-         assert (BBnum_set (BB_now_then :: nil ++ BBs_then)
-         ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) as inv_sep_1. {
-          admit.
-         }
-         
-         assert ( ~
-         BB_num {| BB_num := BB_then.(block_num); st := a |}
-         ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)) as inv_sep_2. admit.
+        assert (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) as inv_sep_1. {
+          tauto.
+        }
 
-         assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)
-         ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) as inv_sep_3. admit.
-
-         assert (BB_num bs2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)) as inv_sep_4. admit.
-
-         pose proof H7 inv_sep_1 inv_sep_2 inv_sep_3 inv_sep_4. apply H8.
-
-         clear H8. destruct H5. clear err_cequiv. clear inf_cequiv.
-         sets_unfold in nrm_cequiv. 
-         specialize (nrm_cequiv a a0). destruct nrm_cequiv as [nrm_cequiv_forward nrm_cequiv_inv]. clear nrm_cequiv_forward.
-
-         assert ((cmd_list_sem cmd_sem c1).(nrm) a a0). {
-            pose proof sem_start_end_with_st (test_true (eval_expr e)) ((cmd_list_sem
-           (fix cmd_sem (cmd : cmd) : CDenote :=
-              {|
-              nrm := match cmd with
-                     | CAsgn x e => (asgn_sem x (eval_expr e)).(nrm)
-                     | CIf e c1 c2 =>
-                         (if_sem (eval_expr e) (cmd_list_sem cmd_sem c1) (cmd_list_sem cmd_sem c2)).(nrm)
-                     | CWhile pre e body =>
-                         (while_sem (eval_expr e) (cmd_list_sem cmd_sem body) (cmd_list_sem cmd_sem pre)).(nrm)
-                     end;
-              err := fun _ : state => False;
-              inf := fun _ : state => False |}) c1).(nrm)) a a0 t1. my_destruct H5.
-            unfold test_true in H5. simpl in H5. destruct H5. unfold Rels.id in H9. simpl in H9. rewrite H9.
-           unfold cmd_sem. tauto.
-         }
-
-         pose proof nrm_cequiv_inv H5 as H_then_equiv.
-         destruct H_then_equiv as [? [? [? [? [? [? ?]]]]]].
-         cbn[Bnrm] in H8. 
+        assert(BB_then_num_in: BBnum_set (BB_now_then :: nil ++ BBs_then) BB_then.(block_num)).
+        {
+          unfold BBnum_set. exists BB_now_then. split.
+          - unfold In. left. tauto.
+          - apply BB_then_block_num_prop.
+        }
         
-         rewrite H3 in H11. rewrite <- H11. rewrite <- H9.
-         subst bs2. subst BB_then. simpl in H12.
-         assert (x1 = {| BB_num := BB_num x1; st := st x1 |}) as t4.
-         {
-            destruct x1. simpl. tauto.
-         }
+        assert ( ~ BB_num {| BB_num := BB_then.(block_num); st := a |} ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)) as inv_sep_2. {
+          unfold not. intros. 
+          rename H8 into FOCUS.
+          cbn [BB_num] in FOCUS. sets_unfold in FOCUS.
+          sets_unfold in inv_sep_1. specialize inv_sep_1 with BB_then.(block_num).
+          tauto.
+        }
 
-         assert (x2 = {| BB_num := BB_next_num; st := a0 |}) as t5.
-         {
-            rewrite <- H12. rewrite <- H10.
-            destruct x2. simpl. tauto.
-         }
-        
-         rewrite <- t4. rewrite <- t5.
-         assert (bb_eq: 
-         {|
-            block_num := BB_now_then.(block_num);
-            commands := BB_cmds_then;
-            jump_info := BB_now_then.(jump_info)
-          |} = BB_now_then). 
+        assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅) as inv_sep_3. {
+          tauto.
+        }
+
+        assert (BB_num bs2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)) as inv_sep_4. {
+          sets_unfold. unfold BBjmp_dest_set.
+          pose proof H as key.
+          destruct BBs_then eqn:? in key.
+              - exists BB_now_then.
+                split. unfold In. left. tauto. destruct key as [key1 key2].
+                rewrite key1. subst BB_then. left. cbn [jump_info]. cbn [jump_dest_1]. rewrite Heqbs2. simpl. tauto.
+              - exists (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(BBn). split.
+                + pose proof H4 as list_prop. remember (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(BBn) as cur_bbn.
+                  simpl in list_prop.
+                  assert (tmp_pre: BB_now_then :: nil ++ BBs_then = BB_now_then :: BBs_then).
+                  simpl. reflexivity.
+                  rewrite tmp_pre.
+                  pose proof as_a_part_then_in BasicBlock cur_bbn (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(BasicBlocks) (BB_now_then :: BBs_then) list_prop as in_prop .
+                  tauto.
+                + rewrite H6. subst BB_else. simpl. left. rewrite Heqbs2. simpl. tauto.
+        }
+
+        pose proof H7 inv_sep_1 inv_sep_2 inv_sep_3 inv_sep_4. apply H8.
+
+        clear H8. destruct H5. clear err_cequiv. clear inf_cequiv.
+        sets_unfold in nrm_cequiv. 
+        specialize (nrm_cequiv a a0). destruct nrm_cequiv as [nrm_cequiv_forward nrm_cequiv_inv]. clear nrm_cequiv_forward.
+
+        assert ((cmd_list_sem cmd_sem c1).(nrm) a a0). {
+          pose proof sem_start_end_with_st (test_true (eval_expr e)) ((cmd_list_sem
+          (fix cmd_sem (cmd : cmd) : CDenote :=
+            {|
+            nrm := match cmd with
+                    | CAsgn x e => (asgn_sem x (eval_expr e)).(nrm)
+                    | CIf e c1 c2 =>
+                        (if_sem (eval_expr e) (cmd_list_sem cmd_sem c1) (cmd_list_sem cmd_sem c2)).(nrm)
+                    | CWhile pre e body =>
+                        (while_sem (eval_expr e) (cmd_list_sem cmd_sem body) (cmd_list_sem cmd_sem pre)).(nrm)
+                    end;
+            err := fun _ : state => False;
+            inf := fun _ : state => False |}) c1).(nrm)) a a0 t1. my_destruct H5.
+          unfold test_true in H5. simpl in H5. destruct H5. unfold Rels.id in H9. simpl in H9. rewrite H9.
+          unfold cmd_sem. tauto.
+        }
+
+        pose proof nrm_cequiv_inv H5 as H_then_equiv.
+        destruct H_then_equiv as [? [? [? [? [? [? ?]]]]]].
+        cbn[Bnrm] in H8. 
+      
+        rewrite H3 in H11. rewrite <- H11. rewrite <- H9.
+        subst bs2. subst BB_then. simpl in H12.
+        assert (x1 = {| BB_num := BB_num x1; st := st x1 |}) as t4.
+        {
+          destruct x1. simpl. tauto.
+        }
+
+        assert (x2 = {| BB_num := BB_next_num; st := a0 |}) as t5.
+        {
+          rewrite <- H12. rewrite <- H10.
+          destruct x2. simpl. tauto.
+        }
+      
+        rewrite <- t4. rewrite <- t5.
+        assert (bb_eq: 
+        {|
+          block_num := BB_now_then.(block_num);
+          commands := BB_cmds_then;
+          jump_info := BB_now_then.(jump_info)
+        |} = BB_now_then). 
         {
          apply compare_two_BasicBlock. repeat split.
           - simpl. rewrite H2. reflexivity.
@@ -1913,20 +1899,52 @@ Proof.
           * simpl. lia. 
 
     -- my_destruct H0. cbn[Bnrm]. sets_unfold.
-       subst BBs_wo_last_. 
-       pose proof separate_step_inv_BBelse_BBs (BB_now_else :: nil ++ BBs_else) (BB_now_then :: nil ++ BBs_then) {| BB_num := BB_else.(block_num); st := a |} bs2.
+      subst BBs_wo_last_. 
+      pose proof separate_step_inv_BBelse_BBs (BB_now_else :: nil ++ BBs_else) (BB_now_then :: nil ++ BBs_then) {| BB_num := BB_else.(block_num); st := a |} bs2.
 
-       assert ( BBnum_set (BB_now_else :: nil ++ BBs_else)
-       ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅) as inv_sep_1. admit.
-       
-       assert (~
-       BB_num {| BB_num := BB_else.(block_num); st := a |}
-       ∈ BBnum_set (BB_now_then :: nil ++ BBs_then)) as inv_sep_2. admit.
+      assert ( BBnum_set (BB_now_else :: nil ++ BBs_else) ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅) as inv_sep_1. 
+      {
+        pose proof (sym_cap nat (BBnum_set (BB_now_else :: nil ++ BBs_else)) (BBnum_set (BB_now_then :: nil ++ BBs_then))) as set_eq.
+        rewrite set_eq. tauto.
+      }
+      
+      assert (BB_else_num_in: BBnum_set (BB_now_else :: nil ++ BBs_else) BB_else.(block_num)).
+      {
+        unfold BBnum_set. exists BB_now_else. split.
+        - unfold In. left. tauto.
+        - apply BB_else_block_num_prop.
+      }
+  
+      assert (~ BB_num {| BB_num := BB_else.(block_num); st := a |} ∈ BBnum_set (BB_now_then :: nil ++ BBs_then)) as inv_sep_2. {
 
-       assert (BBjmp_dest_set (BB_now_else :: nil ++ BBs_else)
-       ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅) as inv_sep_3. admit.
+      unfold not. intros. 
+      rename H8 into FOCUS.
+      cbn [BB_num] in FOCUS. sets_unfold in FOCUS.
+      sets_unfold in inv_sep_1. specialize inv_sep_1 with BB_else.(block_num).
+      tauto.
+      }
 
-       assert (BB_num bs2 ∈ BBjmp_dest_set (BB_now_else :: nil ++ BBs_else)) as inv_sep_4. admit.
+      assert (BBjmp_dest_set (BB_now_else :: nil ++ BBs_else) ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅) as inv_sep_3. {
+        tauto.
+      }
+
+      assert (BB_num bs2 ∈ BBjmp_dest_set (BB_now_else :: nil ++ BBs_else)) as inv_sep_4. {
+        sets_unfold. unfold BBjmp_dest_set.
+        pose proof H0 as key.
+        destruct BBs_else eqn:? in key.
+            - exists BB_now_else.
+              split. unfold In. left. tauto. destruct key as [key1 key2].
+              rewrite key1. subst BB_else. left. simpl. rewrite Heqbs2. tauto.
+            - exists (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else BB_num2).(BBn). split.
+              + pose proof H4 as list_prop. remember (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else BB_num2).(BBn) as cur_bbn.
+                simpl in list_prop.
+                assert (tmp_pre: BB_now_else :: nil ++ BBs_else = BB_now_else :: BBs_else).
+                simpl. reflexivity.
+                rewrite tmp_pre.
+                pose proof as_a_part_then_in BasicBlock cur_bbn (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else BB_num2).(BasicBlocks) (BB_now_else :: BBs_else) list_prop as in_prop .
+                tauto.
+              + rewrite H6. subst BB_else. simpl. left. rewrite Heqbs2. tauto.
+      }
 
        pose proof H7 inv_sep_1 inv_sep_2 inv_sep_3 inv_sep_4. apply H8.
 
