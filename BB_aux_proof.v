@@ -185,6 +185,20 @@ Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(en
 
 
 (* Important !*)
+
+(* 针对state的start和end的性质 *)
+Lemma sem_start_end_with_st:
+  forall (sem1 sem2: state -> state -> Prop)(bs1 bs2: state),
+  ((sem1 ∘ sem2) bs1 bs2 :Prop) -> (exists bs', (sem1 bs1 bs') /\ (sem2 bs' bs2)).
+Proof.
+  intros.
+  sets_unfold in H.
+  destruct H as [? [? ?]]. 
+  exists x.
+  split. apply H. apply H0.
+  Qed.
+
+(* 针对BBstate的start和end的性质 *)
 Lemma sem_start_end_with:
   forall (sem1 sem2: BB_state -> BB_state -> Prop)(bs1 bs2: BB_state),
   ((sem1 ∘ sem2) bs1 bs2 :Prop) -> (exists bs', (sem1 bs1 bs') /\ (sem2 bs' bs2)).
