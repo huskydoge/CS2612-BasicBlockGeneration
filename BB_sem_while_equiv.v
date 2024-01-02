@@ -106,11 +106,13 @@ Proof.
   repeat split.
   + tauto.
   + tauto.
-  (*BB推cmd*)
+  (*cmd推BB*)
   + intros. rename H1 into main_prop.
     destruct main_prop as [bs1 [bs2 [sem_cons [ st_cond1 [st_cond2 [num_cond1 num_cond2]]]]]].
-  (*cmd推BB*)
-  + admit.
+    cbn [cmd_sem]. cbn [nrm].
+    admit.
+  (*BB推cmd*)
+  + intros. rename H1 into main_prop. admit.
 
   (*! DONT CARE: err and inf*)
   + admit.
