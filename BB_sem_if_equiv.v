@@ -752,6 +752,14 @@ Proof.
   (*TODO*)
 Admitted.
 
+
+Lemma BB_list_sem_child_prop:
+  forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2 : BB_state),
+      (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
+      Bnrm (BB_list_sem BBs1) bs1 bs2 -> Bnrm (BB_list_sem BBs2) bs1 bs2.
+Proof.
+Admitted.
+
 (*两个BB如果跳转信息和num相同，那么jmpsem相同*)
 Lemma share_BBjmp_info_and_num_means_same:
   forall (BB1 BB2: BasicBlock) (x1 x2: BB_state),
@@ -1195,7 +1203,15 @@ Proof.
         pose proof H28 H34.
         apply H35.
       (*再跨一步*)
-      - admit. (*TODO, simlar*)
+      - pose proof BB_list_sem_child_prop BBs_wo_last_ (BB_jmp::nil ++ BBs_wo_last_) x3 x2.
+        assert ((forall bb : BasicBlock,
+        In bb BBs_wo_last_ -> In bb (BB_jmp::nil ++ BBs_wo_last_))).
+        {
+          intros. simpl. simpl in H27. destruct H27.
+          - rewrite H27. right. left. tauto.
+          - tauto.
+        }
+        pose proof H26 H27 H25. apply H28.
       }
     specialize (H22 H23 H24 H25).
     rename H15 into key1.  
@@ -1225,11 +1241,25 @@ Proof.
               pose proof (separate_step_aux3 (BB_now_then::nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) bs1_ x2).
               assert (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅ ). tauto.
               assert ( ~ BB_num bs1_ ∈ BBnum_set (BB_now_else :: nil ++ BBs_else)). {
-                admit. (*TODO*)
+                subst bs1_. simpl. 
+                assert (BBnum_set (BB_now_then :: nil ++ BBs_then) BB_then_num) as H_BB_then_num_aux1.
+                unfold BBnum_set. exists BB_now_then. split.
+                unfold In. left. tauto. apply H9.
+                unfold not. intros. sets_unfold in H14. 
+                specialize (H14 BB_then_num).
+                destruct H14 as [? ?]. apply H14. split.
+                apply H_BB_then_num_aux1. apply H22.
               }
               assert (BBjmp_dest_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅). tauto.
               assert (BB_num x2 ∈ BBjmp_dest_set (BB_now_then :: nil ++ BBs_then)). {
-                admit. (*TODO*)
+                rewrite H20. sets_unfold. unfold BBjmp_dest_set. 
+                destruct BBs_then in H.
+                - exists BB_now_then.
+                  split. unfold In. left. tauto. destruct H as [? ?].
+                  rewrite H. subst BB_then. left. simpl. tauto.
+                - exists (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then BB_num1).(BBn). split.
+                  + admit. (* H10，这里有点tricky *)
+                  + rewrite H12. subst BB_then. simpl. left. tauto.
               }
               pose proof (H5 H14 H22 H23 H24). clear H14 H22 H23 H24 H5.
               assert (bs' = bs1_). {
@@ -1362,12 +1392,11 @@ Proof.
           apply aux1. apply aux2.
           * simpl. lia. 
 
-      -- my_destruct H.
-        admit.
-        (* destruct H7. clear err_cequiv inf_cequiv. 
-        pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
-        destruct H7. clear H7. pose proof H9 H2.
-        my_destruct H7. simpl in H7. clear H9. *)
+      -- my_destruct H. admit.
+         (* destruct H7. clear err_cequiv inf_cequiv. 
+         pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
+         destruct H7. clear H7. pose proof H9 H2.
+         my_destruct H7. simpl in H7. clear H9. *)
         (* Inconsistency here. *)
     (* test false -> else 分支*)
     + admit.
