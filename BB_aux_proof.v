@@ -891,8 +891,7 @@ Proof.
         }
 
         pose proof else_range_p1 premise1 as else_range_p1.
-        destruct else_range_p1 as [case1 | case2].
-        + rewrite restrict in restrict2. rewrite <- restrict2 in case1.
+        rewrite restrict in restrict2. rewrite <- restrict2 in else_range_p1.
           assert (lt BB_then_num BB_then_end_num). 
           {
             pose proof bbnow_num_lt_next_num nil BB_then BB_num1 c1 as lemma1.
@@ -903,16 +902,13 @@ Proof.
             subst BB_then. simpl in lemma1. lia.
           }
           lia.
-        + sets_unfold in case2. specialize (case2 x). tauto.
     
       - assert (premise1: BBnum_set BBs_then x). {
           unfold BBnum_set. exists bb1. split; tauto.
         }
         pose proof if_range_p1 premise1 as if_range_p1.
-        destruct if_range_p1 as [case1 | case2].
         + rewrite <- is_else in restrict2. rewrite BBnowelse_blocknum_prop in restrict2.
-          rewrite <- restrict2 in case1. lia.
-        + sets_unfold in case2. pose proof case2 x as case2. tauto.
+          rewrite <- restrict2 in if_range_p1. lia.
 
       - assert (premise1: BBnum_set BBs_then x).
         {
@@ -924,13 +920,7 @@ Proof.
         }
         pose proof if_range_p1 premise1 as if_range_p1.
         pose proof else_range_p1 premise2 as else_range_p1.
-        destruct if_range_p1 as [if1 | if2]; destruct else_range_p1 as [else1 | else2].
-        + pose proof if_range_p2 premise1 as if_range_p2. destruct if_range_p2 as [sub1 | sub2].
-          * lia.
-          * sets_unfold in sub2. pose proof sub2 x. tauto.
-        + sets_unfold in else2. pose proof else2 x. tauto.
-        + sets_unfold in if2. pose proof if2 x. tauto.
-        + sets_unfold in if2. pose proof if2 x. tauto.
+        pose proof if_range_p2 premise1 as if_range_p2. lia.
     }
     unfold not in final.
     intros. rename H into premise.
@@ -939,7 +929,7 @@ Proof.
     exists a. tauto.
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
-  - admit.
+  - admit.  (*TODO *)
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
 Admitted.
