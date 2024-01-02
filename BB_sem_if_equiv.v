@@ -1649,20 +1649,36 @@ Proof.
           pose proof sym_cap nat (BBnum_set (BB_now_then :: nil ++ BBs_then)) (BBnum_set (BB_now_else :: nil ++ BBs_else)) as set_eq.
           rewrite set_eq in separate_prop2.
           specialize (final separate_prop2).
+
+          
           assert (pre1: ~ BB_num bs1_ ∈ BBnum_set (BB_now_then :: nil ++ BBs_then)).
           {
             subst bs1_. simpl. 
             assert (BBnum_set (BB_now_else :: nil ++ BBs_else) BB_else_num) as H_BB_else_num_aux1.
             unfold BBnum_set. exists BB_now_else. split.
             unfold In. left. tauto. apply BBnowelse_num_prop.
-            unfold not. intros. sets_unfold in H15. 
-            admit.
+            unfold not. intros. rename H5 into contra.
+            sets_unfold in separate_prop2. specialize separate_prop2 with BB_else_num. tauto.
           }
           specialize (final pre1 separate_prop4).
           assert (pre2: BB_num x2 ∈ BBjmp_dest_set (BB_now_else :: nil ++ BBs_else)).
           {
-          admit.
-          }
+            rewrite H20. sets_unfold. unfold BBjmp_dest_set.
+            pose proof H0 as key.
+            destruct BBs_else eqn:? in key.
+                - exists BB_now_else.
+                  split. unfold In. left. tauto. clear key1. destruct key as [key1 key2].
+                  rewrite key1. subst BB_else. left. simpl. tauto.
+                - exists (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else BB_num2).(BBn). split.
+                  + pose proof H4 as list_prop. remember (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else BB_num2).(BBn) as cur_bbn.
+                    simpl in list_prop.
+                    assert (tmp_pre: BB_now_else :: nil ++ BBs_else = BB_now_else :: BBs_else).
+                    simpl. reflexivity.
+                    rewrite tmp_pre.
+                    pose proof as_a_part_then_in BasicBlock cur_bbn (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else BB_num2).(BasicBlocks) (BB_now_else :: BBs_else) list_prop as in_prop .
+                    tauto.
+                  + rewrite H6. subst BB_else. simpl. left. tauto.
+              }
           rewrite eq_bs in step2.
           specialize (final pre2 step2).
           assert (now_else_eq: BB_now_else = {|
