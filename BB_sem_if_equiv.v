@@ -524,7 +524,7 @@ Proof.
     intros. sets_unfold in H. destruct H as [? ?]. apply H.
 Qed.
 
-(* BUG Not Used!!!*)
+
 Lemma Iter_sem_union_sem_included: 
   forall (BBnow: BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state) (x0: nat),
     Iter_nrm_BBs_n (BB_sem_union BBs) x0 bs1 bs2 -> Iter_nrm_BBs_n (BB_sem_union (BBnow :: BBs)) x0 bs1 bs2.
@@ -624,8 +624,34 @@ Proof.
         -- specialize (IHx0 x1). apply IHx0. apply H8.
   }
   
-  rewrite H7. clear H5 H6 H7.
-  admit. (* TODO *)
+  rewrite H7. clear H5 H6 H7. split.
+  - intros. sets_unfold.
+    unfold BDenote_concate in H5. cbn[Bnrm] in H5.
+    sets_unfold in H5. right. destruct H5 as [? [? ?]].
+    exists x. split.
+    + unfold BB_sem_union. cbn[Bnrm]. sets_unfold. left. unfold BB_sem.
+      cbn[Bnrm]. sets_unfold. exists bs1. 
+      subst BBnow'. simpl. split. sets_unfold. tauto.
+      unfold BB_jmp_sem in H5. cbn[Bnrm] in H5. apply H5.
+    + unfold BB_list_sem. cbn[Bnrm]. unfold BB_list_sem in H6. cbn[Bnrm] in H6.
+      sets_unfold. sets_unfold in H6. destruct H6 as [? ?].
+      exists x0. pose proof Iter_sem_union_sem_included BBnow' BBs x bs2 x0. simpl. apply H7. apply H6.
+  - intros. sets_unfold in H5. destruct H5 as [? | ?].
+    + unfold BDenote_concate. cbn[Bnrm]. sets_unfold. exists bs1. admit. 
+      (*TODO 这里感觉有点怪 *)
+    + unfold BDenote_concate. cbn[Bnrm]. sets_unfold. destruct H5 as [? [? ?]].
+      exists x. unfold BB_sem_union in H5. cbn[Bnrm] in H5.
+      sets_unfold in H5. destruct H5 as [? | ?].
+      -- split. unfold BB_sem in H5. cbn[Bnrm] in H5. sets_unfold in H5.
+         destruct H5 as [? [? ?]].
+         assert (x0 = bs1). {
+           subst BBnow'. simpl in H5. sets_unfold in H5. rewrite H5. tauto.
+         }
+         rewrite H8 in H7. unfold BB_jmp_sem in H7. subst BBnow'. simpl in H7. unfold BB_jmp_sem. apply H7. 
+         (* 这里x其实已经不在BBnow'中而在BBs中了，需要以此来缩小H6的范围 *)
+         unfold separate_property in H3. admit.
+      -- unfold BB_restrict in H4. destruct H4 as [? [? ?]].
+         admit. (* H4和H5是显然矛盾的 *)
 Admitted.
 
 
