@@ -1713,7 +1713,15 @@ Proof.
          }
         
          rewrite <- t4. rewrite <- t5.
-         admit. (*TODO H8和这个不匹配 *)
+         assert (bb_eq: {|
+         block_num := BB_now_then.(block_num);
+         commands := BB_cmds_then;
+         jump_info := BB_now_then.(jump_info)
+       |} = BB_now_then). {
+         apply compare_two_BasicBlock. repeat split.
+          - simpl. rewrite H2. reflexivity.
+        }
+        rewrite bb_eq in H8. apply H8.
 
          (* destruct H7. clear err_cequiv inf_cequiv. 
          pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
