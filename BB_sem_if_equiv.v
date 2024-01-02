@@ -622,7 +622,7 @@ Proof.
       apply H6. sets_unfold. left. apply H3.
     ++ specialize (IHx x0). 
        apply IHx.
-       -- pose proof BBs1_num_not_in_BBs2 BBs1 BBs2 bs1 x0.
+       -- pose proof BBs1_num_not_in_BBs2_l BBs1 BBs2 bs1 x0.
           pose proof H5 H H0 H1.
           apply H6. pose proof separate_sem_union BBs1 BBs2.
           specialize (H7 bs1 x0). destruct H7 as [? ?].
@@ -1671,6 +1671,7 @@ Proof.
       -- my_destruct H. cbn[Bnrm]. sets_unfold.
          subst BBs_wo_last_. 
          pose proof separate_step_inv_BBthen_BBs (BB_now_then :: nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) {| BB_num := BB_then.(block_num); st := a |} bs2.
+         admit.
          
 
          
