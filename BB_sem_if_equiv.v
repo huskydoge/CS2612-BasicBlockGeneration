@@ -1846,7 +1846,20 @@ Proof.
          specialize (nrm_cequiv a a0). destruct nrm_cequiv as [nrm_cequiv_forward nrm_cequiv_inv]. clear nrm_cequiv_forward.
 
          assert ((cmd_list_sem cmd_sem c1).(nrm) a a0). {
-            admit. (*TODO 显然的，找不到条件了*)
+            pose proof sem_start_end_with_st (test_true (eval_expr e)) ((cmd_list_sem
+           (fix cmd_sem (cmd : cmd) : CDenote :=
+              {|
+              nrm := match cmd with
+                     | CAsgn x e => (asgn_sem x (eval_expr e)).(nrm)
+                     | CIf e c1 c2 =>
+                         (if_sem (eval_expr e) (cmd_list_sem cmd_sem c1) (cmd_list_sem cmd_sem c2)).(nrm)
+                     | CWhile pre e body =>
+                         (while_sem (eval_expr e) (cmd_list_sem cmd_sem body) (cmd_list_sem cmd_sem pre)).(nrm)
+                     end;
+              err := fun _ : state => False;
+              inf := fun _ : state => False |}) c1).(nrm)) a a0 t1. my_destruct H5.
+            unfold test_true in H5. simpl in H5. destruct H5. unfold Rels.id in H9. simpl in H9. rewrite H9.
+           unfold cmd_sem. tauto.
          }
 
          pose proof nrm_cequiv_inv H5 as H_then_equiv.
@@ -1922,7 +1935,20 @@ Proof.
        specialize (nrm_cequiv a a0). destruct nrm_cequiv as [nrm_cequiv_forward nrm_cequiv_inv]. clear nrm_cequiv_forward.
 
        assert ((cmd_list_sem cmd_sem c2).(nrm) a a0). {
-          admit. (*TODO 显然的，找不到条件了*)
+           pose proof sem_start_end_with_st (test_false (eval_expr e)) ((cmd_list_sem
+           (fix cmd_sem (cmd : cmd) : CDenote :=
+              {|
+              nrm := match cmd with
+                     | CAsgn x e => (asgn_sem x (eval_expr e)).(nrm)
+                     | CIf e c1 c2 =>
+                         (if_sem (eval_expr e) (cmd_list_sem cmd_sem c1) (cmd_list_sem cmd_sem c2)).(nrm)
+                     | CWhile pre e body =>
+                         (while_sem (eval_expr e) (cmd_list_sem cmd_sem body) (cmd_list_sem cmd_sem pre)).(nrm)
+                     end;
+              err := fun _ : state => False;
+              inf := fun _ : state => False |}) c2).(nrm)) a a0 t2. my_destruct H5.
+            unfold test_false in H5. simpl in H5. destruct H5. unfold Rels.id in H9. simpl in H9. rewrite H9.
+           unfold cmd_sem. tauto.
        }
 
        pose proof nrm_cequiv_inv H5 as H_else_equiv.
