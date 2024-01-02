@@ -256,9 +256,9 @@ BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) -> (*BBnow不会无条件跳�
 (* disjoint properties can be added here *)
   (separate_property BBnow' BBs_wo_last).
 
-Lemma Qd_if_sound:
+Lemma Qd_while_sound:
   forall (e: expr) (pre body: list cmd),
-    Qd_if e pre body.
+    Qd_while e pre body.
 Proof.
 Admitted.
 
