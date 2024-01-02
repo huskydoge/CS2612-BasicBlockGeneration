@@ -81,7 +81,7 @@ Proof.
   sets_unfold. right. apply H.
 Qed.
 
-
+(*这一条定理用于把并起来的语义分开*)
 Lemma separate_sem_union:
   forall (BBs1 BBs2: list BasicBlock), 
   Bnrm (BB_sem_union (BBs1 ++ BBs2)) ==  (Bnrm (BB_sem_union BBs1)) ∪ Bnrm (BB_sem_union BBs2).
@@ -228,11 +228,12 @@ Proof.
         specialize (H6 bs1.(BB_num)). destruct H6 as [? ?]. clear H10.
         apply H6. apply H9. 
       }
-      pose proof (H3 H4 H1). tauto. (*这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest*)
-            
+      pose proof (H3 H4 H1). tauto. 
+      (*这里是说BBnow的jmpdest里有bs2，但是bs1和bs2不相等，所以不可能是BBnow的jmpdest*) 
 Qed.
 
 
+(*如果(bs1, bs2)在BBs的语义里，那自然也在BBnow :: nil ++ BBs的语义里*)
 Lemma BBs_sem_included: 
   forall (BBnow : BasicBlock) (BBs : list BasicBlock) (bs1 bs2: BB_state),
     (Bnrm (BB_list_sem (BBs))) bs1 bs2 -> (Bnrm (BB_list_sem (BBnow :: nil ++ BBs))) bs1 bs2.
