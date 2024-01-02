@@ -1409,7 +1409,7 @@ Proof.
           apply aux1. apply aux2.
           * simpl. lia. 
 
-      -- my_destruct H. cbn[Bnrm].
+      -- my_destruct H. cbn[Bnrm]. admit.
 
          (* destruct H7. clear err_cequiv inf_cequiv. 
          pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
