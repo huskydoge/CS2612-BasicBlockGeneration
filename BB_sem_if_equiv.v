@@ -1697,7 +1697,7 @@ Proof.
     
     intros. rename H1 into cmd_sem_prop.
 
-(* ! Begin Qdif性质引入，对H编号没有任何影响  ======================================================================================== *  )
+(* ! Begin Qdif性质引入，对H编号没有任何影响  ======================================================================================== *)
 
     pose proof H0 as backup1. pose proof H as backup2.
     my_destruct H0. my_destruct H.
@@ -1786,7 +1786,7 @@ Proof.
     rename H9 into BB_then_block_num_prop. rename H10 into BB_then_list_prop.
     rename H11 into BCequive_then_prop. rename H12 into BBthen_jmp_info.
     clear H0 H. rename backup1 into H0. rename backup2 into H. 
-(* ! End Qdif性质引入，对H编号没有任何影响  ======================================================================================== *  )
+(* !End Qdif性质引入，对H编号没有任何影响  ======================================================================================== *)
 
     exists {| st := a; BB_num := BBnow.(block_num) |}.
     exists {| st := a0; BB_num := BB_next_num |}.
