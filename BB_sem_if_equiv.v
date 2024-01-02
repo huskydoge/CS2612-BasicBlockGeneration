@@ -360,7 +360,12 @@ Qed.
 
 
 
-
+(*
+如果：
+1. (bs1,bs2)在BBs1++BBs2的语义里
+2. bs1不在BBs2中
+=> 那么bs2在BBs1的jump目标中
+*)
 Lemma BB_num_change_from_BBsA_to_BBsB:
   forall (BBs1 BBs2 : list BasicBlock) (bs1 bs2: BB_state),
     ((Bnrm (BB_sem_union (BBs1 ++ BBs2)) bs1 bs2) : Prop) -> not (BBnum_set BBs2 (BB_num bs1)) -> BBjmp_dest_set BBs1 (BB_num bs2).
@@ -384,7 +389,15 @@ Proof.
 Qed.
 
 
-Lemma BB_then_num_not_in_BB_else: 
+(*
+对于两个BBlist，如果:
+1. BBs1和BBs2不交
+2. bs1不在BBs2中
+3. BBs1中的block跳不到BBs2中
+4. (bs1,bs2)在BBs1++BBs2的语义里
+=> 那么bs2不在BBs2中
+*)
+Lemma BBs1_num_not_in_BBs2: 
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
   (BBnum_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
   not (BBnum_set BBs2 (BB_num bs1))->
@@ -403,13 +416,15 @@ Proof.
   sets_unfold in H1. specialize (H1 (BB_num bs2)).
   destruct H1 as [? ?]. clear H5. apply H1.
   split. apply H3. apply H4.
-  (*TODO*)
 Qed.
 
 
-
-
-
+(*
+对于一串BBs和两个BBstate, 如果：
+1. bs1不在BBs中
+2. (bs1,bs2)在BBs的语义里
+=> 那么矛盾！！！
+*)
 Lemma BB_start_not_in_BBs_if_no_num_set: 
   forall (BBs : list BasicBlock) (bs1 bs2 : BB_state),
     ~ BBnum_set BBs (BB_num bs1) -> Bnrm (BB_sem_union BBs) bs1 bs2 -> False.
@@ -470,7 +485,7 @@ Proof.
      pose proof H7 H0 H6. tauto.
   ++ specialize (IHx x0). 
      apply IHx.
-     -- pose proof BB_then_num_not_in_BB_else BBs1 BBs2 bs1 x0.
+     -- pose proof BBs1_num_not_in_BBs2 BBs1 BBs2 bs1 x0.
         pose proof H5 H H0 H1 H3.
         apply H6.
      -- apply H4. 
@@ -495,6 +510,7 @@ Proof.
       * apply H.
       * apply H1.
 Qed.
+
 
 Lemma BB_false_jmp_iff_test_false_jmp:
   forall (e: expr) (a: state),
@@ -524,6 +540,12 @@ Qed.
 
 
 (*IMPORTANT*)
+(* 对于所有的BBnow，BBs，和两个BBstate，如果：
+1. BBnow和BBs满足分离性质 (separate_property)
+2. BBnow BBs bs1.(BB_num) bs2.(BB_num) 满足限制条件 (BB_restrict)
+3. 那么如果我创建一个新的BBnow'，将BBnow的jmp语义复制后，我可以做等价变换
+((BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)).(Bnrm) bs1 bs2) <-> (BB_list_sem (BBnow' :: nil ++ BBs)).(Bnrm) bs1 bs2.
+*)
 Lemma BDenote_concat_equiv_BB_list_sem:
   forall (BBnow : BasicBlock) (BBs : list BasicBlock)(bs1 bs2: BB_state),
     separate_property BBnow BBs -> 
@@ -607,7 +629,7 @@ Proof.
 Admitted.
 
 
-(*对于一个CJump的BB，它的jmp语义要么true要么false*)
+(*对于一个CJump的BB，它的jmp语义要么true jmp要么false jmp| 两个destination 择一*)
 Lemma BB_jmp_sem_simplify:
   forall (BB: BasicBlock) (bs1 bs2: BB_state)(e: expr)(dest1 dest2: nat),
   BB.(jump_info) = 
@@ -716,7 +738,7 @@ Proof.
 Qed.
 
 
-(*将BB::nil ++ BBs 的jmpdest分离开来*)
+(*将BB::nil ++ BBs 的jmpdest分离开来，变成一个Block的jmp语义和一串BB的jmp语义*)
 Lemma BBjmp_dest_set_separate:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock),
   BBjmp_dest_set (BBnow :: BBs) == BBjmp_dest_set (BBnow :: nil) ∪ BBjmp_dest_set BBs.
@@ -731,12 +753,16 @@ Proof.
     + my_destruct H. exists x. split. simpl. tauto. apply H0.
 Qed.
     
+(*
+对于所有的BBnow，BBs，和两个BB_state, 如果：
+x1和x2在(BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs))这个语义里，即BBnow的jmp语义和BBs的语义的连接
+=> 那么BBnow BBs x1.(BB_num) x2.(BB_num) 
+*)
 Lemma BB_restrict_sound:
     forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x1 x2: BB_state),
-    Bnrm
-        (BDenote_concate (BB_jmp_sem BBnow)
-           (BB_list_sem BBs)) x1 x2 -> BB_restrict 
-           BBnow BBs x1.(BB_num) x2.(BB_num).
+    Bnrm (BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)) x1 x2 
+    -> BBs <> nil -> 
+    BB_restrict BBnow BBs x1.(BB_num) x2.(BB_num).
 Proof.
   intros. unfold BB_restrict.
   unfold BDenote_concate in H. cbn[Bnrm] in H. sets_unfold in H.
@@ -747,6 +773,7 @@ Proof.
     + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. apply H1.
     + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. apply H1.
   - unfold BBjmp_dest_set. unfold BB_list_sem in H0. cbn[Bnrm] in H0.
+  (*TODO*)
 Admitted.
      
 
@@ -1163,7 +1190,11 @@ Proof.
       (*限制的一些性质*)
       assert (BB_restrict BB_jmp BBs_wo_last_ x1.(BB_num) x2.(BB_num)). 
       {
-      pose proof BB_restrict_sound BBnow' BBs_wo_last_ x1 x2 H14.
+        assert (tmp_pre: BBs_wo_last_ <> nil). {
+          subst BBs_wo_last_. simpl. discriminate.
+        }
+        pose proof BB_restrict_sound BBnow' BBs_wo_last_ x1 x2 H14 tmp_pre.
+        clear tmp_pre.
         assert (t1: BBnow'.(block_num) = BB_jmp.(block_num)). rewrite HeqBB_jmp. reflexivity.
         assert (t2: BBnow'.(jump_info) = BB_jmp.(jump_info)). rewrite HeqBB_jmp. reflexivity.
         unfold BB_restrict. unfold BB_restrict in H24. rewrite t1 in H24.
