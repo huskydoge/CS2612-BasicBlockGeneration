@@ -493,6 +493,48 @@ Proof.
 Qed.
 
 
+(* 在反向证明的时候将BBthen从BBs中切分出来 *)
+Lemma separate_step_inv_BBthen_BBs:
+  forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
+    (BBnum_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
+    not ((BB_num bs1) ∈ (BBnum_set BBs2))  ->
+    (BBjmp_dest_set BBs1) ∩ (BBnum_set BBs2) == ∅ ->
+    (BB_num bs2) ∈ (BBjmp_dest_set BBs1) ->
+    Bnrm (BB_list_sem BBs1) bs1 bs2 ->
+    Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2.
+Proof.
+  unfold BB_list_sem. simpl. intros.
+  sets_unfold in H3. sets_unfold. destruct H3.
+  exists x. revert bs1 H0 H3.
+  induction x; intros.
+  - tauto.
+  - assert (forall (BBs: list BasicBlock), Iter_nrm_BBs_n (BB_sem_union (BBs)) (S x) =(Bnrm (BB_sem_union (BBs))   ∘ Iter_nrm_BBs_n (BB_sem_union (BBs)) (x))).
+    {
+      reflexivity.
+    }
+    rewrite H4.
+    pose proof sem_start_end_with_2 (Bnrm (BB_sem_union BBs1)) (Iter_nrm_BBs_n (BB_sem_union BBs1) x) bs1 bs2 H3.
+    rewrite H4 in H3.
+    pose proof sem_start_end_with (Bnrm (BB_sem_union (BBs1 ++ BBs2))) (Iter_nrm_BBs_n (BB_sem_union (BBs1 ++ BBs2)) x) bs1 bs2.
+    sets_unfold. apply H6.
+    clear H6 H3 H4.
+    destruct H5. sets_unfold in H3. destruct H3 as [? ?].
+    exists x0.
+    split; sets_unfold.
+    ++ pose proof separate_sem_union BBs1 BBs2.
+      specialize (H5 bs1 x0). destruct H5 as [? ?]. clear H5.
+      apply H6. sets_unfold. left. apply H3.
+    ++ specialize (IHx x0). 
+       apply IHx.
+       -- pose proof BBs1_num_not_in_BBs2 BBs1 BBs2 bs1 x0.
+          pose proof H5 H H0 H1.
+          apply H6. pose proof separate_sem_union BBs1 BBs2.
+          specialize (H7 bs1 x0). destruct H7 as [? ?].
+          apply H8. sets_unfold. left. apply H3.
+       -- apply H4. 
+Qed.
+
+
 
 Lemma BB_true_jmp_iff_test_true_jmp:
   forall (e: expr) (a: state),
@@ -1498,7 +1540,12 @@ Proof.
           * simpl. lia. 
 
       -- my_destruct H. cbn[Bnrm]. sets_unfold.
-         subst BBs_wo_last_.
+         subst BBs_wo_last_. 
+         pose proof separate_step_inv_BBthen_BBs (BB_now_then :: nil ++ BBs_then) (BB_now_else :: nil ++ BBs_else) {| BB_num := BB_then.(block_num); st := a |} bs2.
+         
+
+         
+         
 
          (* destruct H7. clear err_cequiv inf_cequiv. 
          pose proof nrm_cequiv x1 a0. clear nrm_cequiv.
