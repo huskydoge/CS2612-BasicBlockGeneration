@@ -226,8 +226,19 @@ Lemma BB_list_sem_child_prop:
       (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
       Bnrm (BB_list_sem BBs1) bs1 bs2 -> Bnrm (BB_list_sem BBs2) bs1 bs2.
 Proof.
-  (*TODO*)
-Admitted.
+  intros. revert H0. unfold BB_list_sem. simpl. sets_unfold.
+  intros. destruct H0. exists x. 
+  assert(forall (n: nat), Iter_nrm_BBs_n (BB_sem_union BBs1) n ⊆ Iter_nrm_BBs_n (BB_sem_union BBs2) n).
+  {
+  intros. induction n. simpl. sets_unfold. tauto.
+  cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H1.
+  exists x0. split. pose proof BB_sem_child_prop BBs1 BBs2 a x0. tauto. sets_unfold in IHn.
+  pose proof IHn x0 a0 H2. tauto.
+  }
+  pose proof H1 x.
+  sets_unfold in H2.
+  pose proof H2 bs1 bs2 H0. tauto.
+Qed.
 
 
 
