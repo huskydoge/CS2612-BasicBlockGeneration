@@ -27,7 +27,8 @@ Lemma Q_asgn:
   forall (x: var_name) (e: expr),
   Qb (CAsgn x e).
 Proof.
-  intros. unfold Qb. left.  rename H0 into BBnownum_prop. rename H into jmp_prop. rename H1 into BBnow_not_jmp_toself. 
+  intros. unfold Qb. left.  rename H0 into BBnownum_prop. rename H into jmp_prop. rename H1 into BBnow_not_jmp_toself.
+  rename H2 into jmp_condition. 
   exists {|
     block_num := BBnow.(block_num);
     commands := BBnow.(cmd) ++ {| X:= x; E:= e|} :: nil;

@@ -158,6 +158,7 @@ Proof.
     + right. apply H.
 Qed.
 
+
 Definition empty_block := {|
   block_num := 0;
   commands := nil;

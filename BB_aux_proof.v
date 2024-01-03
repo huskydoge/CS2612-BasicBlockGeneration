@@ -817,25 +817,65 @@ x1和x2在(BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs))这个语义里�
 => 那么BBnow BBs x1.(BB_num) x2.(BB_num) 
 *)
 Lemma BB_restrict_sound:
-    forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x1 x2: BB_state),
-    Bnrm (BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)) x1 x2 
-    -> BBs <> nil -> separate_property BBnow BBs -> 
-    BB_restrict BBnow BBs x1.(BB_num) x2.(BB_num).
+    forall (BBnow BBnow': BasicBlock)(BBnum: nat)(BB_wo_last_: list BasicBlock) (x1 x2: BB_state)(c: cmd),
+    (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks) = (BBnow' :: nil) ++ BB_wo_last_ ->
+    Bnrm (BDenote_concate (BB_jmp_sem BBnow') (BB_list_sem BB_wo_last_)) x1 x2 ->
+    BB_wo_last_ <> nil -> 
+    lt BBnow'.(block_num) BBnum -> (*BBnow的blocknum小于BBnum*)
+    BBnow'.(block_num) = BBnow.(block_num) -> (*BBnow'的blocknum和BBnow的blocknum相同*)
+    jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None /\ jump_condition BBnow.(jump_info) = None ->
+    x1.(st) <> x2.(st) (*两个BB_state的state也不等（否则就等于没有传入cmd了）*) ->
+
+    BB_restrict BBnow' BB_wo_last_ x1.(BB_num) x2.(BB_num).
 Proof.
-  intros. unfold BB_restrict.
-  unfold BDenote_concate in H. cbn[Bnrm] in H. sets_unfold in H.
-  destruct H as [? [? ?]]. repeat split.
-  - unfold BB_jmp_sem in H. cbn[Bnrm] in H. unfold BJump_sem in H.
+  intros. unfold BB_restrict. rename H into lst_prop. rename H0 into BDenote_concate_prop.
+  rename H1 into not_empty. rename H2 into BBnow_num_lt_BBnum.
+  rename H3 into eq_blocknum. rename H4 into jump_prop. rename H5 into neq_st.
+  unfold BDenote_concate in BDenote_concate_prop. cbn[Bnrm] in BDenote_concate_prop. sets_unfold in BDenote_concate_prop.
+  destruct BDenote_concate_prop as [bs [cond1 cond2]]. repeat split.
+  - unfold BB_jmp_sem in cond1. cbn[Bnrm] in cond1. unfold BJump_sem in cond1.
     destruct eval_cond_expr. destruct jump_dest_2.
-    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?]. tauto.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
-  - unfold BBjmp_dest_set. admit. 
-  - sets_unfold. intros. unfold separate_property in H1. 
-    sets_unfold in H1. specialize (H1 a). destruct H1. clear H4.
-    apply H1. destruct H3 as [? ?]. split. apply H3.
-    admit.
-  (*! TODO*)
+    + unfold cjmp_sem in cond1. cbn[Bnrm] in cond1. destruct cond1 as [[? [? ?]] ?].  tauto.
+    + unfold ujmp_sem in cond1. cbn[Bnrm] in cond1. destruct cond1 as [? [? ?]]. tauto.
+    + unfold ujmp_sem in cond1. cbn[Bnrm] in cond1. destruct cond1 as [? [? ?]]. tauto.
+  - pose proof BBs_bs2_in_BB_jmp_set BB_wo_last_ bs x2. apply H in cond2.
+    destruct cond2.
+    + tauto.
+    + unfold BB_jmp_sem in cond1. cbn[Bnrm] in cond1. unfold BJump_sem in cond1.
+      destruct jump_prop as [jmp_prop1 [jmp_prop2 jmp_prop3]].
+      admit.
+  - sets_unfold. intros. 
+    pose proof BBgen_range_single_soundness_correct c as key. unfold Q_BBgen_range in key.
+    remember((cmd_BB_gen c nil BBnow BBnum).(next_block_num)) as end_num.
+    remember(BBnow'::nil ++ BB_wo_last_ ++ (cmd_BB_gen c nil BBnow BBnum).(BBn)::nil) as BBdelta.
+    assert (tmp: jump_kind BBnow.(jump_info) = UJump /\
+    jump_dest_2 BBnow.(jump_info) = None). tauto.
+    specialize (key BBnum end_num nil BBnow BBdelta tmp Heqend_num).
+    clear tmp.
+    assert(temp: to_result (cmd_BB_gen c nil BBnow BBnum) = nil ++ BBdelta).
+    { 
+      rewrite HeqBBdelta. unfold to_result. rewrite lst_prop.
+      rewrite app_assoc_reverse. reflexivity.
+    }
+    rewrite eq_blocknum in BBnow_num_lt_BBnum.
+    specialize (key temp BBnow_num_lt_BBnum). destruct key as [prop1 [prop2 prop3]].
+    assert (contra: BBnum_set (tl BBdelta) a). {
+      unfold BBnum_set. rewrite HeqBBdelta. 
+      destruct H as [_ in_wo_last].
+      unfold BBnum_set in in_wo_last. 
+      destruct in_wo_last as [BB_ [c1 c2]].
+      exists BB_. split.
+      - simpl. pose proof In_sublist_then_in_list_head BasicBlock BB_ BB_wo_last_ ((cmd_BB_gen c nil BBnow BBnum).(BBn) :: nil) c1.
+        tauto.
+      - tauto. 
+    }
+    unfold all_ge in prop1. specialize (prop1 a contra).
+    destruct H as [in_bbnow _].
+    unfold BBnum_set in in_bbnow. destruct in_bbnow as [BB_ [c1 c2]].
+    simpl in c1. destruct c1.
+    rewrite <- H in c2. rewrite eq_blocknum in c2. lia. tauto.
+  - sets_unfold in H. tauto.
+  - sets_unfold in H. tauto.
 Admitted.
 
 
@@ -1453,9 +1493,10 @@ Definition Qb(c: cmd): Prop :=
     嗯，当然你要证明的是语义的变化，所以你要说多出来的commands的语义，和那个c的语义一样 -- by cqx *)
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat), 
     let res := cmd_BB_gen c BBs BBnow BBnum in
-    jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None ->
+    jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None -> 
     lt BBnow.(block_num) BBnum -> 
     BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) -> (*不会跳转到自己*)
+    jump_condition BBnow.(jump_info) = None ->
     (*CAsgn*)
     (exists BBnow' BBcmd,
       res.(BBn) = BBnow' /\

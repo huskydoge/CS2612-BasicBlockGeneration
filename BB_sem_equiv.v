@@ -123,6 +123,8 @@ Lemma P_cons:
   Qb c -> P cmds cmd_BB_gen -> P (c :: cmds) (cmd_BB_gen).
 Proof.
   intros.
+  rename H into Qb_prop. rename H0 into P_prop.
+  unfold Qb in Qb_prop. unfold P in P_prop. simpl in *.
   destruct c.
   - admit.
   - admit.

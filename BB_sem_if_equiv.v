@@ -1029,7 +1029,7 @@ Lemma Q_if:
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qb (CIf e c1 c2).
 Proof.
   intros.
-  unfold Qb. intros. rename H1 into jmp_prop. rename H2 into BBnow_num_prop. rename H3 into BBnow_not_jmp_toself. right. 
+  unfold Qb. intros. rename H1 into jmp_prop. rename H2 into BBnow_num_prop. rename H3 into BBnow_not_jmp_toself. rename H4 into jmp_condition. right. 
   (* 这里要和BBgeneration里的情况对齐
   P c1里的BBs，BBnow，BBnum和Q里的BBs，BBnow和BBnum并不相同！在BBgeneration中，我们是创建了一个BBthen来当作c1的BBnow！
   P c1用于分配的BBnum也是如此，如下：    
@@ -1442,9 +1442,41 @@ Proof.
       {
         assert (tmp_pre: BBs_wo_last_ <> nil). {
           subst BBs_wo_last_. simpl. discriminate.
+        } 
+
+        pose proof BB_restrict_sound BBnow BBnow' BBnum BBs_wo_last_ x1 x2 (CIf e c1 c2).
+
+        assert (tmp_pre2: (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks) =
+        (BBnow' :: nil) ++ BBs_wo_last_). {
+
+          pose proof Q_add_BBs_in_generation_reserves_BB_sound (CIf e c1 c2) BBs BBnow BBnum as tran.
+          unfold to_result in tran.
+          pose proof eq_BBn BBs BBnow BBnum (CIf e c1 c2) as eq_bbn.
+          pose proof cut_eq_part_list_r BasicBlock ((cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BBn)
+          :: nil) ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks)) (BBs ++
+          (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks)) as cutted.
+          rewrite app_assoc in tran. apply cutted in tran.
+          rewrite add_prop2 in tran. pose proof cut_eq_part_list_l BasicBlock BBs ((BBnow' :: nil) ++ BBs_wo_last_) ((cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks)) tran as tmp.
+          rewrite <- tmp. reflexivity. 
         }
-        pose proof BB_restrict_sound BBnow' BBs_wo_last_ x1 x2 H14 tmp_pre.
-        clear tmp_pre.
+        specialize (H24 tmp_pre2 H14 tmp_pre).
+
+        assert (tmp_pre3: (BBnow'.(block_num) < BBnum)%nat). tauto.
+        assert (tmp_pre4: BBnow'.(block_num) = BBnow.(block_num)). tauto.
+
+        assert (tmp_pre5:
+        jump_kind BBnow.(jump_info) = UJump /\
+        jump_dest_2 BBnow.(jump_info) = None /\
+        jump_condition BBnow.(jump_info) = None).
+        {
+           simpl. tauto.
+        }
+
+        assert (diff_st: st x1 <> st x2). admit. (*TODO*)
+
+        specialize (H24 tmp_pre3 tmp_pre4 tmp_pre5 diff_st).
+        clear tmp_pre tmp_pre2 tmp_pre3 tmp_pre4 tmp_pre5 diff_st.
+
         assert (t1: BBnow'.(block_num) = BB_jmp.(block_num)). rewrite HeqBB_jmp. reflexivity.
         assert (t2: BBnow'.(jump_info) = BB_jmp.(jump_info)). rewrite HeqBB_jmp. reflexivity.
         unfold BB_restrict. unfold BB_restrict in H24. rewrite t1 in H24.
