@@ -286,6 +286,16 @@ Proof.
 Qed.
 
 
+Lemma Iter_nrm_BBs_n_inv_expansion:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a: nat),
+    Iter_nrm_BBs_n (BB_sem_union BBs) (S a) bs1 bs2 ->
+    exists i, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 i /\ Bnrm (BB_sem_union BBs) i bs2.
+Proof.
+  intros. simpl in H. sets_unfold in H.
+  
+Admitted.
+
+
 Lemma BBs_list_sem_exists_BB_bs1_x_tl:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state),
     Bnrm (BB_list_sem BBs) bs1 bs2 -> (exists (BB: BasicBlock) (x: BB_state), In BB BBs /\ Bnrm (BB_list_sem BBs) bs1 x /\ Bnrm (BB_sem BB) x bs2) \/ bs1 = bs2.
@@ -294,8 +304,13 @@ Proof.
   unfold Iter_nrm_BBs_n in H. sets_unfold in H. 
   destruct H as [? ?]. revert bs1 H. induction x; intros.
   - right. tauto. 
-  - admit. (*TODO*)
-Admitted.
+  - pose proof Iter_nrm_BBs_n_inv_expansion BBs bs1 bs2 x H.
+    destruct H0 as [? [? ?]]. 
+    pose proof BBs_sem_union_exists_BB_bs1_bs2 BBs x0 bs2 H1. left. 
+    destruct H2 as [? [? ?]]. exists x1. exists x0. repeat split.
+    apply H2. unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists x. apply H0.
+    apply H3.
+Qed.
 
      
 
