@@ -198,47 +198,32 @@ Qed.
 
 Lemma BBs_list_sem_exists_BB_bs1_x:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state),
-    Bnrm (BB_list_sem BBs) bs1 bs2 -> (exists (BB: BasicBlock) (x: BB_state), In BB BBs /\ Bnrm (BB_sem BB) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2).
+    Bnrm (BB_list_sem BBs) bs1 bs2 -> (exists (BB: BasicBlock) (x: BB_state), In BB BBs /\ Bnrm (BB_sem BB) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2) \/ bs1 = bs2.
 Proof.
-  intros. unfold BB_list_sem in H.
+  intros. unfold BB_list_sem in H. cbn[Bnrm] in H. 
+  unfold Iter_nrm_BBs_n in H. sets_unfold in H. 
+  destruct H as [? ?]. revert bs1 H. induction x; intros.
+  - right. tauto. 
+  - destruct H as [? [? ?]].
+    pose proof BBs_sem_union_exists_BB_bs1_bs2 BBs bs1 x0 H.
+    destruct H1 as [? [? ?]]. left.
+    exists x1. exists x0. repeat split.
+    apply H1. apply H2. unfold BB_list_sem. cbn[Bnrm].
+    sets_unfold. exists x. apply H0.
+Qed.
 
 
-Lemma BBs_bs2_in_BB_jmp_set:
-  forall (BBs : list BasicBlock) (bs1 bs2: BB_state),
-    Bnrm (BB_list_sem BBs) bs1 bs2 -> BBjmp_dest_set BBs (BB_num bs2).
+Lemma BBs_list_sem_exists_BB_bs1_x_tl:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state),
+    Bnrm (BB_list_sem BBs) bs1 bs2 -> (exists (BB: BasicBlock) (x: BB_state), In BB BBs /\ Bnrm (BB_list_sem BBs) bs1 x /\ Bnrm (BB_sem BB) x bs2) \/ bs1 = bs2.
 Proof.
-  intros. unfold BBjmp_dest_set.
-  unfold BB_list_sem in H. cbn[Bnrm] in H. unfold Iter_nrm_BBs_n in H.
-  sets_unfold in H. destruct H as [? ?].
-  admit.
+  intros. unfold BB_list_sem in H. cbn[Bnrm] in H. 
+  unfold Iter_nrm_BBs_n in H. sets_unfold in H. 
+  destruct H as [? ?]. revert bs1 H. induction x; intros.
+  - right. tauto. 
+  - admit.
 Admitted.
 
-(*
-对于所有的BBnow，BBs，和两个BB_state, 如果：
-x1和x2在(BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs))这个语义里，即BBnow的jmp语义和BBs的语义的连接
-=> 那么BBnow BBs x1.(BB_num) x2.(BB_num) 
-*)
-Lemma BB_restrict_sound:
-    forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x1 x2: BB_state),
-    Bnrm (BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)) x1 x2 
-    -> BBs <> nil -> separate_property BBnow BBs -> 
-    BB_restrict BBnow BBs x1.(BB_num) x2.(BB_num).
-Proof.
-  intros. unfold BB_restrict.
-  unfold BDenote_concate in H. cbn[Bnrm] in H. sets_unfold in H.
-  destruct H as [? [? ?]]. repeat split.
-  - unfold BB_jmp_sem in H. cbn[Bnrm] in H. unfold BJump_sem in H.
-    destruct eval_cond_expr. destruct jump_dest_2.
-    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?]. tauto.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
-    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
-  - unfold BBjmp_dest_set. admit. 
-  - sets_unfold. intros. unfold separate_property in H1. 
-    sets_unfold in H1. specialize (H1 a). destruct H1. clear H4.
-    apply H1. destruct H3 as [? ?]. split. apply H3.
-    admit.
-  (*! TODO*)
-Admitted.
      
 
 (*如果BBs1是BBs2的子集，那么语义上也是*)
@@ -252,6 +237,7 @@ Proof.
   - admit.
   (*TODO!*)
 Admitted.
+
 
 (*如果BBs1是BBs2的子集，那么任意多步的语义上也是*)
 Lemma BB_list_sem_child_prop:
@@ -670,6 +656,51 @@ Admitted.
 
 
 
+Lemma BBs_bs2_in_BB_jmp_set:
+  forall (BBs : list BasicBlock) (bs1 bs2: BB_state),
+    Bnrm (BB_list_sem BBs) bs1 bs2 -> BBjmp_dest_set BBs (BB_num bs2) \/ bs1 = bs2.
+Proof.
+  intros. unfold BBjmp_dest_set.
+  unfold BB_list_sem in H. cbn[Bnrm] in H. unfold Iter_nrm_BBs_n in H.
+  sets_unfold in H. destruct H as [? ?].
+  pose proof BBs_list_sem_exists_BB_bs1_x_tl BBs bs1 bs2. 
+  unfold BB_list_sem in H0. cbn[Bnrm] in H0. sets_unfold in H0.
+  assert (exists i : nat, Iter_nrm_BBs_n (BB_sem_union BBs) i bs1 bs2). {
+    exists x. apply H.
+  }
+  pose proof H0 H1. destruct H2 as [? | ?].
+  - my_destruct H2. left. exists x0. 
+    pose proof single_step_jmp_property_for_bs2 x0 x1 bs2 H4.
+    split. apply H2. apply H5.
+  - right. tauto.  
+Qed.
+
+(*
+对于所有的BBnow，BBs，和两个BB_state, 如果：
+x1和x2在(BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs))这个语义里，即BBnow的jmp语义和BBs的语义的连接
+=> 那么BBnow BBs x1.(BB_num) x2.(BB_num) 
+*)
+Lemma BB_restrict_sound:
+    forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x1 x2: BB_state),
+    Bnrm (BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)) x1 x2 
+    -> BBs <> nil -> separate_property BBnow BBs -> 
+    BB_restrict BBnow BBs x1.(BB_num) x2.(BB_num).
+Proof.
+  intros. unfold BB_restrict.
+  unfold BDenote_concate in H. cbn[Bnrm] in H. sets_unfold in H.
+  destruct H as [? [? ?]]. repeat split.
+  - unfold BB_jmp_sem in H. cbn[Bnrm] in H. unfold BJump_sem in H.
+    destruct eval_cond_expr. destruct jump_dest_2.
+    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?]. tauto.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
+  - unfold BBjmp_dest_set. admit. 
+  - sets_unfold. intros. unfold separate_property in H1. 
+    sets_unfold in H1. specialize (H1 a). destruct H1. clear H4.
+    apply H1. destruct H3 as [? ?]. split. apply H3.
+    admit.
+  (*! TODO*)
+Admitted.
 
 
 Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results): Prop :=
