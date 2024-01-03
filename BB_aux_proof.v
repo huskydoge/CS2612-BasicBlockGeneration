@@ -195,6 +195,18 @@ Proof.
       split. unfold In. right. apply H0. apply H1.
 Qed. 
 
+Lemma BBs_sem_union_exists_BB_bs1_bs2_inv:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state),
+    (exists (BB: BasicBlock), In BB BBs /\ Bnrm (BB_sem BB) bs1 bs2) -> Bnrm (BB_sem_union BBs) bs1 bs2.
+Proof.
+  intros. destruct H as [? [? ?]].
+  unfold BB_sem_union. induction BBs.
+  - unfold In in H. tauto.
+  - cbn[Bnrm]. sets_unfold. unfold In in H. destruct H as [? | ?].
+    + left. rewrite <- H in H0. apply H0.
+    + right. apply IHBBs. apply H.
+Qed. 
+
 
 Lemma BBs_list_sem_exists_BB_bs1_x:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state),
@@ -232,11 +244,14 @@ Lemma BB_sem_child_prop:
     (forall (bb : BasicBlock), In bb BBs1 -> In bb BBs2) ->
     Bnrm (BB_sem_union BBs1) bs1 bs2 -> Bnrm (BB_sem_union BBs2) bs1 bs2.
 Proof.
-  intros. induction BBs1.
-  - simpl in H0. tauto.
-  - admit.
-  (*TODO!*)
-Admitted.
+  intros. 
+  pose proof BBs_sem_union_exists_BB_bs1_bs2 BBs1 bs1 bs2 H0.
+  destruct H1 as [? [? ?]].
+  pose proof BBs_sem_union_exists_BB_bs1_bs2_inv BBs2 bs1 bs2. apply H3.
+  exists x. split.
+  - specialize (H x). apply H. apply H1.
+  - apply H2. 
+Qed.
 
 
 (*如果BBs1是BBs2的子集，那么任意多步的语义上也是*)
