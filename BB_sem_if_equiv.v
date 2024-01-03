@@ -1113,7 +1113,7 @@ Proof.
   (* Get correct BBs' for Q *)
   exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
 
-  assert (then_pre1: jump_kind BB_then.(jump_info) = UJump /\ jump_dest_2 BB_then.(jump_info) = None). {
+  assert (then_pre1: jump_kind BB_then.(jump_info) = UJump /\ jump_dest_2 BB_then.(jump_info) = None /\ jump_condition BB_then.(jump_info) = None). {
     unfold BB_then. simpl. tauto.
   }
 
@@ -1130,7 +1130,7 @@ Proof.
 
   clear then_pre1 then_pre2 then_pre3.
 
-  assert (else_pre1: jump_kind BB_else.(jump_info) = UJump /\ jump_dest_2 BB_else.(jump_info) = None). {
+  assert (else_pre1: jump_kind BB_else.(jump_info) = UJump /\ jump_dest_2 BB_else.(jump_info) = None /\ jump_condition BB_else.(jump_info) = None). {
     unfold BB_else. simpl. tauto.
   }
 
