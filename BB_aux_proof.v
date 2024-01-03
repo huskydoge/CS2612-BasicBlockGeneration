@@ -608,6 +608,23 @@ Proof.
           +++ rewrite H1. tauto.
 Qed.
 
+(*如果:
+1. bs1的num不在BBnow的num中
+2. (bs1, bs2) 在 BBnow ++ BBs 的任意步语义中
+3. BBs不可能跳回到BBnow
+那么 (bs1, bs2) 在 BBs 的任意步语义中
+*)
+Lemma simplify_listsem_with_mismatch_num:
+  forall (bs1 bs2: BB_state)(BBnow: BasicBlock)(BBs: list BasicBlock),
+  BBnow.(block_num) <> BB_num bs1 ->
+  BBnum_set (BBnow :: nil) ∩ BBjmp_dest_set (BBnow :: BBs) == ∅ ->
+  Bnrm (BB_list_sem (BBnow :: nil ++ BBs)) bs1 bs2 ->
+  Bnrm (BB_list_sem BBs) bs1 bs2.
+Proof.
+(*TODO*)
+Admitted.
+
+
 
 
 

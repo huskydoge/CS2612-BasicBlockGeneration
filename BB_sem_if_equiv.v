@@ -733,6 +733,7 @@ Lemma BDenote_concat_equiv_BB_list_sem:
   forall (BBnow : BasicBlock) (BBs : list BasicBlock)(bs1 bs2: BB_state),
     separate_property BBnow BBs -> 
     BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)-> (* BBnow的num是bs1.(BB_num), BBs的跳转目标中有bs2.(BBnum)*)
+    BBnow.(block_num) <> BBnow.(jump_info).(jump_dest_1) /\ Some BBnow.(block_num) <> BBnow.(jump_info).(jump_dest_2) ->
     let BBnow' := {|
       block_num := BBnow.(block_num);
       commands := nil;
@@ -740,7 +741,7 @@ Lemma BDenote_concat_equiv_BB_list_sem:
     |} in
     ((BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)).(Bnrm) bs1 bs2) <-> (BB_list_sem (BBnow' :: nil ++ BBs)).(Bnrm) bs1 bs2.
 Proof.
-  intros.
+  intros. rename H1 into neq_num_jmp_dest. 
   assert (BBnum_set (BBnow' :: nil) == BBnum_set (BBnow :: nil)). {
   unfold BBnum_set. unfold BBnum_set. sets_unfold. split; intros.
   - exists BBnow. split. simpl. tauto. my_destruct H1. simpl in H1. destruct H1.
@@ -848,7 +849,21 @@ Proof.
          rewrite H8 in H7. unfold BB_jmp_sem in H7. subst BBnow'. simpl in H7. unfold BB_jmp_sem. apply H7. 
          (* 这里x其实已经不在BBnow'中而在BBs中了，需要以此来缩小H6的范围 *)
          unfold separate_property in H3.
-         admit.
+         unfold BB_restrict in H4.
+         destruct H4 as [cond1 [cond2 cond3]].
+         destruct neq_num_jmp_dest as [jmp1  jmp2].
+         assert (key: BBnow'.(block_num) <> x.(BB_num)).
+         {
+          pose proof single_step_jmp_property_for_bs2 BBnow' bs1 x H5.
+          destruct H4 as [case1 | case2].
+          + rewrite <- case1. simpl. tauto.
+          + subst BBnow'. simpl in case2. simpl. rewrite case2 in jmp2. 
+            pose proof option_eq_some nat BBnow.(block_num) (BB_num x). tauto.
+         }
+         
+         clear H5. 
+         pose proof simplify_listsem_with_mismatch_num x bs2 BBnow' BBs key H3 H6.
+         tauto.
       -- unfold BB_restrict in H4. destruct H4 as [key1 [key2 key3]].
          (* bs1的num等于BBnow'的num，但是BBnow'的num和BBs的num不相交，
             所以不可能有办法，让bs1从BBs的语义出发 *)
@@ -2000,5 +2015,5 @@ Proof.
       rewrite bb_eq in H8. apply H8.
   - admit.  (*出错*)
   - admit. (*出错*)
-  - admit. (*无限*)
+  - admit. (*无限*) 
 Admitted.
