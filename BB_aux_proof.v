@@ -208,39 +208,74 @@ Proof.
   sets_unfold in H1. simpl in H. apply H1 in H. tauto.
 Qed.
 
+
+
+(*如果:
+1. (bs1, bs2)属于BBnow的跳转语义
+2. BBnow是无条件跳转，没有jumpdest2
+那么bs2的num不等于BBnow, 且BBnow不会跳转到自身*)
 Lemma Jump_restrict:
   forall (BBnow: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BJump_sem BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))
      (jump_dest_2 BBnow.(jump_info))
      (eval_cond_expr (jump_condition BBnow.(jump_info)))) bs1 bs2 ->
+  jump_dest_2 BBnow.(jump_info) = None ->
   BBnow.(block_num) <> bs2.(BB_num) /\
-  BB_gen_properties.BBnum_set
+  BBnum_set
   ({|
      block_num := BBnow.(block_num);
      commands := nil;
      jump_info := BBnow.(jump_info)
    |} :: nil)
   ∩ 
-  BB_gen_properties.BBjmp_dest_set
+  BBjmp_dest_set
     ({|
        block_num := BBnow.(block_num);
        commands := nil;
        jump_info := BBnow.(jump_info)
      |} :: nil) == ∅.
 Proof.
-  intros.
-  unfold BJump_sem in H. 
+  intros. 
+  unfold BJump_sem in H.
+  rename H0 into none_jmp_dest2. 
   destruct (eval_cond_expr (jump_condition BBnow.(jump_info))) eqn:?.
-  - destruct (jump_dest_2 BBnow.(jump_info)) eqn:?.
-    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?].
+  - destruct (jump_dest_2 BBnow.(jump_info)) eqn:? in H. 
+    + rewrite none_jmp_dest2 in Heqo0. discriminate Heqo0.
+    + unfold ujmp_sem in H. cbn[Bnrm] in H. my_destruct H.
       split.
       * rewrite H0 in H2. tauto.
-      * assert(key: BB_num bs1 <> (jump_dest_1 BBnow.(jump_info)) /\ Some (BB_num bs1) <> jump_dest_2 BBnow.(jump_info)). {
-        admit. (*这里逻辑有错误，我的理想情况是，既然无论true还是false，bs2的num都不等于bs1的num，那么自然bs1的num就不应该在jmpdest里才对啊*)
-      }
-      admit.
-    + admit. (* TODO *)
-Admitted.
+      * sets_unfold. intros. split.
+        ** intros. destruct H3 as [cond1 cond2].
+          unfold BBnum_set in cond1. simpl in cond1. destruct cond1 as [BB1 [cond11 cond12]].
+          unfold BBjmp_dest_set in cond2. simpl in cond2. destruct cond2 as [BB2 [cond21 cond22]].
+          destruct cond11. 
+          -- destruct cond21.
+            --- rewrite <- H3 in cond12. simpl in cond12. 
+                rewrite <- H4 in cond22. simpl in cond22.
+                destruct cond22 as [case1 | case2].
+                *** rewrite case1 in H1. rewrite H1 in H2. rewrite cond12 in H0. rewrite H0 in H2. tauto.
+                *** rewrite case2 in Heqo0. discriminate Heqo0.
+            ---tauto.
+          -- destruct cond21. tauto. tauto.
+        ** intros. tauto.
+  - unfold ujmp_sem in H. cbn [Bnrm] in H. my_destruct H. split.
+    + rewrite H0 in H2. tauto.
+    + 
+      sets_unfold. intros. split.
+      ** intros. destruct H3 as [cond1 cond2].
+        unfold BBnum_set in cond1. simpl in cond1. destruct cond1 as [BB1 [cond11 cond12]].
+        unfold BBjmp_dest_set in cond2. simpl in cond2. destruct cond2 as [BB2 [cond21 cond22]].
+        destruct cond11. 
+        -- destruct cond21.
+          --- rewrite <- H3 in cond12. simpl in cond12. 
+              rewrite <- H4 in cond22. simpl in cond22.
+              destruct cond22 as [case1 | case2].
+              *** rewrite case1 in H1. rewrite H1 in H2. rewrite cond12 in H0. rewrite H0 in H2. tauto.
+              *** rewrite case2 in none_jmp_dest2. discriminate none_jmp_dest2.
+          ---tauto.
+        -- destruct cond21. tauto. tauto.
+      ** intros. tauto.
+Qed.
 
 
 Lemma BBs_sem_union_exists_BB_bs1_bs2:
