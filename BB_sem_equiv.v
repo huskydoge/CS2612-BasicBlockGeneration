@@ -47,15 +47,26 @@ Proof.
   exists nil. exists BBnow. exists nil. exists BBnum. exists BBnow.(block_num).
   repeat split; try tauto.
   - rewrite append_nil_r. tauto.
-  - intros. simpl. my_destruct H. simpl in H. sets_unfold.
-    destruct H. revert x H H0 H2. induction x1; intros.
-    + simpl in H. sets_unfold in H. rewrite H in H0. rewrite <- H0. rewrite <- H1. reflexivity.
-    + unfold Iter_nrm_BBs_n in H. sets_unfold in H. my_destruct H. 
-      simpl in H. destruct H as [[? [? ?]] | ?]. rewrite <- H in H5.
-      specialize (IHx1 x2). apply IHx1. apply H4. 
-      admit.
-      admit.
-      tauto.
+  - intros. simpl. my_destruct H. cbn [Bnrm] in H.
+    pose proof unfold_once ({|
+        block_num := BBnow.(block_num);
+        commands := nil;
+        jump_info := BBnow.(jump_info)
+      |} :: nil ++ nil) as key.
+    sets_unfold in key. specialize (key x x0). apply key in H.
+    clear key.
+    destruct H as [case1 | case2].
+    + rewrite case1 in H0. sets_unfold. rewrite H0 in H1. tauto.
+    + sets_unfold. destruct case2 as [middle [cond1 cond2]].
+      pose proof simplify_listsem_with_mismatch_num middle x0 {|
+      block_num := BBnow.(block_num);
+      commands := nil;
+      jump_info := BBnow.(jump_info)
+    |} nil as steps.
+    simpl in cond1. sets_unfold in cond1.
+    destruct cond1 as [r1 | r2].
+    * admit.
+    * tauto.
   - intros. exists {| st := a ; BB_num := BBnow.(block_num) |}.
     exists {| st := a0 ; BB_num := BBnow.(block_num) |}.
     repeat split; simpl; try tauto.

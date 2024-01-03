@@ -182,6 +182,39 @@ Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(en
 
 *)
 
+Lemma Jump_restrict:
+  forall (BBnow: BasicBlock)(bs1 bs2: BB_state),
+  Bnrm (BJump_sem BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))
+     (jump_dest_2 BBnow.(jump_info))
+     (eval_cond_expr (jump_condition BBnow.(jump_info)))) bs1 bs2 ->
+  BBnow.(block_num) <> bs2.(BB_num) /\
+  BB_gen_properties.BBnum_set
+  ({|
+     block_num := BBnow.(block_num);
+     commands := nil;
+     jump_info := BBnow.(jump_info)
+   |} :: nil)
+  ∩ 
+  BB_gen_properties.BBjmp_dest_set
+    ({|
+       block_num := BBnow.(block_num);
+       commands := nil;
+       jump_info := BBnow.(jump_info)
+     |} :: nil) == ∅.
+Proof.
+  intros.
+  unfold BJump_sem in H. 
+  destruct (eval_cond_expr (jump_condition BBnow.(jump_info))) eqn:?.
+  - destruct (jump_dest_2 BBnow.(jump_info)) eqn:?.
+    + unfold cjmp_sem in H. cbn[Bnrm] in H. destruct H as [[? [? ?]] ?].
+      split.
+      * rewrite H0 in H2. tauto.
+      * assert(key: BB_num bs1 <> (jump_dest_1 BBnow.(jump_info)) /\ Some (BB_num bs1) <> jump_dest_2 BBnow.(jump_info)). {
+        admit. (*这里逻辑有错误，我的理想情况是，既然无论true还是false，bs2的num都不等于bs1的num，那么自然bs1的num就不应该在jmpdest里才对啊*)
+      }
+      admit.
+    + admit.
+Admitted.
 
 (*
 对于所有的BBnow，BBs，和两个BB_state, 如果：
