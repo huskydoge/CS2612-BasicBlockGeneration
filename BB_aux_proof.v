@@ -182,6 +182,36 @@ Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(en
 
 *)
 
+Lemma BBs_sem_union_exists_BB_bs1_bs2:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state),
+    Bnrm (BB_sem_union BBs) bs1 bs2 -> (exists (BB: BasicBlock), In BB BBs /\ Bnrm (BB_sem BB) bs1 bs2).
+Proof.
+  intros. induction BBs.
+  - unfold BB_sem_union in H. simpl in H. tauto.
+  - unfold BB_sem_union in H. cbn[Bnrm] in H. sets_unfold in H.
+    destruct H as [? | ?].
+    + exists a. intros. split. unfold In. left. tauto. apply H.
+    + pose proof IHBBs H. destruct H0 as [? [? ?]]. exists x.
+      split. unfold In. right. apply H0. apply H1.
+Qed. 
+
+
+Lemma BBs_list_sem_exists_BB_bs1_x:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state),
+    Bnrm (BB_list_sem BBs) bs1 bs2 -> (exists (BB: BasicBlock) (x: BB_state), In BB BBs /\ Bnrm (BB_sem BB) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2).
+Proof.
+  intros. unfold BB_list_sem in H.
+
+
+Lemma BBs_bs2_in_BB_jmp_set:
+  forall (BBs : list BasicBlock) (bs1 bs2: BB_state),
+    Bnrm (BB_list_sem BBs) bs1 bs2 -> BBjmp_dest_set BBs (BB_num bs2).
+Proof.
+  intros. unfold BBjmp_dest_set.
+  unfold BB_list_sem in H. cbn[Bnrm] in H. unfold Iter_nrm_BBs_n in H.
+  sets_unfold in H. destruct H as [? ?].
+  admit.
+Admitted.
 
 (*
 对于所有的BBnow，BBs，和两个BB_state, 如果：
@@ -191,7 +221,7 @@ x1和x2在(BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs))这个语义里�
 Lemma BB_restrict_sound:
     forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x1 x2: BB_state),
     Bnrm (BDenote_concate (BB_jmp_sem BBnow) (BB_list_sem BBs)) x1 x2 
-    -> BBs <> nil -> 
+    -> BBs <> nil -> separate_property BBnow BBs -> 
     BB_restrict BBnow BBs x1.(BB_num) x2.(BB_num).
 Proof.
   intros. unfold BB_restrict.
@@ -203,7 +233,10 @@ Proof.
     + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
     + unfold ujmp_sem in H. cbn[Bnrm] in H. destruct H as [? [? ?]]. tauto.
   - unfold BBjmp_dest_set. admit. 
-  - admit. 
+  - sets_unfold. intros. unfold separate_property in H1. 
+    sets_unfold in H1. specialize (H1 a). destruct H1. clear H4.
+    apply H1. destruct H3 as [? ?]. split. apply H3.
+    admit.
   (*! TODO*)
 Admitted.
      
@@ -230,10 +263,10 @@ Proof.
   intros. destruct H0. exists x. 
   assert(forall (n: nat), Iter_nrm_BBs_n (BB_sem_union BBs1) n ⊆ Iter_nrm_BBs_n (BB_sem_union BBs2) n).
   {
-  intros. induction n. simpl. sets_unfold. tauto.
-  cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H1.
-  exists x0. split. pose proof BB_sem_child_prop BBs1 BBs2 a x0. tauto. sets_unfold in IHn.
-  pose proof IHn x0 a0 H2. tauto.
+    intros. induction n. simpl. sets_unfold. tauto.
+    cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H1.
+    exists x0. split. pose proof BB_sem_child_prop BBs1 BBs2 a x0. tauto. sets_unfold in IHn.
+    pose proof IHn x0 a0 H2. tauto.
   }
   pose proof H1 x.
   sets_unfold in H2.
