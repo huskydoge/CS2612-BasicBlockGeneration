@@ -184,10 +184,29 @@ Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(en
 
 Lemma nil_sem:
   forall (bs1 bs2: BB_state),
-  Bnrm (BB_list_sem nil) bs1 bs2 -> False.
+  Bnrm (BB_list_sem nil) bs1 bs2 -> bs1 = bs2.
 Proof.
-  (*TODO*)
-Admitted.
+  intros. unfold BB_list_sem in H. unfold BB_sem_union in H. 
+  assert(forall (n: nat), n<>O ->Iter_nrm_BBs_n({| Bnrm := ∅; Berr := ∅; Binf := ∅ |})(n) == ∅).
+{
+  induction n.
+  - simpl. tauto.
+  - intros. cbn[Iter_nrm_BBs_n]. simpl. sets_unfold. intros. split. intros. my_destruct H1. tauto. tauto. 
+}
+  assert(⋃ (Iter_nrm_BBs_n {| Bnrm := ∅; Berr := ∅; Binf := ∅ |}) == Rels.id).
+{
+   sets_unfold. intros. split.
+  - intros. destruct H1. induction x.  simpl in H1. tauto. assert((S x)<>O). lia. pose proof H0 (S x) H2. sets_unfold in H3. 
+    assert(forall a a0 : BB_state,
+     Iter_nrm_BBs_n
+       {|
+       Bnrm := fun _ _ : BB_state => False;
+       Berr := fun _ : BB_state => False;
+       Binf := fun _ : BB_state => False |} (S x) a a0 -> False).  apply H3.  pose proof H4 a a0 H1. tauto.
+  - intros. exists O. simpl. tauto.
+} 
+  sets_unfold in H1. simpl in H. apply H1 in H. tauto.
+Qed.
 
 Lemma Jump_restrict:
   forall (BBnow: BasicBlock)(bs1 bs2: BB_state),
