@@ -63,10 +63,27 @@ Proof.
       commands := nil;
       jump_info := BBnow.(jump_info)
     |} nil as steps.
-    simpl in cond1. sets_unfold in cond1.
-    destruct cond1 as [r1 | r2].
-    * admit.
-    * tauto.
+    assert(pre1: {|
+    block_num := BBnow.(block_num);
+    commands := nil;
+    jump_info := BBnow.(jump_info)
+  |}.(block_num) <> BB_num middle). admit.
+
+    assert(pre2:
+  BB_gen_properties.BBnum_set
+    ({|
+       block_num := BBnow.(block_num);
+       commands := nil;
+       jump_info := BBnow.(jump_info)
+     |} :: nil)
+  ∩ BB_gen_properties.BBjmp_dest_set
+      ({|
+         block_num := BBnow.(block_num);
+         commands := nil;
+         jump_info := BBnow.(jump_info)
+       |} :: nil) == ∅). admit.
+    pose proof (steps pre1 pre2 cond2) as p.
+    pose proof nil_sem middle x0 p. tauto.
   - intros. exists {| st := a ; BB_num := BBnow.(block_num) |}.
     exists {| st := a0 ; BB_num := BBnow.(block_num) |}.
     repeat split; simpl; try tauto.

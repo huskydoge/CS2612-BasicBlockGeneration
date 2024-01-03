@@ -182,6 +182,13 @@ Definition BB_restrict (BB1: BasicBlock)(BBs: list BasicBlock)(start_BB: nat)(en
 
 *)
 
+Lemma nil_sem:
+  forall (bs1 bs2: BB_state),
+  Bnrm (BB_list_sem nil) bs1 bs2 -> False.
+Proof.
+  (*TODO*)
+Admitted.
+
 Lemma Jump_restrict:
   forall (BBnow: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BJump_sem BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))
@@ -213,8 +220,10 @@ Proof.
         admit. (*这里逻辑有错误，我的理想情况是，既然无论true还是false，bs2的num都不等于bs1的num，那么自然bs1的num就不应该在jmpdest里才对啊*)
       }
       admit.
-    + admit.
+    + admit. (* TODO *)
 Admitted.
+
+
 Lemma BBs_sem_union_exists_BB_bs1_bs2:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state),
     Bnrm (BB_sem_union BBs) bs1 bs2 -> (exists (BB: BasicBlock), In BB BBs /\ Bnrm (BB_sem BB) bs1 bs2).
@@ -266,7 +275,7 @@ Proof.
   unfold Iter_nrm_BBs_n in H. sets_unfold in H. 
   destruct H as [? ?]. revert bs1 H. induction x; intros.
   - right. tauto. 
-  - admit.
+  - admit. (*TODO*)
 Admitted.
 
      
@@ -708,6 +717,7 @@ Proof.
       rewrite <- H2 in H5. rewrite H5 in H. contradiction.
     + admit.
   - admit. 
+(*TODO*)
 Admitted.
 
 
