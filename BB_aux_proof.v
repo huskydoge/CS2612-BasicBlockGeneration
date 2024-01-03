@@ -646,7 +646,7 @@ Proof.
         -- exists a. split.
           +++ right. unfold In. left. tauto.
           +++ pose proof single_step_jmp_property_for_bs1 a bs1 bs2 H. rewrite H0. tauto.
-        -- pose proof (IHBBs H). destruct H0. exists x. destruct H0. split ;destruct H0.
+        -- pose proof (IHBBs H). destruct H0. exists x. destruct H0. split; destruct H0.
           +++ left. tauto.
           +++ right. unfold In. right. tauto.
           +++ rewrite H1. tauto.
@@ -666,7 +666,15 @@ Lemma simplify_listsem_with_mismatch_num:
   Bnrm (BB_list_sem (BBnow :: nil ++ BBs)) bs1 bs2 ->
   Bnrm (BB_list_sem BBs) bs1 bs2.
 Proof.
-(*TODO*)
+  intros. 
+  pose proof BBs_list_sem_exists_BB_bs1_x (BBnow::nil ++ BBs) bs1 bs2 H1.
+  destruct H2 as [? | ?].
+  - destruct H2 as [? [? [? [? ?]]]].
+    unfold In in H2. destruct H2 as [? | ?].
+    + pose proof BB_sem_start_BB_num bs1 x0 x H3.
+      rewrite <- H2 in H5. rewrite H5 in H. contradiction.
+    + admit.
+  - admit. 
 Admitted.
 
 
