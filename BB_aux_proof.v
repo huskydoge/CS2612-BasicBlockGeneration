@@ -843,7 +843,7 @@ Proof.
     + tauto.
     + unfold BB_jmp_sem in cond1. cbn[Bnrm] in cond1. unfold BJump_sem in cond1.
       destruct jump_prop as [jmp_prop1 [jmp_prop2 jmp_prop3]].
-      admit.
+      admit. (*这里分类讨论即可，但是奔皓累了*)
   - sets_unfold. intros. 
     pose proof BBgen_range_single_soundness_correct c as key. unfold Q_BBgen_range in key.
     remember((cmd_BB_gen c nil BBnow BBnum).(next_block_num)) as end_num.
