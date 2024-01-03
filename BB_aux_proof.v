@@ -843,7 +843,11 @@ Proof.
     + tauto.
     + unfold BB_jmp_sem in cond1. cbn[Bnrm] in cond1. unfold BJump_sem in cond1.
       destruct jump_prop as [jmp_prop1 [jmp_prop2 jmp_prop3]].
-      admit. (*这里分类讨论即可，但是奔皓累了*)
+      destruct (eval_cond_expr (jump_condition BBnow'.(jump_info))). 
+      destruct (jump_dest_2 BBnow'.(jump_info)).
+      -- simpl in cond1. my_destruct cond1. rewrite H0 in cond1. tauto.
+      -- simpl in cond1. my_destruct cond1. rewrite H0 in cond1. tauto.
+      -- simpl in cond1. my_destruct cond1. rewrite H0 in cond1. tauto.
   - sets_unfold. intros. 
     pose proof BBgen_range_single_soundness_correct c as key. unfold Q_BBgen_range in key.
     remember((cmd_BB_gen c nil BBnow BBnum).(next_block_num)) as end_num.
@@ -876,7 +880,7 @@ Proof.
     rewrite <- H in c2. rewrite eq_blocknum in c2. lia. tauto.
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
-Admitted.
+Qed.
 
 
 Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results): Prop :=
