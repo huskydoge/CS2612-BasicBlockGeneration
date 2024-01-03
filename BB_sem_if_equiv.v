@@ -1021,6 +1021,9 @@ Proof.
 Qed.
 
 
+
+(* ! Main =================================================================================================================================================================================================== *)
+
 Lemma Q_if:
   forall (e: expr) (c1 c2: list cmd),
   P c1 (cmd_BB_gen) -> P c2 (cmd_BB_gen) -> Qb (CIf e c1 c2).
@@ -1109,6 +1112,41 @@ Proof.
   (* Get correct BBs' for Q *)
   (* Get correct BBs' for Q *)
   exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
+
+  assert (then_pre1: jump_kind BB_then.(jump_info) = UJump /\ jump_dest_2 BB_then.(jump_info) = None). {
+    unfold BB_then. simpl. tauto.
+  }
+
+  assert (then_pre2: (BB_then.(block_num) < BB_num1)%nat). {
+    unfold BB_then. simpl. lia. 
+  }
+
+  assert (then_pre3: BB_then.(block_num) <> jump_dest_1 BB_then.(jump_info)).
+  {
+    unfold BB_then. simpl. lia.
+  }
+
+  pose proof H then_pre1 then_pre2 then_pre3 as H.
+
+  clear then_pre1 then_pre2 then_pre3.
+
+  assert (else_pre1: jump_kind BB_else.(jump_info) = UJump /\ jump_dest_2 BB_else.(jump_info) = None). {
+    unfold BB_else. simpl. tauto.
+  }
+
+  assert (else_pre2: (BB_else.(block_num) < BB_num2)%nat). {
+    unfold BB_else. simpl. admit. (*TODO BBgen的性质*) 
+  }
+
+  assert (else_pre3: BB_else.(block_num) <> jump_dest_1 BB_else.(jump_info)).
+  {
+    unfold BB_else. simpl. lia.
+  }
+
+  pose proof H0 else_pre1 else_pre2 else_pre3 as H0.
+
+
+
   (* MAIN ========================================== *)
 
 

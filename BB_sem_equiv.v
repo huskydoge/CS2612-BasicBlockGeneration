@@ -45,9 +45,10 @@ Lemma P_nil: forall cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> b
 Proof.
   unfold P. intros.
   exists nil. exists BBnow. exists nil. exists BBnum. exists BBnow.(block_num).
-  repeat split; try tauto.
+  repeat split; try tauto. 
   - rewrite append_nil_r. tauto.
-  - intros. simpl. my_destruct H. cbn [Bnrm] in H.
+  - rename H into jmp_prop. rename H0 into block_lt_bbnum.  rename H1 into not_jmp_toself. 
+    intros. simpl. my_destruct H. cbn [Bnrm] in H.
     pose proof unfold_once ({|
         block_num := BBnow.(block_num);
         commands := nil;
@@ -58,6 +59,7 @@ Proof.
     destruct H as [case1 | case2].
     + rewrite case1 in H0. sets_unfold. rewrite H0 in H1. tauto.
     + sets_unfold. destruct case2 as [middle [cond1 cond2]].
+      (*我要在这里用cond1和cond2推出矛盾，因为middle的num经过跳转一次之后，肯定不在BBnow的语义里了*)    
       pose proof simplify_listsem_with_mismatch_num middle x0 {|
       block_num := BBnow.(block_num);
       commands := nil;
@@ -87,7 +89,9 @@ Proof.
   - intros. exists {| st := a ; BB_num := BBnow.(block_num) |}.
     exists {| st := a0 ; BB_num := BBnow.(block_num) |}.
     repeat split; simpl; try tauto.
-    simpl in H. sets_unfold in H. rewrite <- H. admit. admit.
+    simpl in H. 
+
+    * simpl.
   - admit. (* err case *)
   - admit.  (* err case *)
   - admit. (* inf case *)
