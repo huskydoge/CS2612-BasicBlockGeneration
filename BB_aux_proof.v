@@ -808,7 +808,7 @@ Proof.
   - intros. specialize (IHn H). cbn[Iter_nrm_BBs_n] in H1.
     pose proof sem_start_end_with (Bnrm (BB_sem_union (BBnow :: nil ++ BBs)))  (Iter_nrm_BBs_n (BB_sem_union (BBnow :: nil ++ BBs)) n) x bs2 H1.
     my_destruct H2. clear H1.
-    assert(~ BBnum_set (BBnow :: nil) (BB_num x0)). (* TODO,use BBnum x0 in BBjmp_dest(BBnow :: BBs), and you can get it in H2 *)
+    assert(~ BBnum_set (BBnow :: nil) (BB_num x0)). (* use BBnum x0 in BBjmp_dest(BBnow :: BBs), and you can get it in H2 *)
     {
       pose proof BBs_sem_union_exists_BB_bs1_bs2 (BBnow::nil ++ BBs) x x0 H2.
       destruct H1 as [? [? ?]]. unfold not. intros.
