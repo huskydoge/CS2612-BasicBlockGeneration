@@ -1599,7 +1599,7 @@ Proof.
     
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
-Admitted.
+Qed.
 
 
 
