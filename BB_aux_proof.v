@@ -765,6 +765,51 @@ Proof.
           +++ rewrite H1. tauto.
 Qed.
 
+(* convert indexed union into one union *)
+Lemma indexed_sem_exist_n:
+  forall (BD: BDenote)(bs1 bs2 : BB_state),
+  ⋃ (Iter_nrm_BBs_n  BD) bs1 bs2 <-> exists n : nat, Iter_nrm_BBs_n BD n bs1 bs2.
+Proof.
+  intros. split.
+  - tauto.
+  - tauto.
+Qed.  
+
+Lemma Iter_n_simplify:
+  forall (n: nat) (BBnow: BasicBlock) (BBs: list BasicBlock)(bs2: BB_state), 
+  BBnum_set (BBnow :: nil) ∩ BBjmp_dest_set (BBnow :: BBs) == ∅ ->
+  forall (x: BB_state), ~BBnum_set (BBnow :: nil) (BB_num x) -> 
+   Iter_nrm_BBs_n (BB_sem_union (BBnow :: nil ++ BBs)) n x bs2 -> Iter_nrm_BBs_n (BB_sem_union BBs) n x bs2.
+Proof.
+  intros n BBnow BBs bs2.
+  induction n.
+  - intros. simpl in H0. simpl. tauto.
+  - intros. specialize (IHn H). cbn[Iter_nrm_BBs_n] in H1.
+    pose proof sem_start_end_with (Bnrm (BB_sem_union (BBnow :: nil ++ BBs)))  (Iter_nrm_BBs_n (BB_sem_union (BBnow :: nil ++ BBs)) n) x bs2 H1.
+    my_destruct H2. clear H1.
+    assert(~ BBnum_set (BBnow :: nil) (BB_num x0)). (* TODO,use BBnum x0 in BBjmp_dest(BBnow :: BBs), and you can get it in H2 *)
+  {
+    admit.
+  }
+    specialize (IHn x0 H1 H3).
+    assert(Bnrm (BB_sem_union (BBs)) x x0). (* TODO, use x not in BBnum_set *)
+  {
+    cbn[BB_sem_union] in H2. cbn[Bnrm] in H2. destruct H2.
+    + unfold BB_sem in H2. cbn[Bnrm] in H2. 
+        pose proof sem_start_end_with (Bnrm (BB_cmds_sem BBnow)) (Bnrm (BB_jmp_sem BBnow)) x x0 H2.
+        my_destruct H4.
+        pose proof BB_cmds_sem_no_change_num BBnow x1 x H4.
+        unfold BB_jmp_sem in H5. simpl in H5. 
+        rewrite H6 in H0. unfold BJump_sem in H5. 
+        assert (BBnum_set (BBnow :: nil) (BB_num x1)). unfold BBnum_set. exists BBnow. tauto.
+      destruct (eval_cond_expr (jump_condition BBnow.(jump_info)))
+  }
+    cbn[Iter_nrm_BBs_n]. 
+    pose proof sem_start_end_with_2 (Bnrm (BB_sem_union (BBs)))  (Iter_nrm_BBs_n (BB_sem_union (BBs)) n) x bs2.
+    apply H5. exists x0. split. tauto. tauto.
+Admitted.
+    
+
 (*如果:
 1. bs1的num不在BBnow的num中
 2. (bs1, bs2) 在 BBnow ++ BBs 的任意步语义中
@@ -785,10 +830,40 @@ Proof.
     unfold In in H2. destruct H2 as [? | ?].
     + pose proof BB_sem_start_BB_num bs1 x0 x H3.
       rewrite <- H2 in H5. rewrite H5 in H. contradiction.
-    + admit.
-  - admit. 
-(*TODO*)
-Admitted.
+    + simpl in H2. assert(In x BBs). tauto. 
+        assert(exists BB : BasicBlock, In BB BBs /\ Bnrm (BB_sem BB) bs1 x0). exists x. split. tauto. tauto.
+        assert(Bnrm (BB_sem_union BBs) bs1 x0). pose proof BBs_sem_union_exists_BB_bs1_bs2_inv BBs bs1 x0 H6. tauto.
+        assert(~ BBnum_set (BBnow :: nil) (BB_num x0)) as x0_num_prop.
+      {
+        pose proof BB_jmp_sem_num_in_BBjmp_dest_set x. unfold BB_sem in H3. cbn[Bnrm] in H3.
+        pose proof sem_start_end_with (Bnrm (BB_cmds_sem x)) (Bnrm (BB_jmp_sem x)) bs1 x0 H3.
+        my_destruct H9.
+        assert(In x (BBnow::BBs)). unfold In. right. tauto.
+        assert(BBjmp_dest_set (BBnow :: BBs) (BB_num x0)). unfold BBjmp_dest_set.
+        exists x. split. tauto. unfold BB_jmp_sem in H10. simpl in H10. unfold BJump_sem in H10.
+        destruct (eval_cond_expr (jump_condition x.(jump_info))). destruct (jump_dest_2 x.(jump_info)).
+        unfold cjmp_sem in H10. simpl in H10. my_destruct H10. destruct H14. 
+        destruct H14. rewrite H14. left. tauto.
+        destruct H14. rewrite H14. right. tauto.
+        unfold ujmp_sem in H10. simpl in H10. my_destruct H10. left. rewrite H13. tauto.
+        unfold ujmp_sem in H10. simpl in H10. my_destruct H10. left. rewrite H13. tauto.
+        sets_unfold in H0. specialize (H0 (BB_num x0)).
+        destruct H0. clear H1 H2 H13 x H3 H4 H5 H6 H7 H8 H9 H10 H11.
+        intro contra.
+        apply H0.
+        split. tauto. tauto.
+      }
+        assert(Bnrm (BB_list_sem BBs) x0 bs2).
+      {
+        unfold BB_list_sem in H4. pose proof indexed_sem_exist_n (BB_sem_union (BBnow :: nil ++ BBs)) x0 bs2. destruct H8.
+        unfold Bnrm in H4. specialize (H8 H4). clear H9. unfold BB_list_sem. unfold Bnrm. 
+        pose proof indexed_sem_exist_n (BB_sem_union BBs) x0 bs2. destruct H9. apply H10. clear H9 H10 H3 H4 H6 H7.
+        destruct H8 as [n ?]. exists n. induction n. simpl in H3. simpl. tauto.
+        pose proof Iter_n_simplify (S n) BBnow BBs bs2 H0 x0 x0_num_prop H3. tauto.
+      }
+      pose proof unfold_once BBs. sets_unfold in H9. pose proof H9 bs1 bs2. apply H9. right. exists x0. split. tauto. tauto.
+  - pose proof unfold_once BBs. apply H3. sets_unfold. left. tauto.
+Qed.
 
 
 
