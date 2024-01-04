@@ -824,18 +824,24 @@ Proof.
         apply H. split. apply H5. apply H7.
     }
     specialize (IHn x0 H1 H3).
-    assert(Bnrm (BB_sem_union (BBs)) x x0). (* TODO, use x not in BBnum_set *)
-    {
-      cbn[BB_sem_union] in H2. cbn[Bnrm] in H2. destruct H2.
-      + unfold BB_sem in H2. cbn[Bnrm] in H2. 
-          pose proof sem_start_end_with (Bnrm (BB_cmds_sem BBnow)) (Bnrm (BB_jmp_sem BBnow)) x x0 H2.
-          my_destruct H4.
-          pose proof BB_cmds_sem_no_change_num BBnow x1 x H4.
-          unfold BB_jmp_sem in H5. simpl in H5. 
-          rewrite H6 in H0. unfold BJump_sem in H5. 
-          assert (BBnum_set (BBnow :: nil) (BB_num x1)). unfold BBnum_set. exists BBnow. tauto.
-        destruct (eval_cond_expr (jump_condition BBnow.(jump_info)))
-    }
+    assert(Bnrm (BB_sem_union (BBs)) x x0).
+  {
+    cbn[BB_sem_union] in H2. cbn[Bnrm] in H2. destruct H2.
+    + unfold BB_sem in H2. cbn[Bnrm] in H2. 
+        pose proof sem_start_end_with (Bnrm (BB_cmds_sem BBnow)) (Bnrm (BB_jmp_sem BBnow)) x x0 H2.
+        my_destruct H4.
+        pose proof BB_cmds_sem_no_change_num BBnow x1 x H4.
+        unfold BB_jmp_sem in H5. simpl in H5. 
+        rewrite H6 in H0. unfold BJump_sem in H5. 
+        assert (BBnum_set (BBnow :: nil) (BB_num x1)). unfold BBnum_set. exists BBnow. split. unfold In. tauto.
+        destruct (eval_cond_expr (jump_condition BBnow.(jump_info))).
+        destruct ( jump_dest_2 BBnow.(jump_info)).
+        unfold cjmp_sem in H5. simpl in H5. my_destruct H5. rewrite H8. reflexivity.
+        unfold ujmp_sem in H5. simpl in H5. my_destruct H5. rewrite H7. reflexivity.
+        unfold ujmp_sem in H5. simpl in H5. my_destruct H5. rewrite H7. reflexivity.
+        tauto.
+    + tauto.
+  }
     cbn[Iter_nrm_BBs_n]. 
     pose proof sem_start_end_with_2 (Bnrm (BB_sem_union (BBs)))  (Iter_nrm_BBs_n (BB_sem_union (BBs)) n) x bs2.
     apply H5. exists x0. split. tauto. tauto.
