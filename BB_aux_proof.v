@@ -845,7 +845,7 @@ Proof.
     cbn[Iter_nrm_BBs_n]. 
     pose proof sem_start_end_with_2 (Bnrm (BB_sem_union (BBs)))  (Iter_nrm_BBs_n (BB_sem_union (BBs)) n) x bs2.
     apply H5. exists x0. split. tauto. tauto.
-Admitted.
+Qed.
     
 
 (*如果:
