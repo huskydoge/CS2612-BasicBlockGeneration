@@ -127,7 +127,7 @@ Proof.
   unfold Qb in Qb_prop. unfold P in P_prop. simpl in *.
   destruct c.
   - unfold P. intros.
-    exists nil. exists {|
+    exists BBs. exists {|
       block_num := BBnow.(block_num);
       commands := BBnow.(cmd) ++ {| X:= x; E:= e|} :: nil;
       jump_info := BBnow.(jump_info);
@@ -135,6 +135,7 @@ Proof.
     exists (list_cmd_BB_gen cmd_BB_gen (CAsgn x e :: cmds) BBs BBnow BBnum).(next_block_num).
     exists BBnow.(block_num). intros. repeat split.
     + simpl. admit.
+    + admit.
     + intros. rename H2 into key1. simpl. sets_unfold.
       specialize (Qb_prop BBs BBnow BBnum).
       remember ({|
@@ -162,7 +163,14 @@ Proof.
          ++ admit.
       -- admit. (* Qb_aux2 is for if and while, shouldn't be here *)
     + intros.
-      repeat split; try tauto. cbn[Bnrm]. admit.
+      repeat split; try tauto. cbn[Bnrm]. 
+      remember ({|
+        block_num := BBnow.(block_num);
+        commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+        jump_info := BBnow.(jump_info) |}) as BBnow'.
+      exists {| st := a; BB_num := BBnow'.(block_num) |}.
+      exists {| st := a0; BB_num := jump_dest_1 BBnow.(jump_info) |}.
+      repeat split; try tauto.
     + admit. (* err case*)
     + admit. (* err case *)
     + admit. (* inf case *)
