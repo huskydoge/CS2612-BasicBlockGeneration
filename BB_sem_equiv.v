@@ -132,10 +132,14 @@ Lemma BBs_sem_Asgn_split:
       jump_info := BBnow.(jump_info)
     |} in
     let BBcmd := {| X := x ; E := e|} in
-    (Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2 /\ bs1.(BB_num) = BBnow.(block_num)) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2).
+     bs1.(BB_num) = BBnow.(block_num) -> ((Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2)).
 Proof.
-  intros.
-  Admitted.
+  intros. split.
+  + admit.
+  + intros. my_destruct H0.
+    unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
+Admitted.
+    
 
 
 
@@ -204,8 +208,8 @@ Proof.
          (* asgn的语义是不涉及Jump的，所以我们希望先走一步CAsgn，再用cmds_nrm_equiv的结论来进行证明 *)
          (* 这个时候，就需要H_sem_full来拆出来这两步，用一个中间的state作为过渡 *)
          pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e x2 x3 as T1.
-         destruct T1 as [H T2]. clear T2.
-         destruct H as [? [H_step1 H_step2]]. split. apply H_sem_full. apply D3.
+         destruct T1 as [H T2]. apply D3.
+         destruct H as [? [H_step1 H_step2]]. apply H_sem_full. 
          exists x4.(st). split. 
          ++ unfold BAsgn_list_sem in H_step1. cbn[Bnrm] in H_step1.
             unfold BAsgn_denote in H_step1. cbn[Bnrm] in H_step1.
@@ -236,7 +240,7 @@ Proof.
          repeat split; try tauto. cbn[Bnrm].
          remember ({| BB_num := BBnow'_.(block_num); st := a |}) as bs1.
          remember ({| BB_num := jump_dest_1 BBnow.(jump_info); st := a0 |}) as bs2.
-         pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e bs1 bs2 as T1. destruct T1 as [T2 H_cmds_equiv_inv]. clear T2.
+         pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e bs1 bs2 as T1. destruct T1 as [T2 H_cmds_equiv_inv]. subst bs1. simpl. tauto. clear T2.
          apply H_cmds_equiv_inv. 
 
          destruct H_asgn_equiv. clear err_cequiv inf_cequiv.
