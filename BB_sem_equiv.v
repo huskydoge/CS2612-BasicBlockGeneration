@@ -283,7 +283,45 @@ Proof.
     clear T1 T2 T3 T4. 
     destruct Qb_prop as [Qb_asgn | Qb_if_while ].
     + admit.
-    + destruct Qb_if_while as [? [? [? [? [A1 [A2 [A3 A4]]]]]]]. admit.
+    + destruct Qb_if_while as [? [? [? [? [? [A2 [A3 [A4 A5]]]]]]]]. 
+      remember ((BB_generation.cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)) as BBnow_mid.
+      specialize (P_prop (BBs ++ x :: x2) BBnow_mid (S (S BBnum))).
+
+      assert (jump_kind BBnow_mid.(jump_info) = UJump /\
+      jump_dest_2 BBnow_mid.(jump_info) = None /\
+      jump_condition BBnow_mid.(jump_info) = None) as T1. admit.
+
+      assert ((BBnow_mid.(block_num) < S (S BBnum))%nat) as T2. admit.
+
+      assert (BBnow_mid.(block_num) <>
+      jump_dest_1 BBnow_mid.(jump_info)) as T3. admit.
+
+      pose proof P_prop T1 T2 T3 as P_prop. destruct P_prop as [BBs'_ [BBnow'_ [BBcmds_ [BBnum'_ [BBendnum_ T4]]]]].
+      clear T1 T2 T3.
+      destruct T4 as [B1 [B2 [B3 [B4 [B5 [H_cmd_equiv B6]]]]]].
+
+      (* ! Check. *)
+      exists ((x :: x2) ++ BBnow'_ :: BBs'_).
+      exists BBnow. exists nil. exists BBnum'_. exists BBendnum_. repeat split.
+      -- admit.
+      -- admit.
+      -- rewrite append_nil_r. tauto.
+      -- admit.
+      -- intros. destruct H2 as [? [? [H_sem_full [C1 [C2 [C3 C4]]]]]].
+         cbn[Bnrm] in H_sem_full.
+         (* 类似上文的思路，在这里从BBnow'_处把信息拆出来
+         * BBnow'_是一个过渡，在走完CIf之后对应额BBnow_mid中cmds为空
+         * 而加入了cmd gen得到的BBs之后这里就不会再是空集了
+         * 在A2, A3中，我们希望是x = BBnow.
+
+         * 这里很可能会用到(BBnow BBsthen BBselse) | BBs_others这一刀的性质，在H_sem_full里把它切割出来
+         * 如果我们还是关注H_sem_full的话，就必然会遇到
+         ` BBs1 + BBnow + BBs2 == BBs1 + BBnow_A + BBnowB + BBs2
+           这个性质，其中BBnow_A为cmds为空的Block（即BBnext）
+           实际上对于BBnow_A的语义处理 只需要让它的前继BB跳过来就行
+         *)
+
+
   - admit.
 Admitted. 
 
