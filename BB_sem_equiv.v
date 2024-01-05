@@ -166,7 +166,7 @@ Proof.
     clear T1 T2 T3 T4.
     (* Qb 会有两种情况来讨论 *)
     destruct Qb_prop as [Qb_asgn | Qb_if_while ].
-    + destruct Qb_asgn as [? [? [B1 [B2 H_asgn_equiv]]]]. 
+    + destruct Qb_asgn as [isAsgn [? [? [B1 [B2 H_asgn_equiv]]]]]. 
       unfold BB_generation.cmd_BB_gen in B1. simpl in B1.
       (* 从B1，B2中显然可以得到x0就是我们想要的完成了CAsgn移入的Block
          加入一条CAsgns是不会改变BBs的，所以原来的BBs会作为P cmds的输入
@@ -273,7 +273,7 @@ Proof.
       -- admit. (* inf case *)
       -- admit. (* inf case *) 
       -- admit. (*TODO simple *)
-    + admit.
+    + destruct Qb_if_while as [contra _]. unfold is_asgn in contra. tauto.
   - admit.
   - admit.
 Admitted. 
