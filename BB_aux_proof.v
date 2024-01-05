@@ -1605,7 +1605,11 @@ Proof.
 Qed.
 
 
-
+Definition is_asgn (c: cmd): Prop :=
+  match c with
+  | CAsgn _ _ => True
+  | _ => False
+  end.
  
 
 Definition Qb(c: cmd): Prop :=
@@ -1618,16 +1622,17 @@ Definition Qb(c: cmd): Prop :=
     BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) -> (*不会跳转到自己*)
     jump_condition BBnow.(jump_info) = None ->
     (*CAsgn*)
-    (exists BBnow' BBcmd,
+    (is_asgn(c) /\ (exists BBnow' BBcmd,
       res.(BBn) = BBnow' /\
       BBnow'.(commands) = BBnow.(commands) ++ (BBcmd :: nil) /\
-      BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num)) (*还在当下的BBnow里，BBnum则是下一个BB的编号，不能用*)
+      BCequiv (BAsgn_list_sem (BBcmd :: nil)) (cmd_sem c) BBnow'.(block_num) BBnow'.(block_num))) (*还在当下的BBnow里，BBnum则是下一个BB的编号，不能用*)
     \/
     (*CIf / CWhile*)
+    ((~ is_asgn(c)) /\
     (exists BBnow' BBs' BBnum' BBs_wo_last, 
       res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\
       res.(BBn).(block_num) = BBnum' /\
-      BCequiv (BDenote_concate (BB_jmp_sem BBnow')(BB_list_sem BBs_wo_last)) (cmd_sem c) BBnow.(block_num) (S (S BBnum))). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
+      BCequiv (BDenote_concate (BB_jmp_sem BBnow')(BB_list_sem BBs_wo_last)) (cmd_sem c) BBnow.(block_num) (S (S BBnum)))). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
 (* # BUG BCequiv里不应该有最后的BBnext！*)
 
 (* c: the cmd we are currently facing
