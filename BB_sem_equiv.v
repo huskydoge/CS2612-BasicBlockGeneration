@@ -117,16 +117,24 @@ Proof.
 Admitted.
 
 
-(* ! Check correctness, important *)
+(* Changed how we split everything *)
+(* 只拆分一个cmd *)
 Lemma BBs_sem_Asgn_split:
-  forall (BBnow: BasicBlock) (BBs: list BasicBlock) (x: var_name) (e: expr) (bs1 bs2: BB_state),
-    let BB_delta := {|
+  forall (BBnow: BasicBlock) (BBs: list BasicBlock) (BBcmds: list BB_cmd) (x: var_name) (e: expr) (bs1 bs2: BB_state),
+    let BB1 := {|
       block_num := BBnow.(block_num);
-      commands := {| X := x; E := e |} :: nil;
+      commands := {| X := x; E := e |} :: BBcmds;
       jump_info := BBnow.(jump_info)
     |} in
-    Bnrm (BB_list_sem (BB_delta :: BBs)) bs1 bs2 -> bs1.(BB_num) = BBnow.(block_num) -> (exists (x: BB_state), Bnrm (BB_sem BB_delta) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2).
+    let BB2 := {|
+      block_num := BBnow.(block_num);
+      commands := BBcmds;
+      jump_info := BBnow.(jump_info)
+    |} in
+    let BBcmd := {| X := x ; E := e|} in
+    Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2 -> bs1.(BB_num) = BBnow.(block_num) -> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2).
 Proof.
+  intros.
   Admitted.
 
 
@@ -147,153 +155,84 @@ Proof.
     *)
 
     specialize (Qb_prop BBs BBnow BBnum).
-    
-     
-    
+    destruct H as [T1 [T2 T3]].
+    assert (jump_kind BBnow.(jump_info) = UJump /\
+    jump_dest_2 BBnow.(jump_info) = None) as T4. split. apply T1. apply T2.
+    pose proof Qb_prop T4 H0 H1 T3 as Qb_prop.
+    clear T1 T2 T3 T4.
+    (* Qb 会有两种情况来讨论 *)
+    destruct Qb_prop as [Qb_asgn | Qb_if_while ].
+    + destruct Qb_asgn as [? [? [B1 [B2 H_asgn_equiv]]]]. 
+      unfold BB_generation.cmd_BB_gen in B1. simpl in B1.
+      (* 从B1，B2中显然可以得到x0就是我们想要的完成了CAsgn移入的Block
+         加入一条CAsgns是不会改变BBs的，所以原来的BBs会作为P cmds的输入
+         同样不会改变的还有BBnum
+      *)
+      specialize (P_prop BBs x0 BBnum).
+      assert (jump_kind x0.(jump_info) = UJump /\
+      jump_dest_2 x0.(jump_info) = None /\
+      jump_condition x0.(jump_info) = None) as T1. admit.
 
-    exists BBs. exists {|
-      block_num := BBnow.(block_num);
-      commands := BBnow.(cmd) ++ {| X:= x; E:= e|} :: nil;
-      jump_info := BBnow.(jump_info);
-    |}. exists ({| X := x; E := e|} :: nil).
-    exists (list_cmd_BB_gen cmd_BB_gen (CAsgn x e :: cmds) BBs BBnow BBnum).(next_block_num).
-    exists BBnow.(block_num). intros. repeat split.
-    + simpl. admit.
-    + admit.
-    + intros. rename H2 into key1. simpl. sets_unfold.
-      specialize (Qb_prop BBs BBnow BBnum).
-      remember ({|
-      block_num := BBnow.(block_num);
-      commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
-      jump_info := BBnow.(jump_info) |}) as BBnow'.
+      assert ((x0.(block_num) < BBnum)%nat) as T2. admit.
 
-      destruct H as [H_aux1 [H_aux2 H_aux3]].
-      destruct Qb_prop as [Qb_aux1 | Qb_aux2].
-      repeat split. apply H_aux1. apply H_aux2.
-      apply H0. apply H1. apply H_aux3.
-      -- destruct Qb_aux1 as [? [? [Qb_1 [Qb_2 Qb_3]]]].
-         destruct Qb_3. clear err_cequiv inf_cequiv.
-         sets_unfold in nrm_cequiv. 
-         cbn[Bnrm] in key1. unfold cmd_sem in nrm_cequiv. 
-         unfold asgn_sem in nrm_cequiv. cbn[nrm] in nrm_cequiv. 
-         (* Fetch the states from key1. This should derive Asgn *)
-         destruct key1 as [? [? [B1 [B2 [B3 [B4 B5]]]]]].
-         pose proof BBs_sem_Asgn_split BBnow' BBs x e x2 x3 B1 B4 as H_Asgn_split.
-         destruct H_Asgn_split as [? [H_step1 H_step2]].
+      assert (x0.(block_num) <> jump_dest_1 x0.(jump_info)) as T3. admit.
 
-         unfold BB_sem in H_step1.
-         cbn[Bnrm] in H_step1. sets_unfold in H_step1.
-         destruct H_step1 as [? [H_step1_aux1 H_step1_aux2]].
-         unfold BB_cmds_sem in H_step1_aux1. cbn[Bnrm] in H_step1_aux1.
-         unfold BAsgn_list_sem in H_step1_aux1. simpl in H_step1_aux1. sets_unfold in H_step1_aux1.
-         destruct H_step1_aux1 as [? ?].
-        
-         specialize (nrm_cequiv a x5.(st)). destruct nrm_cequiv as [H_forward H_backward]. clear H_backward.
-         cbn[Bnrm] in H_forward.
+      pose proof P_prop T1 T2 T3 as P_prop.
+      clear T1 T2 T3.
 
-         
-         assert (exists i : int64, (eval_expr e).(nrm) a i /\ st x5 x = Vint i /\ (forall Y : var_name, x <> Y -> st x5 Y = a Y)) as H_step1_final. {
-            apply H_forward.
-            exists x2. exists x5. split. exists x6. 
-            assert (x1 = {| X := x; E := e|}). admit. (*TODO *)
-            rewrite H2. simpl. apply H.
-            unfold BB_generation.cmd_BB_gen in Qb_1. simpl in Qb_1. subst BBnow'. simpl in B4.
-            repeat split. apply B2. rewrite <- Qb_1. simpl. apply B4. 
-            rewrite <- Qb_1. simpl. my_destruct H. rewrite H2 in H3. rewrite <- H3. apply B4. 
-         }
-         
-         exists x5.(st). split. apply H_step1_final.
+      destruct P_prop as [BBs_ [BBnow'_ [BBcmds_ [BBnum'_ [BBendnum_ ?]]]]].
 
-         (* x2: 起始状态 *)
-         (* x5: 走完了Asgn *)
-         (* x4: 走完Jump *)
-         (* x3: 走完BBs *)
+      exists BBs_. exists BBnow'_. exists ({|X := x; E := e|}::nil ++ BBcmds_). exists BBnum'_. exists BBendnum_. 
+      
+      (* 整理一下已知条件 *)
+      destruct H as [C1 [C2 [C3 [C5 [C6 [H_cmd_equiv C7]]]]]].
 
-         (* Here we should use step2 *)
-         (* 本质上是希望说明: 只包含Jump的BBnow'+BBs == cmds *)
-         remember {|
-            block_num := BBnow'.(block_num);
-            commands := nil;
-            jump_info := BBnow'.(jump_info)
-         |} as BBnow_step2.
-         specialize (P_prop BBs BBnow_step2 BBnum).
-         destruct P_prop as [BBs'_ [BBnow'_ [BBcmds_ [BBnum'_ [BBendnum_ ?]]]]]. destruct H2.
-         subst BBnow_step2. simpl. repeat split; subst BBnow'; simpl. apply H_aux1. apply H_aux2. apply H_aux3.
-         subst BBnow_step2. simpl. subst BBnow'; simpl. apply H0.
-         subst BBnow_step2. simpl. subst BBnow'; simpl. apply H1.
-         
-         destruct H3 as [? [? [? [? [key2 ?]]]]].
+      repeat split. 
+      -- rewrite <- B1 in C1. simpl in C1. admit. (*TODO fix here, why C1 is different? *)
+      -- admit. (*TODO use C2 *)
+      -- rewrite <- B1 in C3. simpl in C3. rewrite <- app_assoc in C3. apply C3.
+      -- rewrite C5. rewrite <- B1. simpl. tauto.
+      -- admit. (*TODO perhaps not very difficult *)
+      -- intros. (* BBsem -> cmd_sem *)
+         destruct H as [? [? [H_sem_full [D1 [D2 [D3 D4]]]]]]. cbn[Bnrm] in H_sem_full.
+         destruct H_asgn_equiv. clear err_cequiv inf_cequiv.
+         sets_unfold in nrm_cequiv. rename nrm_cequiv into asgn_nrm_equiv.
+         destruct H_cmd_equiv. clear err_cequiv inf_cequiv.
+         sets_unfold in nrm_cequiv. rename nrm_cequiv into cmds_nrm_equiv.
 
-         destruct key2. clear err_cequiv inf_cequiv.
-         sets_unfold in nrm_cequiv.
-         specialize (nrm_cequiv x5.(st) a0). destruct nrm_cequiv as [H_forward_ H_backward_]. clear H_backward_. apply H_forward_.
+         cbn[cmd_list_sem]. simpl. sets_unfold.
+         (* asgn的语义是不涉及Jump的，所以我们希望先走一步CAsgn，再用cmds_nrm_equiv的结论来进行证明 *)
+         (* 这个时候，就需要H_sem_full来拆出来这两步，用一个中间的state作为过渡 *)
+         pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e x2 x3.
+         destruct H as [? [H_step1 H_step2]]. apply H_sem_full. apply D3.
+         exists x4.(st). split. 
+         ++ unfold BAsgn_list_sem in H_step1. cbn[Bnrm] in H_step1.
+            unfold BAsgn_denote in H_step1. cbn[Bnrm] in H_step1.
+            sets_unfold in H_step1. simpl in H_step1.
+            destruct H_step1 as [? [[H_step1_main H_step1_aux2] H_step1_aux1]].
+            rewrite H_step1_aux1 in H_step1_main.
+            rewrite D1 in H_step1_main. destruct H_step1_main as [? [H_step1_main1 [H_step1_main2 H_step1_main3]]].
+            exists x6. repeat split. 
+            apply H_step1_main1. apply H_step1_main2. intros. specialize (H_step1_main3 Y).
+            pose proof H_step1_main3 H as T1. rewrite T1. tauto.  
+        ++ specialize (cmds_nrm_equiv x4.(st) a0).
+           destruct cmds_nrm_equiv as [H_cmds_equiv_forward T1]. clear T1.
+           apply H_cmds_equiv_forward. cbn[Bnrm].
+           exists x4. exists {| st := a0; BB_num := jump_dest_1 x0.(jump_info) |}.
+           simpl. repeat split; try tauto.
+           unfold BB_list_sem in H_step2. cbn[Bnrm] in H_step2.
+           sets_unfold in H_step2. 
+           assert ({| BB_num := jump_dest_1 x0.(jump_info); st := a0 |} = x3). admit. (*TODO easy*)
+           rewrite H. apply H_step2.
+           assert (x2.(BB_num) = x4.(BB_num)) as T1. admit. (*TODO H_step1 easy *)
+           rewrite <- T1. rewrite <- D3. tauto.
 
-         exists x5. exists {| st := a0; BB_num := jump_dest_1 BBnow_step2.(jump_info) |}.
-         repeat split; try tauto. cbn[Bnrm]. 
-         (* 第一个branch用H_step2和H_step1_aux2 *)
-         ++ remember ({|
-          block_num := BBnow'.(block_num);
-          commands := {| X := x; E := e |} :: nil ++ BBcmds_;
-          jump_info := BBnow'.(jump_info) |}) as BBnow_1to2.
-            assert (Bnrm (BDenote_concate (BB_jmp_sem
-            BBnow_1to2) (BB_list_sem BBs)) x5 x3) as H_sem_concat. {
-              unfold BDenote_concate. cbn[Bnrm]. sets_unfold.
-              exists x4. split. apply H_step1_aux2. apply H_step2.
-            }
-            pose proof BDenote_concat_equiv_BB_list_sem BBnow_1to2 BBs x5 x3 as H_BBs_equiv_aux.
-
-            (* Separate property. *)
-            assert (separate_property BBnow_1to2 BBs) as H_sep_1. admit.
-
-            assert (BB_restrict BBnow_1to2 BBs (BB_num x5) (BB_num x3)) as H_sep_2. admit.
-
-            assert (BBnow_1to2.(block_num) <> jump_dest_1 BBnow_1to2.(jump_info) /\
-            Some BBnow_1to2.(block_num) <> jump_dest_2 BBnow_1to2.(jump_info)) as H_sep_3. admit.
-
-            pose proof H_BBs_equiv_aux H_sep_1 H_sep_2 H_sep_3 as H_BBs_equiv. clear H_BBs_equiv_aux.
-
-            destruct H_BBs_equiv as [H_BBs_equiv tmp]. clear tmp.
-
-            pose proof H_BBs_equiv H_sem_concat as H_final.
-            
-            (* 到这里就有点奇怪了，我不太清楚这个地方该怎么处理BB_cmds，这里的的BB_cmds应该是来源于BBs而不是一开始的Asgn；前半段我证明了CAsgn <-> 一个手动添加的只有一个指令的Block；后半段我理论上希望证明的是cmds <-> BBs；而现在好像出现了一点不一致 *)
-
-            assert (BBnow_1to2 = BBnow'_). {
-              admit. (* 理论上BBnow'_中不会再加cmd了? *)
-            }
-            
-            rewrite H8 in H_final.
-            assert ({| BB_num := jump_dest_1 BBnow_step2.(jump_info); st := a0 |} = x3). {
-              admit. (* 这一步是显然的 *)
-            }
-
-            admit.
-
-
-         ++ rewrite H5. subst BBnow_step2. simpl. subst BBnow'. 
-            simpl. my_destruct H. rewrite H8 in H9. rewrite <- H9. apply B4. 
-         
-
-      -- admit. (* Qb_aux2 is for if and while, shouldn't be here *)
-    + intros.
-      repeat split; try tauto. cbn[Bnrm]. 
-      remember ({|
-        block_num := BBnow.(block_num);
-        commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
-        jump_info := BBnow.(jump_info) |}) as BBnow'.
-      exists {| st := a; BB_num := BBnow'.(block_num) |}.
-      exists {| st := a0; BB_num := jump_dest_1 BBnow.(jump_info) |}.
-      repeat split; try tauto.
-      remember ({|
-        block_num := BBnow'.(block_num);
-        commands := {| X := x; E := e |} :: nil;
-        jump_info := BBnow'.(jump_info)
-      |}) as BB_delta.
-      pose proof unfold_once (BB_delta::nil ++ BBs). admit. 
-    + admit. (* err case*)
-    + admit. (* err case *)
-    + admit. (* inf case *)
-    + admit. (* inf case *)
+      -- intros. (* cmd_sem -> BB_sem *)
+         admit.
+      -- admit. (* err case *)
+      -- admit. (* err case *)
+      -- admit. (* inf case *)
+      -- admit. (* inf case *) 
 
   - admit.
   - admit.
