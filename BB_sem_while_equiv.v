@@ -309,6 +309,7 @@ Proof.
   remember(list_cmd_BB_gen cmd_BB_gen body nil BB_body BB_num2) as BB_body_generated_results.
   remember(to_result(BB_pre_generated_results) ++ to_result(BB_body_generated_results)) as BBs_wo_last. 
   remember(BBs_wo_last ++ BB_next :: nil) as BBs'.
+  split. unfold is_asgn. simpl. tauto.
   exists BBnow'. exists BBs'. exists BB_next_num. exists BBs_wo_last.
 
   (*assert 1*)

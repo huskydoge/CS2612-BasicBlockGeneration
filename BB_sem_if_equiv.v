@@ -1139,7 +1139,8 @@ Proof.
   jump_info := BBnow.(jump_info)
   |}).
   set(BBs'_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else ++ BB_next::nil). (*这里BBs_else已经包括了else分支最后一个BB，然后就是无条件跳转到BBnext了，还要接上一个BBnext，*)
-  set(BBs_wo_last_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else). 
+  set(BBs_wo_last_ := BB_now_then::nil ++ BBs_then ++ BB_now_else::nil ++ BBs_else).
+  split. unfold is_asgn. simpl. tauto. 
   (* Get correct BBs' for Q *)
   (* Get correct BBs' for Q *)
   exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
