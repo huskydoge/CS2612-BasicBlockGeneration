@@ -126,7 +126,48 @@ Proof.
   rename H into Qb_prop. rename H0 into P_prop.
   unfold Qb in Qb_prop. unfold P in P_prop. simpl in *.
   destruct c.
-  - admit.
+  - unfold P. intros.
+    exists nil. exists {|
+      block_num := BBnow.(block_num);
+      commands := BBnow.(cmd) ++ {| X:= x; E:= e|} :: nil;
+      jump_info := BBnow.(jump_info);
+    |}. exists ({| X := x; E := e|} :: nil).
+    exists (list_cmd_BB_gen cmd_BB_gen (CAsgn x e :: cmds) BBs BBnow BBnum).(next_block_num).
+    exists BBnow.(block_num). intros. repeat split.
+    + simpl. admit.
+    + intros. rename H2 into key1. simpl. sets_unfold.
+      specialize (Qb_prop BBs BBnow BBnum).
+      remember ({|
+      block_num := BBnow.(block_num);
+      commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+      jump_info := BBnow.(jump_info) |}) as BBnow'.
+
+      destruct H as [H_aux1 [H_aux2 H_aux3]].
+      destruct Qb_prop as [Qb_aux1 | Qb_aux2].
+      repeat split. apply H_aux1. apply H_aux2.
+      apply H0. apply H1. apply H_aux3.
+      -- destruct Qb_aux1 as [? [? [Qb_1 [Qb_2 Qb_3]]]].
+         destruct Qb_3. clear err_cequiv inf_cequiv.
+         sets_unfold in nrm_cequiv. 
+         cbn[Bnrm] in key1. unfold cmd_sem in nrm_cequiv. 
+         unfold asgn_sem in nrm_cequiv. cbn[nrm] in nrm_cequiv. 
+         (* Fetch the states from key1. This should derive Asgn *)
+         (*! should be a and some x, not a0 *)
+         specialize (nrm_cequiv a a0). destruct nrm_cequiv as [H_forward H_backward]. clear H_backward.
+         assert (exists i : int64, (eval_expr e).(nrm) a i /\ a0 x = Vint i /\ (forall Y : var_name, x <> Y -> a0 Y = a Y)). admit. (*TODO *)
+         destruct H as [? ?].
+         (* wrong here, should be an intermediate variable *)
+         exists a. repeat split.
+         ++ admit.
+         ++ admit.
+      -- admit. (* Qb_aux2 is for if and while, shouldn't be here *)
+    + intros.
+      repeat split; try tauto. cbn[Bnrm]. admit.
+    + admit. (* err case*)
+    + admit. (* err case *)
+    + admit. (* inf case *)
+    + admit. (* inf case *)
+
   - admit.
   - admit.
 Admitted. 
