@@ -132,7 +132,7 @@ Lemma BBs_sem_Asgn_split:
       jump_info := BBnow.(jump_info)
     |} in
     let BBcmd := {| X := x ; E := e|} in
-    Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2 -> bs1.(BB_num) = BBnow.(block_num) -> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2).
+    (Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2 /\ bs1.(BB_num) = BBnow.(block_num)) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2).
 Proof.
   intros.
   Admitted.
@@ -203,8 +203,9 @@ Proof.
          cbn[cmd_list_sem]. simpl. sets_unfold.
          (* asgn的语义是不涉及Jump的，所以我们希望先走一步CAsgn，再用cmds_nrm_equiv的结论来进行证明 *)
          (* 这个时候，就需要H_sem_full来拆出来这两步，用一个中间的state作为过渡 *)
-         pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e x2 x3.
-         destruct H as [? [H_step1 H_step2]]. apply H_sem_full. apply D3.
+         pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e x2 x3 as T1.
+         destruct T1 as [H T2]. clear T2.
+         destruct H as [? [H_step1 H_step2]]. split. apply H_sem_full. apply D3.
          exists x4.(st). split. 
          ++ unfold BAsgn_list_sem in H_step1. cbn[Bnrm] in H_step1.
             unfold BAsgn_denote in H_step1. cbn[Bnrm] in H_step1.
@@ -227,8 +228,42 @@ Proof.
            assert (x2.(BB_num) = x4.(BB_num)) as T1. admit. (*TODO H_step1 easy *)
            rewrite <- T1. rewrite <- D3. tauto.
 
-      -- intros. (* cmd_sem -> BB_sem *)
-         admit.
+      -- intros. rename H into H_cmds_sem_main. (* cmd_sem -> BB_sem *)
+         unfold cmd_list_sem in H_cmds_sem_main. simpl in H_cmds_sem_main. sets_unfold in H_cmds_sem_main.
+         destruct H_cmds_sem_main as [? [H_step1 H_step2]].
+         exists {| st := a; BB_num := BBnow'_.(block_num) |}.
+         exists {| st := a0; BB_num := jump_dest_1 BBnow.(jump_info) |}.
+         repeat split; try tauto. cbn[Bnrm].
+         remember ({| BB_num := BBnow'_.(block_num); st := a |}) as bs1.
+         remember ({| BB_num := jump_dest_1 BBnow.(jump_info); st := a0 |}) as bs2.
+         pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e bs1 bs2 as T1. destruct T1 as [T2 H_cmds_equiv_inv]. clear T2.
+         apply H_cmds_equiv_inv. 
+
+         destruct H_asgn_equiv. clear err_cequiv inf_cequiv.
+         sets_unfold in nrm_cequiv. rename nrm_cequiv into asgn_nrm_equiv.
+         destruct H_cmd_equiv. clear err_cequiv inf_cequiv.
+         sets_unfold in nrm_cequiv. rename nrm_cequiv into cmds_nrm_equiv.
+
+         clear H_cmds_equiv_inv.
+         specialize (asgn_nrm_equiv a x2). destruct asgn_nrm_equiv as [T1 T2]. pose proof T2 H_step1 as H_asgn_equiv_inv. clear T1 T2.
+         destruct H_asgn_equiv_inv as [? [? [H_asgn_main [A1 [A2 [A3 A4]]]]]].
+         cbn[Bnrm] in H_asgn_main. destruct H_asgn_main as [? H_asgn_main].
+         exists x5. split.
+         ++ unfold BAsgn_list_sem. cbn[Bnrm]. unfold BAsgn_denote. cbn[Bnrm]. simpl. 
+            sets_unfold. exists x4. destruct H_asgn_main as [[[? H_asgn_main3] H_asgn_main2] H_asgn_main1].
+            assert (x1 = {| X := x; E := e|}) as T1. admit. (*TODO easy*)
+            rewrite T1 in H_asgn_main3. simpl in H_asgn_main3.
+            repeat split. exists x6.
+            rewrite A1 in H_asgn_main3. rewrite H_asgn_main1 in H_asgn_main3. subst bs1. simpl. apply H_asgn_main3.
+            rewrite A4. subst bs1. simpl. rewrite C5. tauto.
+            rewrite H_asgn_main1. tauto.
+        ++ specialize (cmds_nrm_equiv x2 a0). destruct cmds_nrm_equiv as [T1 T2]. clear T1. pose proof T2 H_step2 as H_cmds_equiv_inv.
+           clear T2.
+           destruct H_cmds_equiv_inv as [? [? [H_cmds_main [D1 [D2 [D3 D4]]]]]]. cbn[Bnrm] in H_cmds_main.
+           unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
+           assert (x6 = x5) as T1. admit. (*TODO easy *)
+           assert (bs2 = x7) as T2. admit. (*TODO easy*)
+           rewrite <- T1. rewrite T2. apply H_cmds_main.
       -- admit. (* err case *)
       -- admit. (* err case *)
       -- admit. (* inf case *)
