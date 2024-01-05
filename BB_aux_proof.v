@@ -995,6 +995,33 @@ Proof.
   - sets_unfold in H. tauto.
 Qed.
 
+(*针对传入的cmds对BBnow的jmpinfo进行赋值。如果第一个c是if或者while，马上结束递归；否则应该对剩下的tl继续匹配*)
+Fixpoint JmpInfoMatching(cmds: list cmd)(BBnow' next_BB: BasicBlock)(BBnow_jmp_info: BlockInfo)(BBnum: nat) : Prop :=
+  (match cmds with
+  | nil =>  BBnow'.(jump_info) = BBnow_jmp_info
+  | c :: tl =>
+    (match c with
+      | CAsgn x e => JmpInfoMatching tl BBnow' next_BB BBnow_jmp_info BBnum
+      | CIf e c1 c2 => (let BB_then_num := BBnum in
+             let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+             let BlockInfo' := {|
+                                  jump_kind := CJump;
+                                  jump_dest_1 := next_BB.(block_num);
+                                  jump_dest_2 := Some (S(next_BB.(block_num)));
+                                  jump_condition := Some e
+                                |} in
+                                BBnow'.(jump_info) = BlockInfo')
+      | CWhile pre e body => (let BB_pre_num := BBnum in
+             let BB_body_num := S(BB_pre_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
+             let BlockInfo' := {|
+                                  jump_kind := UJump;
+                                  jump_dest_1 := next_BB.(block_num);
+                                  jump_dest_2 := None;
+                                  jump_condition := None
+                                |} in
+                                BBnow'.(jump_info) = BlockInfo') 
+    end)
+  end).
 
 Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results): Prop :=
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum :nat),  
@@ -1024,39 +1051,10 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
     (* 根据BBs' 的情况分配JumpInfo*)
     match BBs' with
     | nil => BBnow'.(jump_info) = BBnow.(jump_info) /\ BBendnum = BBnow.(block_num)
-    | next_BB :: _  => 
-        (match cmds with
-        | nil =>  BBnow'.(jump_info) = BBnow.(jump_info)
-        | c :: tl =>
-          (match c with
-            | CAsgn x e => (let BlockInfo' := {|
-                                              jump_kind := UJump;
-                                              jump_dest_1 := next_BB.(block_num);
-                                              jump_dest_2 := None;
-                                              jump_condition := None
-                                            |} in
-                                            BBnow'.(jump_info) = BlockInfo')
-            | CIf e c1 c2 => (let BB_then_num := BBnum in
-                   let BB_else_num := S(BB_then_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-                   let BlockInfo' := {|
-                                        jump_kind := CJump;
-                                        jump_dest_1 := next_BB.(block_num);
-                                        jump_dest_2 := Some (S(next_BB.(block_num)));
-                                        jump_condition := Some e
-                                      |} in
-                                      BBnow'.(jump_info) = BlockInfo')
-            | CWhile pre e body => (let BB_pre_num := BBnum in
-                   let BB_body_num := S(BB_pre_num) in  (* 用哪个比较好？next_BB.(block_num)还是 BBnum？*)
-                   let BlockInfo' := {|
-                                        jump_kind := UJump;
-                                        jump_dest_1 := next_BB.(block_num);
-                                        jump_dest_2 := None;
-                                        jump_condition := None
-                                      |} in
-                                      BBnow'.(jump_info) = BlockInfo') 
-          end)
-        end)
-    end /\
+    | next_BB :: _  =>  JmpInfoMatching cmds BBnow' next_BB  BBnow.(jump_info) BBnum 
+    end
+    
+    /\
 
     (*要拿到用于分配的下一个BBnum的信息*)
 
@@ -1646,3 +1644,30 @@ Definition Qb(c: cmd): Prop :=
   next_block_num: nat (* I think next block should start with the number*)
 }.*)
 
+
+
+(*对于cmdbbgen，cmd = CAsgn的一些性质*)
+Lemma Asgn_prop:
+  forall (BBnow: BasicBlock) (BBs: list BasicBlock) (BBnum: nat) (x: var_name) (e: expr),
+  (cmd_BB_gen (CAsgn x e) BBs BBnow BBnum).(BasicBlocks) = BBs /\
+  (cmd_BB_gen (CAsgn x e) BBs BBnow BBnum).(BBn) = {|
+    block_num := BBnow.(block_num);
+    commands := BBnow.(commands) ++ {| X := x; E := e |} :: nil;
+    jump_info := BBnow.(jump_info)
+  |} /\
+  (cmd_BB_gen (CAsgn x e) BBs BBnow BBnum).(next_block_num) = BBnum.
+Proof.
+  intros. simpl. split.
+  - reflexivity.
+  - split.
+    + reflexivity.
+    + reflexivity.
+Qed.
+
+
+(*Jmp Info是会被继承下去的！估计要互递归 TODO*)
+Lemma JmpInfo_inherit:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
+  ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
+Proof.
+Admitted.

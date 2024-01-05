@@ -18,6 +18,7 @@ Require Import Main.BB_aux_proof.
 Require Import Main.BB_sem_asgn_equiv.
 Require Import Main.BB_sem_while_equiv.
 Require Import Main.BB_sem_if_equiv.
+Require Import Main.BB_gen_properties.
 
 
 Import Denotation.
@@ -144,45 +145,48 @@ Admitted.
 
 
 Lemma P_cons:
-  forall (c: cmd) (cmds: list cmd) (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
+  forall (c: cmd) (cmds: list cmd),
   Qb c -> P cmds cmd_BB_gen -> P (c :: cmds) (cmd_BB_gen).
 Proof.
   intros.
-  rename H into Qb_prop. rename H0 into P_prop.
+  rename H into Qb_prop. rename H0 into P_prop. (* ! P_prop描述的是c::cmds中cmds的性质*)
   unfold Qb in Qb_prop. unfold P in P_prop. simpl in *.
-  destruct c.
+  destruct c eqn:?.
   - unfold P. intros.
     (* 结论中的BBs'是表示c :: cmds在gen之后新的BBs
-       而BBnow'则是c :: cmds在gen之后的BBn
+       而BBnow'则是c :: cmds在gen之后的对BBnow的cmds和jumpinfo进行改变之后的BBnow
        那么我们本质上是用Qb和P来拼接着生成c :: cmds
        最后再证明生成的结果符合某些性质
     *)
 
-    specialize (Qb_prop BBs BBnow BBnum).
-    destruct H as [T1 [T2 T3]].
+    specialize (Qb_prop BBs BBnow BBnum). (*P(c:cmds), Q(c), 所以Q的BBs用P引入的去填，正确*)
+    destruct H as [bbnow_T1 [bbnow_T2 bbnow_T3]]. (*BBnow的jmpinfo*)
     assert (jump_kind BBnow.(jump_info) = UJump /\
-    jump_dest_2 BBnow.(jump_info) = None) as T4. split. apply T1. apply T2.
-    pose proof Qb_prop T4 H0 H1 T3 as Qb_prop.
-    clear T1 T2 T3 T4.
-    (* Qb 会有两种情况来讨论 *)
+    jump_dest_2 BBnow.(jump_info) = None) as bbnow_T4. split. apply bbnow_T1. apply bbnow_T2.
+    pose proof Qb_prop bbnow_T4 H0 H1 bbnow_T3 as Qb_prop.
+
+    (* Qb 会有两种情况来讨论，但是可以根据isasgn进行情况排除 *)
     destruct Qb_prop as [Qb_asgn | Qb_if_while ].
     + destruct Qb_asgn as [isAsgn [? [? [B1 [B2 H_asgn_equiv]]]]]. 
       unfold BB_generation.cmd_BB_gen in B1. simpl in B1.
-      (* 从B1，B2中显然可以得到x0就是我们想要的完成了CAsgn移入的Block
-         加入一条CAsgns是不会改变BBs的，所以原来的BBs会作为P cmds的输入
-         同样不会改变的还有BBnum
+      (* 
+        从B1，B2中显然可以得到x0就是我们想要的完成了CAsgn移入的Block
+        加入一条CAsgns是不会改变BBs的，所以原来的BBs会作为P cmds的输入
+        同样不会改变的还有BBnum。
       *)
       specialize (P_prop BBs x0 BBnum).
       assert (jump_kind x0.(jump_info) = UJump /\
       jump_dest_2 x0.(jump_info) = None /\
-      jump_condition x0.(jump_info) = None) as T1. admit.
+      jump_condition x0.(jump_info) = None) as T1. {
+        rewrite <- B1. tauto. 
+      }
 
-      assert ((x0.(block_num) < BBnum)%nat) as T2. admit.
+      assert ((x0.(block_num) < BBnum)%nat) as T2. rewrite <- B1. tauto.
 
-      assert (x0.(block_num) <> jump_dest_1 x0.(jump_info)) as T3. admit.
+      assert (x0.(block_num) <> jump_dest_1 x0.(jump_info)) as T3. rewrite <- B1. tauto.
 
       pose proof P_prop T1 T2 T3 as P_prop.
-      clear T1 T2 T3.
+      clear T1 T2 T3. (*x0的jmp信息不会再用到了*)
 
       destruct P_prop as [BBs_ [BBnow'_ [BBcmds_ [BBnum'_ [BBendnum_ ?]]]]].
 
@@ -192,11 +196,14 @@ Proof.
       destruct H as [C1 [C2 [C3 [C5 [C6 [H_cmd_equiv C7]]]]]].
 
       repeat split. 
-      -- rewrite <- B1 in C1. simpl in C1. admit. (*TODO fix here, why C1 is different? *)
-      -- admit. (*TODO use C2 *)
+      -- rewrite <- B1 in C1. simpl in C1. 
+         destruct BBs_.
+         ++ tauto.
+         ++ cbn [JmpInfoMatching]. tauto.
+      -- simpl. rewrite B1. tauto.
       -- rewrite <- B1 in C3. simpl in C3. rewrite <- app_assoc in C3. apply C3.
       -- rewrite C5. rewrite <- B1. simpl. tauto.
-      -- admit. (*TODO perhaps not very difficult *)
+      -- simpl. rewrite B1. tauto.
       -- intros. (* BBsem -> cmd_sem *)
          destruct H as [? [? [H_sem_full [D1 [D2 [D3 D4]]]]]]. cbn[Bnrm] in H_sem_full.
          destruct H_asgn_equiv. clear err_cequiv inf_cequiv.
@@ -227,9 +234,16 @@ Proof.
            simpl. repeat split; try tauto.
            unfold BB_list_sem in H_step2. cbn[Bnrm] in H_step2.
            sets_unfold in H_step2. 
-           assert ({| BB_num := jump_dest_1 x0.(jump_info); st := a0 |} = x3). admit. (*TODO easy*)
+           assert ({| BB_num := jump_dest_1 x0.(jump_info); st := a0 |} = x3). {
+            rewrite <- B1. destruct x3. simpl. simpl in D4. rewrite D4. 
+            simpl in D2. rewrite D2. reflexivity.
+            }
            rewrite H. apply H_step2.
-           assert (x2.(BB_num) = x4.(BB_num)) as T1. admit. (*TODO H_step1 easy *)
+           assert (x2.(BB_num) = x4.(BB_num)) as T1. {
+            (*Use H_step1 easy *)
+            simpl in H_step1. sets_unfold in H_step1. destruct H_step1 as [BBstate_ cond].
+            destruct cond as [[cond1 cond2] cond3]. rewrite cond2. rewrite cond3. tauto.
+           }
            rewrite <- T1. rewrite <- D3. tauto.
 
       -- intros. rename H into H_cmds_sem_main. (* cmd_sem -> BB_sem *)
@@ -255,7 +269,11 @@ Proof.
          exists x5. split.
          ++ unfold BAsgn_list_sem. cbn[Bnrm]. unfold BAsgn_denote. cbn[Bnrm]. simpl. 
             sets_unfold. exists x4. destruct H_asgn_main as [[[? H_asgn_main3] H_asgn_main2] H_asgn_main1].
-            assert (x1 = {| X := x; E := e|}) as T1. admit. (*TODO easy*)
+            assert (x1 = {| X := x; E := e|}) as T1. {
+              rewrite <- B1 in B2. simpl in B2. 
+              pose proof cut_eq_part_l BB_cmd {| X := x; E := e |} x1 BBnow.(cmd) nil B2.
+              rewrite H. reflexivity.
+            }
             rewrite T1 in H_asgn_main3. simpl in H_asgn_main3.
             repeat split. exists x6.
             rewrite A1 in H_asgn_main3. rewrite H_asgn_main1 in H_asgn_main3. subst bs1. simpl. apply H_asgn_main3.
@@ -265,22 +283,31 @@ Proof.
            clear T2.
            destruct H_cmds_equiv_inv as [? [? [H_cmds_main [D1 [D2 [D3 D4]]]]]]. cbn[Bnrm] in H_cmds_main.
            unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
-           assert (x6 = x5) as T1. admit. (*TODO easy *)
-           assert (bs2 = x7) as T2. admit. (*TODO easy*)
+           assert (x6 = x5) as T1. 
+           {
+            destruct H_asgn_main as [[cond1 cond2] cond3]. rewrite cond3.
+            destruct x6. destruct x4. simpl in A2. simpl in D1. rewrite <- A2 in D1. rewrite D1. 
+            simpl in D3. rewrite C5 in D3. simpl in A4. rewrite <- A4 in D3. rewrite D3. reflexivity.
+           }
+           assert (bs2 = x7) as T2. {
+            destruct x7. rewrite Heqbs2. simpl in D2. rewrite D2.
+            simpl in D4. rewrite D4. rewrite <- B1. simpl. tauto.
+           }
+           
+           
            rewrite <- T1. rewrite T2. apply H_cmds_main.
       -- admit. (* err case *)
       -- admit. (* err case *)
       -- admit. (* inf case *)
       -- admit. (* inf case *) 
-      -- admit. (*TODO simple *)
+      -- simpl. rewrite B1. pose proof JmpInfo_inherit BBs x0 BBnum cmds. rewrite H. rewrite <- B1.  simpl. tauto.
     + destruct Qb_if_while as [contra _]. unfold is_asgn in contra. tauto.
   - unfold P. intros.  
     specialize (Qb_prop BBs BBnow BBnum).
-    destruct H as [T1 [T2 T3]].
+    destruct H as [bbnow_T1 [bbnow_T2 bbnow_T3]].
     assert (jump_kind BBnow.(jump_info) = UJump /\
-    jump_dest_2 BBnow.(jump_info) = None) as T4. split. apply T1. apply T2.
-    pose proof Qb_prop T4 H0 H1 T3 as Qb_prop.
-    clear T1 T2 T3 T4. 
+    jump_dest_2 BBnow.(jump_info) = None) as bbnow_T4. split. apply bbnow_T1. apply bbnow_T2.
+    pose proof Qb_prop bbnow_T4 H0 H1 bbnow_T3 as Qb_prop.
     destruct Qb_prop as [Qb_asgn | Qb_if_while ].
     + admit.
     + destruct Qb_if_while as [? [? [? [? [? [A2 [A3 [A4 A5]]]]]]]]. 
