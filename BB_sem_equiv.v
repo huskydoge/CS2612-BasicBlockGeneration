@@ -256,6 +256,8 @@ Proof.
               admit. (* 这一步是显然的 *)
             }
 
+            admit.
+
 
          ++ rewrite H5. subst BBnow_step2. simpl. subst BBnow'. 
             simpl. my_destruct H. rewrite H8 in H9. rewrite <- H9. apply B4. 
