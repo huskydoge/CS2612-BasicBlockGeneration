@@ -274,7 +274,16 @@ Proof.
       -- admit. (* inf case *) 
       -- admit. (*TODO simple *)
     + admit.
-  - admit.
+  - unfold P. intros.  
+    specialize (Qb_prop BBs BBnow BBnum).
+    destruct H as [T1 [T2 T3]].
+    assert (jump_kind BBnow.(jump_info) = UJump /\
+    jump_dest_2 BBnow.(jump_info) = None) as T4. split. apply T1. apply T2.
+    pose proof Qb_prop T4 H0 H1 T3 as Qb_prop.
+    clear T1 T2 T3 T4. 
+    destruct Qb_prop as [Qb_asgn | Qb_if_while ].
+    + admit.
+    + destruct Qb_if_while as [? [? [? [? [A1 [A2 [A3 A4]]]]]]]. admit.
   - admit.
 Admitted. 
 
