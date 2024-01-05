@@ -140,6 +140,17 @@ Proof.
   unfold Qb in Qb_prop. unfold P in P_prop. simpl in *.
   destruct c.
   - unfold P. intros.
+    (* 结论中的BBs'是表示c :: cmds在gen之后新的BBs
+       而BBnow'则是c :: cmds在gen之后的BBn
+       那么我们本质上是用Qb和P来拼接着生成c :: cmds
+       最后再证明生成的结果符合某些性质
+    *)
+
+    specialize (Qb_prop BBs BBnow BBnum).
+    
+     
+    
+
     exists BBs. exists {|
       block_num := BBnow.(block_num);
       commands := BBnow.(cmd) ++ {| X:= x; E:= e|} :: nil;
@@ -222,7 +233,7 @@ Proof.
          (* 第一个branch用H_step2和H_step1_aux2 *)
          ++ remember ({|
           block_num := BBnow'.(block_num);
-          commands := {| X := x; E := e |} :: nil;
+          commands := {| X := x; E := e |} :: nil ++ BBcmds_;
           jump_info := BBnow'.(jump_info) |}) as BBnow_1to2.
             assert (Bnrm (BDenote_concate (BB_jmp_sem
             BBnow_1to2) (BB_list_sem BBs)) x5 x3) as H_sem_concat. {
@@ -272,7 +283,13 @@ Proof.
         jump_info := BBnow.(jump_info) |}) as BBnow'.
       exists {| st := a; BB_num := BBnow'.(block_num) |}.
       exists {| st := a0; BB_num := jump_dest_1 BBnow.(jump_info) |}.
-      repeat split; try tauto. admit.
+      repeat split; try tauto.
+      remember ({|
+        block_num := BBnow'.(block_num);
+        commands := {| X := x; E := e |} :: nil;
+        jump_info := BBnow'.(jump_info)
+      |}) as BB_delta.
+      pose proof unfold_once (BB_delta::nil ++ BBs). admit. 
     + admit. (* err case*)
     + admit. (* err case *)
     + admit. (* inf case *)

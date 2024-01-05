@@ -1073,7 +1073,23 @@ Proof.
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
   unfold P in H. specialize (H (nil) BB_then BB_num1). 
-  
+
+  assert (then_pre1: jump_kind BB_then.(jump_info) = UJump /\ jump_dest_2 BB_then.(jump_info) = None /\ jump_condition BB_then.(jump_info) = None). {
+    unfold BB_then. simpl. tauto.
+  }
+
+  assert (then_pre2: (BB_then.(block_num) < BB_num1)%nat). {
+    unfold BB_then. simpl. lia. 
+  }
+
+  assert (then_pre3: BB_then.(block_num) <> jump_dest_1 BB_then.(jump_info)).
+  {
+    unfold BB_then. simpl. lia.
+  }
+
+  pose proof H then_pre1 then_pre2 then_pre3 as H.
+  clear then_pre1 then_pre2 then_pre3.
+
   (*接下来要拿c1到生成的基本块列表后，对else分支做同样的事情*)
   (* Get correct num。 我们首先要拿到c1 gen之后，下一个用于分配的BBnum(即BB_num2)，所以要先destruct H，即从P c1的命题中得到这个信息 *)
   destruct H as [BBs_then [BB_now_then [ BB_cmds_then [BB_num2 [?]]]]].
@@ -1095,6 +1111,21 @@ Proof.
 
   specialize (H0 (nil) BB_else BB_num2).
 
+  assert (else_pre1: jump_kind BB_else.(jump_info) = UJump /\ jump_dest_2 BB_else.(jump_info) = None /\ jump_condition BB_else.(jump_info) = None). {
+    unfold BB_else. simpl. tauto.
+  }
+
+  assert (else_pre2: (BB_else.(block_num) < BB_num2)%nat). {
+    unfold BB_else. simpl. admit. (*TODO BBgen的性质*) 
+  }
+
+  assert (else_pre3: BB_else.(block_num) <> jump_dest_1 BB_else.(jump_info)).
+  {
+    unfold BB_else. simpl. lia.
+  }
+  
+  pose proof H0 else_pre1 else_pre2 else_pre3 as H0.
+
   (*现在要从else分支的结果中destruct得到新的东西, 和then的情况类似，但这里的BB_num3应该没用*)
   destruct H0 as [BBs_else [BB_now_else [ BB_cmds_else [BB_num3 [?]]]]].
 
@@ -1112,40 +1143,6 @@ Proof.
   (* Get correct BBs' for Q *)
   (* Get correct BBs' for Q *)
   exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
-
-  assert (then_pre1: jump_kind BB_then.(jump_info) = UJump /\ jump_dest_2 BB_then.(jump_info) = None /\ jump_condition BB_then.(jump_info) = None). {
-    unfold BB_then. simpl. tauto.
-  }
-
-  assert (then_pre2: (BB_then.(block_num) < BB_num1)%nat). {
-    unfold BB_then. simpl. lia. 
-  }
-
-  assert (then_pre3: BB_then.(block_num) <> jump_dest_1 BB_then.(jump_info)).
-  {
-    unfold BB_then. simpl. lia.
-  }
-
-  pose proof H then_pre1 then_pre2 then_pre3 as H.
-
-  clear then_pre1 then_pre2 then_pre3.
-
-  assert (else_pre1: jump_kind BB_else.(jump_info) = UJump /\ jump_dest_2 BB_else.(jump_info) = None /\ jump_condition BB_else.(jump_info) = None). {
-    unfold BB_else. simpl. tauto.
-  }
-
-  assert (else_pre2: (BB_else.(block_num) < BB_num2)%nat). {
-    unfold BB_else. simpl. admit. (*TODO BBgen的性质*) 
-  }
-
-  assert (else_pre3: BB_else.(block_num) <> jump_dest_1 BB_else.(jump_info)).
-  {
-    unfold BB_else. simpl. lia.
-  }
-
-  pose proof H0 else_pre1 else_pre2 else_pre3 as H0.
-
-
 
   (* MAIN ========================================== *)
 
