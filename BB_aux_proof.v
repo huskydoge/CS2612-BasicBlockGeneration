@@ -1629,7 +1629,7 @@ Definition Qb(c: cmd): Prop :=
     ((~ is_asgn(c)) /\
     (exists BBnow' BBs' BBnum' BBs_wo_last, 
       res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\
-      res.(BBn).(block_num) = BBnum' /\
+      res.(next_block_num) = BBnum' /\
       BCequiv (BDenote_concate (BB_jmp_sem BBnow')(BB_list_sem BBs_wo_last)) (cmd_sem c) BBnow.(block_num) (S (S BBnum)))). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
 (* # BUG BCequiv里不应该有最后的BBnext！*)
 
@@ -1666,8 +1666,14 @@ Qed.
 
 
 (*Jmp Info是会被继承下去的！估计要互递归 TODO*)
-Lemma JmpInfo_inherit:
+Lemma JmpInfo_inherit_for_list:
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
   ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
+Proof.
+Admitted.
+
+Lemma JmpInfo_inherit:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (c: cmd),
+  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
 Proof.
 Admitted.

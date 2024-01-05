@@ -300,7 +300,7 @@ Proof.
       -- admit. (* err case *)
       -- admit. (* inf case *)
       -- admit. (* inf case *) 
-      -- simpl. rewrite B1. pose proof JmpInfo_inherit BBs x0 BBnum cmds. rewrite H. rewrite <- B1.  simpl. tauto.
+      -- simpl. rewrite B1. pose proof JmpInfo_inherit_for_list BBs x0 BBnum cmds. rewrite H. rewrite <- B1.  simpl. tauto.
     + destruct Qb_if_while as [contra _]. unfold is_asgn in contra. tauto.
   - unfold P. intros.  
     specialize (Qb_prop BBs BBnow BBnum).
@@ -309,33 +309,42 @@ Proof.
     jump_dest_2 BBnow.(jump_info) = None) as bbnow_T4. split. apply bbnow_T1. apply bbnow_T2.
     pose proof Qb_prop bbnow_T4 H0 H1 bbnow_T3 as Qb_prop.
     destruct Qb_prop as [Qb_asgn | Qb_if_while ].
-    + admit.
-    + destruct Qb_if_while as [? [? [? [? [? [A2 [A3 [A4 A5]]]]]]]]. 
+    + destruct Qb_asgn as [contra _]. unfold is_asgn in contra. tauto.
+    + destruct Qb_if_while as [? [BBnow'_ [BBs'_ [BBnum'_ [BBswo_ [A2 [A3 [A4 A5]]]]]]]]. 
       remember ((BB_generation.cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)) as BBnow_mid.
-      specialize (P_prop (BBs ++ x :: x2) BBnow_mid (S (S BBnum))).
+      specialize (P_prop (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).
 
       assert (jump_kind BBnow_mid.(jump_info) = UJump /\
       jump_dest_2 BBnow_mid.(jump_info) = None /\
-      jump_condition BBnow_mid.(jump_info) = None) as T1. admit.
+      jump_condition BBnow_mid.(jump_info) = None) as T1. {
+        pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2) as inherit_jmp.
+        rewrite <- HeqBBnow_mid in inherit_jmp. repeat split; rewrite inherit_jmp; tauto.
+      }
 
-      assert ((BBnow_mid.(block_num) < S (S BBnum))%nat) as T2. admit.
+      assert ((BBnow_mid.(block_num) < BBnum'_)%nat) as T2. {
+        pose proof inherit_lt_num_prop BBs BBnow BBnum (CIf e c1 c2) H0 as tran.
+        rewrite <- HeqBBnow_mid in tran. rewrite A4 in tran. tauto. 
+      }
 
       assert (BBnow_mid.(block_num) <>
-      jump_dest_1 BBnow_mid.(jump_info)) as T3. admit.
+      jump_dest_1 BBnow_mid.(jump_info)) as T3. {
+        pose proof inherit_not_jmp_to_self BBs BBnow BBnum (CIf e c1 c2) H1 as tran.
+        rewrite <- HeqBBnow_mid in tran.  tauto.
+      }
 
-      pose proof P_prop T1 T2 T3 as P_prop. destruct P_prop as [BBs'_ [BBnow'_ [BBcmds_ [BBnum'_ [BBendnum_ T4]]]]].
-      clear T1 T2 T3.
+      pose proof P_prop T1 T2 T3 as P_prop. destruct P_prop as [BBs'_p [BBnow'_p [BBcmds'_p [BBnum'_p [BBendnum_ T4]]]]].
+
       destruct T4 as [B1 [B2 [B3 [B4 [B5 [H_cmd_equiv B6]]]]]].
 
       (* ! Check. *)
-      exists ((x :: x2) ++ BBnow'_ :: BBs'_).
-      exists BBnow. exists nil. exists BBnum'_. exists BBendnum_. repeat split.
+      exists (BBswo_ ++ BBnow'_p :: BBs'_p).
+      exists BBnow'_. exists nil. exists (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(next_block_num). exists BBendnum_. repeat split.
+      -- simpl. admit.
+      -- admit. (*从A3中得到BBnow'_的信息*)
       -- admit.
-      -- admit.
-      -- rewrite append_nil_r. tauto.
-      -- admit.
+      -- (*Use B5*) admit.
       -- intros. destruct H2 as [? [? [H_sem_full [C1 [C2 [C3 C4]]]]]].
-         cbn[Bnrm] in H_sem_full.
+         cbn[Bnrm] in H_sem_full. admit.
          (* 类似上文的思路，在这里从BBnow'_处把信息拆出来
          * BBnow'_是一个过渡，在走完CIf之后对应额BBnow_mid中cmds为空
          * 而加入了cmd gen得到的BBs之后这里就不会再是空集了
@@ -347,9 +356,13 @@ Proof.
            这个性质，其中BBnow_A为cmds为空的Block（即BBnext）
            实际上对于BBnow_A的语义处理 只需要让它的前继BB跳过来就行
          *)
-
-
-  - admit.
+      -- admit.
+      -- admit. (* err case *)
+      -- admit. (* err case *)
+      -- admit. (* inf case *)
+      -- admit. (* inf case *)
+      -- pose proof JmpInfo_inherit_for_list BBs BBnow BBnum (CIf e c1 c2 :: cmds). tauto.
+    - admit.
 Admitted. 
 
 

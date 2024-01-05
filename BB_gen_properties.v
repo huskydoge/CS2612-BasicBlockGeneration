@@ -403,6 +403,17 @@ Proof.
 Qed.
 
 
+(* ======================================================================================================================================== *)
+
+(*如果BBnow不会jmp到他自己，那么其继承者也不会 TODO*)
+Lemma inherit_not_jmp_to_self:
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
+    (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info).
+Proof.
+Admitted.
+
+
 
 (* ======================================================================================================================================= *)
 
@@ -418,9 +429,16 @@ Proof.
   tauto.
 Qed.
 
-
+(*TODO ! 这里num之间的关系要整理一下，说不定有些定理是没有必要的*)
 (*如果传入的BBnow的num小于BBnum（似乎不需要用到），那么BBnum的num小于等于next_block_num ====================================================================================================== *)
 (*要写成互递归了，因为要拿到c1中间的结果进行比较*)
+
+(*如果BBnow的num小于分配的num，那么总有最后所在的BB的num小于下一个分配的num*)
+Lemma inherit_lt_num_prop:
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    (lt BBnow.(block_num) BBnum) -> (lt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (cmd_BB_gen c BBs BBnow BBnum).(next_block_num)).
+Proof.
+Admitted.
 
 Lemma bbnum_le_next_num_single_cmd:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),

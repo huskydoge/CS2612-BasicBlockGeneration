@@ -1143,7 +1143,7 @@ Proof.
   split. unfold is_asgn. simpl. tauto. 
   (* Get correct BBs' for Q *)
   (* Get correct BBs' for Q *)
-  exists BBnow'. exists BBs'_. exists BB_next_num. exists (BBs_wo_last_).
+  exists BBnow'. exists BBs'_. exists (cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(next_block_num). exists (BBs_wo_last_).
 
   (* MAIN ========================================== *)
 
