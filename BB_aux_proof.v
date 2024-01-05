@@ -328,7 +328,7 @@ Lemma Iter_nrm_BBs_n_inv_expansion:
     exists i, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 i /\ Bnrm (BB_sem_union BBs) i bs2.
 Proof.
   intros. simpl in H. sets_unfold in H.
-  
+  (*TODO*)
 Admitted.
 
 
