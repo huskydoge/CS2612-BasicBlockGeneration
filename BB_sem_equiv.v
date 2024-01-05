@@ -272,7 +272,8 @@ Proof.
       -- admit. (* err case *)
       -- admit. (* inf case *)
       -- admit. (* inf case *) 
-
+      -- admit. (*TODO simple *)
+    + admit.
   - admit.
   - admit.
 Admitted. 
