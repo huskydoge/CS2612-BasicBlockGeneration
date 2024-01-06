@@ -1624,3 +1624,11 @@ Lemma if_separate_for_pcons2:
 Proof.
   intros.
 Admitted. (*TODO*)
+
+
+(*如果cmd是CIf，那么新生成的BBnow'相对于BBnow并不会添加cmd*)
+Lemma if_cmdgen_prop1:
+  forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum : nat),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(cmd) = nil.
+Proof.
+Admitted.

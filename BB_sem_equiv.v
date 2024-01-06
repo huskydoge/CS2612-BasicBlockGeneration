@@ -469,7 +469,9 @@ Proof.
          * unfold BB_list_sem in H_step2_main. 
            cbn[Bnrm] in H_step2_main. sets_unfold in H_step2_main.
            assert (BBnow_mid.(cmd) = nil). {
-              admit. (*TODO CIf性质 *)
+              pose proof if_cmdgen_prop1 e c1 c2 BBs BBnow BBnum as t.
+              rewrite <- HeqBBnow_mid in t. tauto.
+              (*CIf性质 *)
            }
            rewrite H2 in B3. rewrite append_nil_l in B3.
            rewrite <- B3. apply H_step2_main.
