@@ -40,7 +40,6 @@ Proof.
 Qed.
 
 
-(* #TODO: fix p_nil*)
 Lemma P_nil: forall cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results,
   P nil (cmd_BB_gen).
 Proof.
