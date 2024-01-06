@@ -416,13 +416,11 @@ Proof.
       -- rewrite BBnow'_prop. simpl. rewrite app_nil_r. tauto.
       -- rewrite BBnow'_prop. simpl. tauto.
       -- (*Use B5*) admit.
-      -- intros. destruct H2 as [? [? [H_sem_full [C1 [C2 [C3 C4]]]]]].
-         cbn[Bnrm] in H_sem_full. admit.
-         (* 类似上文的思路，在这里从BBnow'_处把信息拆出来
-         * BBnow'_是一个过渡，在走完CIf之后对应额BBnow_mid中cmds为空
-         * 而加入了cmd gen得到的BBs之后这里就不会再是空集了
-         * 在A2, A3中，我们希望是x = BBnow.
-
+      -- intros. destruct H2 as [bs1 [bs2 [H_sem_full [C1 [C2 [C3 C4]]]]]].
+         cbn[Bnrm] in H_sem_full.
+         pose proof A5 as key1. pose proof H_cmd_equiv as key2. admit.
+         (* 
+         用A5和H_cmd_equiv！
          * 这里很可能会用到(BBnow BBsthen BBselse) | BBs_others这一刀的性质，在H_sem_full里把它切割出来
          * 如果我们还是关注H_sem_full的话，就必然会遇到
          ` BBs1 + BBnow + BBs2 == BBs1 + BBnow_A + BBnowB + BBs2
