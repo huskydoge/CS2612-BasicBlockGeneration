@@ -879,7 +879,7 @@ Proof.
             tauto.
           }
           tauto.
-Admitted.
+Qed.
 
 
 (*对于一个CJump的BB，它的jmp语义要么true jmp要么false jmp| 两个destination 择一*)

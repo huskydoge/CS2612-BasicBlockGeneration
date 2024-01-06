@@ -1665,19 +1665,6 @@ Proof.
 Qed.
 
 
-(*Jmp Info是会被继承下去的！估计要互递归 TODO*)
-Lemma JmpInfo_inherit_for_list:
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
-  ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
-Proof.
-Admitted.
-
-Lemma JmpInfo_inherit:
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (c: cmd),
-  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
-Proof.
-Admitted.
-
 Lemma head_eq_prop:
   forall (A: Type) (l1 l2: list A) (a b: A),
   a::l1 = b::l2 -> a = b.

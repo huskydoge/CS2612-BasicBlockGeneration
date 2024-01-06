@@ -1456,6 +1456,9 @@ Qed.
 
 
 
+(* BBgen If 的一些性质 ================================================================================= *)
+
+
 (*! IMPORTANT 对于if而言，新产生的BBs中的第一个，就是BBthen，那么自然有其blocknum的性质*)
 Lemma if_head_prop:
   forall (e: expr) (c1 c2: list cmd)(BBswo_ BBs: list BasicBlock)(BBnow BBnow'_: BasicBlock)(BBnum: nat),
@@ -1626,9 +1629,48 @@ Proof.
 Admitted. (*TODO*)
 
 
-(*如果cmd是CIf，那么新生成的BBnow'相对于BBnow并不会添加cmd*)
+(*如果cmd是CIf，那么新生成的BBs的最后一个Block，也就是BBnext，它的cmd为空*)
 Lemma if_cmdgen_prop1:
   forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum : nat),
   (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(cmd) = nil.
 Proof.
+  intros.
+  cbn [cmd_BB_gen]. simpl. reflexivity.
+Qed.
+
+(*如果cmd是CIf，那么新生成的BBs的最后一个就是BBnext，它的num就是S S BBnum*)
+Lemma if_BBn_num_prop:
+  forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(block_num) = S (S BBnum).
+Proof. 
+  intros.
+  cbn [cmd_BB_gen]. simpl. reflexivity.
+Qed.
+
+
+
+(* ================================================================================= *)
+
+
+(* Jmp Info的继承性质  ============================================================================================================ *)
+
+(*Jmp Info是会被继承下去的！TODO Maybe EASY, 递归就好*)
+Lemma JmpInfo_inherit_for_list:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
+  ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
+Proof.
 Admitted.
+
+
+Lemma JmpInfo_inherit:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (c: cmd),
+  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
+Proof.
+  destruct c. 
+  + reflexivity.
+  + cbn [cmd_BB_gen]. simpl. reflexivity.
+  + cbn [cmd_BB_gen]. simpl. reflexivity.
+Qed.
+
+(* ============================================================================================================ *)
+
