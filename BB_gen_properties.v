@@ -1595,9 +1595,32 @@ Proof.
     pose proof hd_A_and_B_is_hd_A_if_A_not_nil (e0 ++ e1) e2 as hd_position.
     assert (e0_not_nil: (e0 ++ e1) <> nil).
     {
-      (*对c1是否为空进行分类讨论, 但是可能有点麻烦*) admit.
+      (*对c1是否为空进行分类讨论, 但是可能有点麻烦*) admit. (*TODO*)
     }
     pose proof hd_position e0_not_nil as hd_position.
 Admitted.
 
 
+Lemma if_separate_for_pcons1:
+  forall (e: expr) (c1 c2 cmds: list cmd) (BBs BBswo_ : list BasicBlock)(BBnow BBnow'_ BBnow_mid : BasicBlock)(BBnum BBnum'_: nat),
+  BBnow_mid = (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) ->
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_  ->
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) = BBnum'_ ->
+  (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(BasicBlocks) 
+  = 
+  (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BasicBlocks).
+Proof.
+  intros.
+Admitted. (*TODO*)
+
+Lemma if_separate_for_pcons2:
+  forall (e: expr) (c1 c2 cmds: list cmd) (BBs BBswo_ : list BasicBlock)(BBnow BBnow'_ BBnow_mid : BasicBlock)(BBnum BBnum'_: nat),
+  BBnow_mid = (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) ->
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_ ->
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) = BBnum'_ ->
+  (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(BBn) :: nil 
+  = 
+  (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) :: nil.
+Proof.
+  intros.
+Admitted. (*TODO*)

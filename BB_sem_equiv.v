@@ -419,7 +419,10 @@ Proof.
             rewrite <- head_wo in num_prop. rewrite num_prop. rewrite BBnow'_prop. simpl. reflexivity. 
       -- rewrite BBnow'_prop. simpl. rewrite app_nil_r. tauto.
       -- rewrite BBnow'_prop. simpl. tauto.
-      -- (*Use B5*) admit.
+      -- (*Use B5*) 
+          pose proof if_separate_for_pcons1 e c1 c2 cmds BBs BBswo_ BBnow BBnow'_ BBnow_mid BBnum BBnum'_ HeqBBnow_mid A3 A4 as pconif1.
+          pose proof if_separate_for_pcons2 e c1 c2 cmds BBs BBswo_ BBnow BBnow'_ BBnow_mid BBnum BBnum'_ HeqBBnow_mid A3 A4 as pconif2.
+          rewrite pconif1. rewrite pconif2. rewrite B5. rewrite app_assoc_reverse. simpl. reflexivity.
       -- intros. destruct H2 as [bs1 [bs2 [H_sem_full [C1 [C2 [C3 C4]]]]]].
          cbn[Bnrm] in H_sem_full.
          pose proof A5 as key1. pose proof H_cmd_equiv as key2.
