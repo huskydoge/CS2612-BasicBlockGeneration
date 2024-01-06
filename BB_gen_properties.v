@@ -56,25 +56,66 @@ Proof.
 Qed.
 
 
+(*a obvious transform*)
+Lemma tran_ele:
+  forall (A: Type)(l1 l2: list A)(a: A),
+  l1 ++ a::l2 = l1 ++ a::nil ++ l2.
+Proof.
+  intros. 
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma eli_nil:
+  forall(A: Type) (l1 l2: list A)(a: A),
+  l1 ++ a::nil = l2 ++ a::nil -> l1 = l2.
+Proof.
+  intros.
+Admitted.
+
+
 Lemma cut_eq_part_list_r:
   forall (A: Type) (l1 l2 l3: list A),
   l2 ++ l1 = l3 ++ l1 -> l2 = l3.
 Proof.
-  intros.
+  intros. revert l2 l3 H.
   induction l1.
-  - simpl in H. rewrite app_nil_r in H. rewrite app_nil_r in H. apply H.
-  - simpl in H. admit. (*TODO*)
-Admitted.
+  - intros. rewrite app_nil_r in H. rewrite app_nil_r in H. apply H.
+  - intros. inversion H.
+    pose proof tran_ele A l2 l1 a. 
+    pose proof tran_ele A l3 l1 a. 
+    rewrite H0 in H. rewrite H2 in H.
+    pose proof IHl1 (l2 ++ a :: nil) (l3 ++ a :: nil).
+    assert ( (l2 ++ a :: nil) ++ l1 = (l3 ++ a :: nil) ++ l1).
+    {
+      rewrite app_assoc_reverse.
+      rewrite <- app_assoc.
+      simpl.
+      simpl in H. tauto.
+    }
+    pose proof H3 H4.
+    pose proof IHl1 l2 l3.
+    pose proof eli_nil A l2 l3 a H5. tauto.
+Qed.
 
 Lemma cut_eq_part_list_r':
   forall (A: Type) (l1 l2 l3: list A),
   l2 = l3 -> l2 ++ l1 = l3 ++ l1.
 Proof.
-  intros.
+  intros. revert l2 l3 H.
   induction l1.
-  - simpl. rewrite app_nil_r. rewrite app_nil_r. apply H.
-  - simpl. admit. (*TODO*)
-Admitted.
+  - simpl. intros. rewrite app_nil_r. rewrite app_nil_r. apply H.
+  - intros. simpl. 
+    pose proof tran_ele A l2 l1 a. rewrite H0.
+    pose proof tran_ele A l3 l1 a. rewrite H1.
+    assert (l2 ++ a :: nil = l3 ++ a :: nil).
+    {
+      rewrite H. reflexivity.
+    }
+    specialize (IHl1 (l2 ++ a :: nil) (l3 ++ a :: nil) H2).
+    rewrite <- app_assoc in IHl1. simpl in IHl1. 
+    rewrite <- app_assoc in IHl1. simpl in IHl1. tauto.
+Qed.
 
 
 Definition BB_num_set := nat -> Prop.
@@ -405,13 +446,108 @@ Qed.
 
 (* ======================================================================================================================================== *)
 
+
+Definition Q_inherit_not_jmp_to_self (c: cmd): Prop :=
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
+    (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info).
+
+Definition P_inherit_not_jmp_to_self(cmds: list cmd): Prop :=
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (cmds: list cmd),
+  (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
+  (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(jump_info).
+
+Lemma Q_inherit_not_jmp_to_self_asgn: 
+  forall  (x: var_name) (e: expr),
+  Q_inherit_not_jmp_to_self (CAsgn x e).
+Proof. 
+
+Admitted.
+
+Lemma Q_inherit_not_jmp_to_self_if:
+  forall  (e: expr) (c1: list cmd) (c2: list cmd),
+  P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
+  Q_inherit_not_jmp_to_self (CIf e c1 c2).
+Proof.
+Admitted.
+
+Lemma Q_inherit_not_jmp_to_self_while:
+  forall  (e: expr) (c1: list cmd) (c2: list cmd),
+  P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
+  Q_inherit_not_jmp_to_self (CWhile c1 e c2).
+Proof.
+Admitted. 
+
+Lemma P_inherit_not_jmp_to_self_nil:
+  P_inherit_not_jmp_to_self nil.
+Proof.
+Admitted.
+
+
+Lemma P_inherit_not_jmp_to_self_cons:
+forall (c: cmd) (cmds: list cmd),
+  Q_inherit_not_jmp_to_self c ->
+  P_inherit_not_jmp_to_self cmds ->
+  P_inherit_not_jmp_to_self (c :: cmds).
+Proof.
+Admitted.
+
+Section inherit_not_jmp_to_self_sound.
+
+Variable inherit_not_jmp_to_self_sound: forall (c: cmd), Q_inherit_not_jmp_to_self c.
+
+Fixpoint inherit_list_not_jmp_to_self_sound (cmds: list cmd): P_inherit_not_jmp_to_self cmds :=
+  match cmds with
+  | nil => P_inherit_not_jmp_to_self_nil 
+  | c :: cmds0 => P_inherit_not_jmp_to_self_cons c cmds0 (inherit_not_jmp_to_self_sound c) (inherit_list_not_jmp_to_self_sound cmds0)
+  end.
+
+End inherit_not_jmp_to_self_sound.
+
+Fixpoint inherit_not_jmp_to_self_sound (c: cmd): Q_inherit_not_jmp_to_self c :=
+  match c with
+  | CAsgn x e => Q_inherit_not_jmp_to_self_asgn x e
+  | CIf e cmds1 cmds2 =>
+      Q_inherit_not_jmp_to_self_if e cmds1 cmds2
+        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds1)
+        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds2)
+  | CWhile cmds1 e cmds2 =>
+      Q_inherit_not_jmp_to_self_while e cmds1 cmds2
+        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds1)
+        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds2)
+  end.
+
+Lemma inherit_not_jmp_to_self_soundness_correct:
+  forall (c: cmd),
+  Q_inherit_not_jmp_to_self c.
+Proof.
+  apply inherit_not_jmp_to_self_sound.
+Qed.
+
+Lemma inherit_list_not_jmp_to_self_soundness_correct:
+  forall (cmds: list cmd),
+  P_inherit_not_jmp_to_self cmds.
+Proof.
+  apply inherit_list_not_jmp_to_self_sound.
+  pose proof inherit_not_jmp_to_self_soundness_correct.
+  apply H.
+Qed.
+
+
+
 (*如果BBnow不会jmp到他自己，那么其继承者也不会 TODO*)
 Lemma inherit_not_jmp_to_self:
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
     (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
     (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info).
 Proof.
-Admitted.
+  pose proof inherit_not_jmp_to_self_soundness_correct.
+  intros.
+  unfold Q_inherit_not_jmp_to_self in H.
+  specialize (H c BBs BBnow BBnum c H0). tauto.
+Qed.
+
+
 
 
 
@@ -497,8 +633,9 @@ Lemma bbnum_eq_next_num:
     (lt BBnow.(block_num) BBnum) -> (tl (res.(BasicBlocks) ++ res.(BBn) :: nil)) = nil -> BBnum = res.(next_block_num).
 Proof.
   intros. induction c.
-  - simpl. lia.
   - cbn [list_cmd_BB_gen].
+    simpl. lia.
+  -
     unfold list_cmd_BB_gen.
     destruct a.
     + simpl. admit.
@@ -1225,7 +1362,7 @@ Proof. (*TODO*)
       discriminate H3. tauto.
 Qed.
 
-Lemma P_BBgen_nil: forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results),
+Lemma P_BBgen_nil:
     P_BBgen_range cmd_BB_gen nil.
 Proof.
   intros. unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0. 
@@ -1246,7 +1383,7 @@ Proof.
 Admitted.
 
 Lemma P_BBgen_con:
-    forall (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results) (c: cmd) (cmds: list cmd),
+    forall (c: cmd) (cmds: list cmd),
     Q_BBgen_range c ->
     P_BBgen_range cmd_BB_gen cmds ->
     P_BBgen_range cmd_BB_gen (c::cmds).
@@ -1259,13 +1396,13 @@ Admitted.
 
 Section BB_gen_range_sound.
 
-Variable cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
+
 Variable BB_gen_range_soundness: forall (c: cmd), Q_BBgen_range c.
 
 Fixpoint BBgen_list_range_soundness (cmds: list cmd): P_BBgen_range cmd_BB_gen cmds :=
   match cmds with
-  | nil => P_BBgen_nil cmd_BB_gen
-  | c :: cmds0 => P_BBgen_con cmd_BB_gen c cmds0 (BB_gen_range_soundness c) (BBgen_list_range_soundness cmds0)
+  | nil => P_BBgen_nil 
+  | c :: cmds0 => P_BBgen_con c cmds0 (BB_gen_range_soundness c) (BBgen_list_range_soundness cmds0)
   end.
 
 End BB_gen_range_sound.
@@ -1275,12 +1412,12 @@ Fixpoint BB_gen_range_soundness (c: cmd): Q_BBgen_range c :=
   | CAsgn x e => Q_asgn_BBgen_range x e
   | CIf e cmds1 cmds2 =>
       Q_if_BBgen_range e cmds1 cmds2
-        (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds1)
-        (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds2)
+        (BBgen_list_range_soundness BB_gen_range_soundness cmds1)
+        (BBgen_list_range_soundness BB_gen_range_soundness cmds2)
   | CWhile cmds1 e cmds2 =>
       Q_while_BBgen_range e cmds1 cmds2
-        (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds1)
-        (BBgen_list_range_soundness cmd_BB_gen BB_gen_range_soundness cmds2)
+        (BBgen_list_range_soundness BB_gen_range_soundness cmds1)
+        (BBgen_list_range_soundness BB_gen_range_soundness cmds2)
   end.
 
 Lemma BBgen_range_single_soundness_correct:

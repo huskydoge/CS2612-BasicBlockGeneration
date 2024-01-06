@@ -418,7 +418,8 @@ Proof.
       -- (*Use B5*) admit.
       -- intros. destruct H2 as [bs1 [bs2 [H_sem_full [C1 [C2 [C3 C4]]]]]].
          cbn[Bnrm] in H_sem_full.
-         pose proof A5 as key1. pose proof H_cmd_equiv as key2. admit.
+         pose proof A5 as key1. pose proof H_cmd_equiv as key2.
+         unfold BCequiv in key2.
          (* 
          用A5和H_cmd_equiv！
          * 这里很可能会用到(BBnow BBsthen BBselse) | BBs_others这一刀的性质，在H_sem_full里把它切割出来
