@@ -338,10 +338,83 @@ Proof.
 
       (* ! Check. *)
       exists (BBswo_ ++ BBnow'_p :: BBs'_p).
-      exists BBnow'_. exists nil. exists (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(next_block_num). exists BBendnum_. repeat split.
-      -- simpl. admit.
-      -- admit. (*从A3中得到BBnow'_的信息*)
-      -- admit.
+      exists BBnow'_. exists nil. exists (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(next_block_num). exists BBendnum_. 
+      simpl in A2. 
+      remember (to_result
+      (list_cmd_BB_gen cmd_BB_gen c1 nil
+         {|
+           block_num := BBnum;
+           commands := nil;
+           jump_info :=
+             {|
+               jump_kind := UJump;
+               jump_dest_1 := S (S BBnum);
+               jump_dest_2 := None;
+               jump_condition := None
+             |}
+         |} (S (S (S BBnum))))) as then_res.
+      remember (         
+        to_result
+      (list_cmd_BB_gen cmd_BB_gen c2 nil
+         {|
+           block_num := S BBnum;
+           commands := nil;
+           jump_info :=
+             {|
+               jump_kind := UJump;
+               jump_dest_1 := S (S BBnum);
+               jump_dest_2 := None;
+               jump_condition := None
+             |}
+         |}
+         (list_cmd_BB_gen cmd_BB_gen c1 nil
+            {|
+              block_num := BBnum;
+              commands := nil;
+              jump_info :=
+                {|
+                  jump_kind := UJump;
+                  jump_dest_1 := S (S BBnum);
+                  jump_dest_2 := None;
+                  jump_condition := None
+                |}
+            |} (S (S (S BBnum)))).(next_block_num))) as else_res.
+      rewrite <- app_assoc in A2.
+
+      assert (BBnow'_prop: BBnow'_ = {|
+        block_num := BBnow.(block_num);
+        commands := BBnow.(cmd);
+        jump_info :=
+          {|
+            jump_kind := CJump;
+            jump_dest_1 := BBnum;
+            jump_dest_2 := Some (S BBnum);
+            jump_condition := Some e
+          |}
+      |}). {
+        pose proof cut_eq_part_list_l BasicBlock BBs as eq.
+        specialize (eq (({|
+        block_num := BBnow.(block_num);
+        commands := BBnow.(cmd);
+        jump_info :=
+          {|
+            jump_kind := CJump;
+            jump_dest_1 := BBnum;
+            jump_dest_2 := Some (S BBnum);
+            jump_condition := Some e
+          |}
+      |} :: then_res ++ else_res) ++ BBnow_mid :: nil) (BBnow'_ :: BBs'_) A2).
+        simpl in eq. inversion eq. reflexivity.
+      }
+      repeat split.
+      -- simpl. destruct (BBswo_ ++ BBnow'_p :: BBs'_p) eqn:?. 
+         ++ (*矛盾*) admit.
+         ++ (*BBswo_的头就是BBthen！成立的！*)
+            (*引理1: 从Heql中得到b就是head BBswo_*)
+            (*引理2: 用A3得到BBswo_的头就是BBthen*)
+            admit.
+      -- rewrite BBnow'_prop. simpl. rewrite app_nil_r. tauto.
+      -- rewrite BBnow'_prop. simpl. tauto.
       -- (*Use B5*) admit.
       -- intros. destruct H2 as [? [? [H_sem_full [C1 [C2 [C3 C4]]]]]].
          cbn[Bnrm] in H_sem_full. admit.

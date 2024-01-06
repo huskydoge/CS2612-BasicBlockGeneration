@@ -1677,3 +1677,10 @@ Lemma JmpInfo_inherit:
   ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
 Proof.
 Admitted.
+
+Lemma head_eq_prop:
+  forall (A: Type) (l1 l2: list A) (a b: A),
+  a::l1 = b::l2 -> a = b.
+Proof.
+  intros. inversion H. reflexivity.
+Qed.
