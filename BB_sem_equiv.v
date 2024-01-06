@@ -413,9 +413,10 @@ Proof.
             pose proof not_nil_l BasicBlock BBswo_ (BBnow'_p :: BBs'_p) H2. tauto.
          ++ (*BBswo_的头就是BBthen！成立的！*)
             (*引理1: 从Heql中得到b就是head BBswo_*)
-            pose proof extract_head_from_list BasicBlock BBswo_ (BBnow'_p :: BBs'_p) l b Heql as head_wo.
+            pose proof extract_head_from_list BasicBlock BBswo_ (BBnow'_p :: BBs'_p) l b empty_block Heql as head_wo.
             (*引理2: 用A3得到BBswo_的头就是BBthen*)
-            admit.
+            pose proof if_head_prop e c1 c2 BBswo_ BBs BBnow BBnow'_ BBnum A3 as num_prop.
+            rewrite <- head_wo in num_prop. rewrite num_prop. rewrite BBnow'_prop. simpl. reflexivity. 
       -- rewrite BBnow'_prop. simpl. rewrite app_nil_r. tauto.
       -- rewrite BBnow'_prop. simpl. tauto.
       -- (*Use B5*) admit.

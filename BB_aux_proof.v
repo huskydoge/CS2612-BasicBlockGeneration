@@ -1707,8 +1707,8 @@ Qed.
 
 (*如果l1 ++ l2 = a :: l3，那么a肯定是l1的头*)
 Lemma extract_head_from_list:
-  forall (A: Type) (l1 l2 l3: list A) (a: A),
-  l1 ++ l2 = a :: l3 -> a = hd a l1.
+  forall (A: Type) (l1 l2 l3: list A) (a: A)(d: A),
+  l1 ++ l2 = a :: l3 -> a = hd d l1.
 Proof.
   intros. revert l1 l2 H.
   induction l3. 
