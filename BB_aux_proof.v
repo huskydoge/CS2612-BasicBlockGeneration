@@ -1684,3 +1684,32 @@ Lemma head_eq_prop:
 Proof.
   intros. inversion H. reflexivity.
 Qed.
+
+(*如果l = l1 + l2，l1不为空，那么l不为空*)
+Lemma not_nil_l:
+  forall (A: Type) (l1 l2: list A),
+  l1 <> nil -> l1 ++ l2 <> nil.
+Proof.
+  intros. unfold not. intros. destruct l1.
+  - apply H. reflexivity.
+  - inversion H0.
+Qed.
+
+(*如果l = l1 + l2，l2不为空，那么l不为空*)
+Lemma not_nil_r:
+  forall (A: Type) (l1 l2: list A),
+  l2 <> nil -> l1 ++ l2 <> nil.
+Proof.
+  intros. unfold not. intros. destruct l1.
+  - inversion H0. simpl in H0. tauto.
+  - inversion H0.
+Qed.
+
+(*如果l1 ++ l2 = a :: l3，那么a肯定是l1的头*)
+Lemma extract_head_from_list:
+  forall (A: Type) (l1 l2 l3: list A) (a: A),
+  l1 ++ l2 = a :: l3 -> a = hd a l1.
+Proof.
+  intros. revert l1 l2 H.
+  induction l3. 
+Admitted.

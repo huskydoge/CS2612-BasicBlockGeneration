@@ -408,9 +408,12 @@ Proof.
       }
       repeat split.
       -- simpl. destruct (BBswo_ ++ BBnow'_p :: BBs'_p) eqn:?. 
-         ++ (*矛盾*) admit.
+         (*矛盾*)
+         ++ pose proof if_wont_be_nil e c1 c2 BBs BBswo_ BBnow BBnow'_ BBnum A3.
+            pose proof not_nil_l BasicBlock BBswo_ (BBnow'_p :: BBs'_p) H2. tauto.
          ++ (*BBswo_的头就是BBthen！成立的！*)
             (*引理1: 从Heql中得到b就是head BBswo_*)
+            pose proof extract_head_from_list BasicBlock BBswo_ (BBnow'_p :: BBs'_p) l b Heql as head_wo.
             (*引理2: 用A3得到BBswo_的头就是BBthen*)
             admit.
       -- rewrite BBnow'_prop. simpl. rewrite app_nil_r. tauto.
@@ -530,13 +533,13 @@ Admitted.
 
 Section BB_sound.
 
-Variable cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> nat -> basic_block_gen_results.
+
 Variable cmd_BB_gen_sound: forall (c: cmd), Qb c.
 
 Fixpoint cmd_list_BB_gen_sound (cmds: list cmd): P cmds cmd_BB_gen :=
   match cmds with
   | nil => P_nil cmd_BB_gen
-  | c :: cmds0 => P_cons c cmds0 cmd_BB_gen (cmd_BB_gen_sound c) (cmd_list_BB_gen_sound cmds0)
+  | c :: cmds0 => P_cons c cmds0 (cmd_BB_gen_sound c) (cmd_list_BB_gen_sound cmds0)
   end.
 
 End BB_sound.
@@ -546,12 +549,12 @@ Fixpoint cmd_BB_gen_sound (c: cmd): Qb c :=
   | CAsgn x e => Q_asgn x e
   | CIf e cmds1 cmds2 =>
       Q_if e cmds1 cmds2
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds1)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds2)
   | CWhile cmds1 e cmds2 =>
       Q_while cmds1 e cmds2
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds1)
-        (cmd_list_BB_gen_sound cmd_BB_gen cmd_BB_gen_sound cmds2)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds1)
+        (cmd_list_BB_gen_sound cmd_BB_gen_sound cmds2)
   end.
 
 

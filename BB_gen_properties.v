@@ -444,7 +444,7 @@ Proof.
 Qed.
 
 
-(* ======================================================================================================================================== *)
+(* TODO ======================================================================================================================================== *)
 
 
 Definition Q_inherit_not_jmp_to_self (c: cmd): Prop :=
@@ -646,6 +646,26 @@ Admitted. (*TODO @LYZ *)
 
 (*START：列表集合的一些性质 ==================================================================================================================================================================================================================== *)
 
+
+Lemma if_wont_be_nil:
+  forall (e: expr) (c1 c2: list cmd) (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum : nat),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_
+  ->
+  BBswo_ <> nil.
+Proof.
+  (*TODO*)
+Admitted.
+
+Lemma while_wont_be_nil:
+  forall (e: expr) (c1 c2: list cmd) (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum : nat),
+  (cmd_BB_gen (CWhile c1 e c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_
+  ->
+  BBswo_ <> nil.
+Proof.
+  (*TODO*)
+Admitted.
+
+
 (*x在 l1 ++ l2中，那么必然在至少其中之一*)
 Lemma In_a_or_b:
   forall (A: Type) (x: A) (l1 l2: list A),
@@ -791,8 +811,6 @@ Proof.
     pose proof add_BBs_in_generation_reserves_BB cmds ((cmd_BB_gen a nil BBnow BBnum).(BasicBlocks)) (cmd_BB_gen a nil BBnow BBnum).(BBn) (cmd_BB_gen a nil BBnow BBnum).(next_block_num) as BBs_simpl.
     unfold to_result in BBs_simpl. rewrite BBs_simpl.
     clear BBs_simpl.
-
-
    
 Admitted.
 
@@ -1329,7 +1347,7 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CWhile c1 e c2).
 Proof.
-  Admitted.
+Admitted.
 
 Lemma length_eq : forall (A : Type) (xs ys : list A),
   xs = ys -> length xs = length ys.
@@ -1343,7 +1361,7 @@ Qed.
 Lemma Q_asgn_BBgen_range:
 forall  (x: var_name) (e: expr),
     Q_BBgen_range (CAsgn x e).
-Proof. (*TODO*)
+Proof. 
   intros. unfold Q_BBgen_range. intros. simpl in H0.
   unfold to_result in H1. simpl in H1. apply cut_eq_part_list_l in H1. rename H2 into BBnum_lt_startnum.
   repeat split.
@@ -1436,5 +1454,150 @@ Proof.
     apply H.
 Qed.
 
+
+
+(*! IMPORTANT 对于if而言，新产生的BBs中的第一个，就是BBthen，那么自然有其blocknum的性质*)
+Lemma if_head_prop:
+  forall (e: expr) (c1 c2: list cmd)(BBswo_ BBs: list BasicBlock)(BBnow BBnow'_: BasicBlock)(BBnum: nat),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_
+  ->
+  (hd empty_block (BBswo_)).(block_num) = BBnum.
+Proof.
+  intros.
+  cbn [cmd_BB_gen] in H. simpl in H.
+  remember ({|
+  block_num := BBnow.(block_num);
+  commands := BBnow.(cmd);
+  jump_info :=
+    {|
+      jump_kind := CJump;
+      jump_dest_1 := BBnum;
+      jump_dest_2 := Some (S BBnum);
+      jump_condition := Some e
+    |}
+|}
+:: to_result
+     (list_cmd_BB_gen cmd_BB_gen c1 nil
+        {|
+          block_num := BBnum;
+          commands := nil;
+          jump_info :=
+            {|
+              jump_kind := UJump;
+              jump_dest_1 := S (S BBnum);
+              jump_dest_2 := None;
+              jump_condition := None
+            |}
+        |} (S (S (S BBnum)))) ++
+   to_result
+     (list_cmd_BB_gen cmd_BB_gen c2 nil
+        {|
+          block_num := S BBnum;
+          commands := nil;
+          jump_info :=
+            {|
+              jump_kind := UJump;
+              jump_dest_1 := S (S BBnum);
+              jump_dest_2 := None;
+              jump_condition := None
+            |}
+        |}
+        (list_cmd_BB_gen cmd_BB_gen c1 nil
+           {|
+             block_num := BBnum;
+             commands := nil;
+             jump_info :=
+               {|
+                 jump_kind := UJump;
+                 jump_dest_1 := S (S BBnum);
+                 jump_dest_2 := None;
+                 jump_condition := None
+               |}
+           |} (S (S (S BBnum)))).(next_block_num))) as BBswo_2.
+  pose proof cut_eq_part_list_l BasicBlock BBs BBswo_2 (BBnow'_ :: BBswo_) H.
+  rewrite HeqBBswo_2 in H0. inversion H0. rewrite H3. clear H2.
+  rename H3 into key. unfold to_result in key. 
+  remember (((list_cmd_BB_gen cmd_BB_gen c1 nil
+  {|
+    block_num := BBnum;
+    commands := nil;
+    jump_info :=
+      {|
+        jump_kind := UJump;
+        jump_dest_1 := S (S BBnum);
+        jump_dest_2 := None;
+        jump_condition := None
+      |}
+  |} (S (S (S BBnum)))).(BasicBlocks))) as e0.
+
+  remember ((list_cmd_BB_gen cmd_BB_gen c1 nil
+  {|
+    block_num := BBnum;
+    commands := nil;
+    jump_info :=
+      {|
+        jump_kind := UJump;
+        jump_dest_1 := S (S BBnum);
+        jump_dest_2 := None;
+        jump_condition := None
+      |}
+  |} (S (S (S BBnum)))).(BBn) :: nil) as e1.
+
+  remember ((list_cmd_BB_gen cmd_BB_gen c2 nil
+  {|
+    block_num := S BBnum;
+    commands := nil;
+    jump_info :=
+      {|
+        jump_kind := UJump;
+        jump_dest_1 := S (S BBnum);
+        jump_dest_2 := None;
+        jump_condition := None
+      |}
+  |}
+  (list_cmd_BB_gen cmd_BB_gen c1 nil
+     {|
+       block_num := BBnum;
+       commands := nil;
+       jump_info :=
+         {|
+           jump_kind := UJump;
+           jump_dest_1 := S (S BBnum);
+           jump_dest_2 := None;
+           jump_condition := None
+         |}
+     |} (S (S (S BBnum)))).(next_block_num)).(BasicBlocks) ++
+(list_cmd_BB_gen cmd_BB_gen c2 nil
+  {|
+    block_num := S BBnum;
+    commands := nil;
+    jump_info :=
+      {|
+        jump_kind := UJump;
+        jump_dest_1 := S (S BBnum);
+        jump_dest_2 := None;
+        jump_condition := None
+      |}
+  |}
+  (list_cmd_BB_gen cmd_BB_gen c1 nil
+     {|
+       block_num := BBnum;
+       commands := nil;
+       jump_info :=
+         {|
+           jump_kind := UJump;
+           jump_dest_1 := S (S BBnum);
+           jump_dest_2 := None;
+           jump_condition := None
+         |}
+     |} (S (S (S BBnum)))).(next_block_num)).(BBn) :: nil) as e2.
+    
+    pose proof hd_A_and_B_is_hd_A_if_A_not_nil (e0 ++ e1) e2 as hd_position.
+    assert (e0_not_nil: (e0 ++ e1) <> nil).
+    {
+      (*对c1是否为空进行分类讨论, 但是可能有点麻烦*) admit.
+    }
+    pose proof hd_position e0_not_nil as hd_position.
+Admitted.
 
 
