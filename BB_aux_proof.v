@@ -739,7 +739,7 @@ Lemma No_err_and_inf_for_expr:
   (exists i : int64, EDenote.nrm (eval_expr e) (st bs) i).
 Admitted.
 
-(*如果bs1的num不在BBs的num中，那bs1不能作为BBs语义的起点！*)
+(*如果bs1的num不在BBs的num中，那bs1不能作为BBs单步语义的起点！*)
 Lemma cannot_start_with:
   forall (bs1 bs2: BB_state)(BBs: list BasicBlock),
   ~ (BBnum_set BBs (BB_num bs1)) -> (BB_sem_union (BBs)).(Bnrm) bs1 bs2 -> False.
@@ -904,7 +904,10 @@ Proof.
 Qed.
 
 
-
+(*如果 (bs1 bs2) 在BBs的任意步语义中，那么
+a. bs2在BBs的jmpdest中
+\/
+b. bs1和bs2相等*)
 Lemma BBs_bs2_in_BB_jmp_set:
   forall (BBs : list BasicBlock) (bs1 bs2: BB_state),
     Bnrm (BB_list_sem BBs) bs1 bs2 -> BBjmp_dest_set BBs (BB_num bs2) \/ bs1 = bs2.
@@ -923,6 +926,19 @@ Proof.
     split. apply H2. apply H5.
   - right. tauto.  
 Qed.
+
+
+(*如果 (bs1 bs2) 在BBs的任意步语义中，那么
+a. bs1在BBs的numset中
+\/
+b. bs1和bs2相等*)
+Lemma BBs_bs1_in_BB_num_set:
+  forall (BBs : list BasicBlock) (bs1 bs2: BB_state),
+    Bnrm (BB_list_sem BBs) bs1 bs2 -> BBnum_set BBs (BB_num bs1) \/ bs1 = bs2.
+Proof.
+  intros. unfold BBnum_set.
+  admit. (* TODO *)
+Admitted.
 
 (*
 对于所有的BBnow，BBs，和两个BB_state, 如果：
@@ -1700,4 +1716,14 @@ Proof.
   intros. revert l1 l2 H.
   induction l3. 
   (*TODO*)
+Admitted.
+
+
+(*如果num在BBnum_set(BBnow::BBs)中，那么为在BBnow的num，要么在BBs的num中*)
+Lemma destruct_in_BBnum_set:
+  forall (BBnow: BasicBlock) (BBs: list BasicBlock) (BBnum: nat),
+  BBnum_set(BBnow::BBs) (BBnum) -> BBnum = BBnow.(block_num) \/ BBnum_set(BBs) (BBnum).
+Proof.
+  intros. 
+  admit. (*TODO easy*) 
 Admitted.
