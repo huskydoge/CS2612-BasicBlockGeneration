@@ -1699,4 +1699,5 @@ Lemma extract_head_from_list:
 Proof.
   intros. revert l1 l2 H.
   induction l3. 
+  (*TODO*)
 Admitted.

@@ -444,7 +444,7 @@ Proof.
 Qed.
 
 
-(* TODO ======================================================================================================================================== *)
+(* TODO 证明======================================================================================================================================== *)
 
 
 Definition Q_inherit_not_jmp_to_self (c: cmd): Prop :=
@@ -535,7 +535,7 @@ Qed.
 
 
 
-(*如果BBnow不会jmp到他自己，那么其继承者也不会 TODO*)
+(*如果BBnow不会jmp到他自己，那么其继承者也不会*)
 Lemma inherit_not_jmp_to_self:
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
     (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
