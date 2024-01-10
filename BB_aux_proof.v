@@ -1791,6 +1791,8 @@ Qed.
 4. BBnow1 :: nil ++ BBs1 和 BBnow2 :: nil ++ BBs2 的BBjmp_dest_set不交
 5. bs1的BBnum在 BBnow1 :: nil ++ BBs1 的numset中
 6. bs2的BBnum在 BBnow2 :: nil ++ BBs2 的jmpset中
+7. 没有办法从 BBnow1 :: nil ++ BBs1 跳转到 BBs2
+8. 没有办法从 BBnow2 :: nil ++ BBs2 跳转到 BBnow1 :: nil ++ BBs1
 那么存在一个x，使得:
 1. (bs1, x) 在 BB_list_sem (BBnow1 :: nil ++ BBs1) 中
 2. (x, bs2) 在 BB_list_sem (BBnow2 :: BBs2) 中
@@ -1803,6 +1805,8 @@ Lemma an_over_pass_bridge:
   BBjmp_dest_set (BBnow1 :: nil ++ BBs1) ∩ BBjmp_dest_set (BBnow2 :: nil ++ BBs2) == ∅ ->
   bs1.(BB_num) ∈  BBnum_set (BBnow1 :: nil ++ BBs1) ->
   bs2.(BB_num) ∈  BBjmp_dest_set (BBnow2 :: nil ++ BBs2) ->
+  BBjmp_dest_set (BBnow1 :: nil ++ BBs1) ∩ BBnum_set (BBs2) == ∅ ->
+  BBjmp_dest_set (BBnow2 :: nil ++ BBs2) ∩ BBnum_set (BBnow1 :: nil ++ BBs1) == ∅ ->
   (exists x,
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\
   Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2).
