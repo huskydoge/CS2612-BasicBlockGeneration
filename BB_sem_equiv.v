@@ -246,6 +246,7 @@ Proof.
            rewrite <- T1. rewrite <- D3. tauto.
 
       -- intros. rename H into H_cmds_sem_main. (* cmd_sem -> BB_sem *)
+        
          unfold cmd_list_sem in H_cmds_sem_main. simpl in H_cmds_sem_main. sets_unfold in H_cmds_sem_main.
          destruct H_cmds_sem_main as [? [H_step1 H_step2]].
          exists {| st := a; BB_num := BBnow'_.(block_num) |}.
@@ -434,20 +435,57 @@ Proof.
            这个性质，其中BBnow_A为cmds为空的Block（即BBnext）
            实际上对于BBnow_A的语义处理 只需要让它的前继BB跳过来就行
          *)
+         assert (BBnow_mid_num_prop: BBnow_mid.(block_num) = S (S BBnum)). {
+          rewrite HeqBBnow_mid. simpl. reflexivity.
+         }
          destruct key1. clear err_cequiv inf_cequiv.
          rename nrm_cequiv into H_step1. sets_unfold in H_step1.
          destruct key2. clear err_cequiv inf_cequiv.
-         rename nrm_cequiv into H_step2. sets_unfold in H_step2.
+         rename nrm_cequiv into H_step2. sets_unfold in H_step2. simpl in H_step2.
          remember ({|
           block_num := BBnow'_.(block_num);
           commands := nil;
           jump_info := BBnow'_.(jump_info) |}) as BBnow_start.
-         assert (exists (x: BB_state), Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 x /\ Bnrm (BB_list_sem (BBnow'_p :: BBs'_p)) x bs2) as H_sep. admit. (*TODO hard and important*)
-
+         assert (exists (x: BB_state), Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 x /\ Bnrm (BB_list_sem (BBnow'_p :: BBs'_p)) x bs2) as H_sep. {
+         assert (amid: exists a_mid, (cmd_sem (CIf e c1 c2)).(nrm) a a_mid). {
+            (*显然存在这样一个a_mid的，在程序不出错的情况下 TODO *)
+            admit.
+         } 
+         destruct amid as [a_mid H_amid].
+         set(bs_mid:={| st := a_mid; BB_num := BBnow_mid.(block_num) |}).
+         exists bs_mid. split.
+         - specialize (H_step1 a a_mid). destruct H_step1 as [_ focus].
+           specialize (focus H_amid).
+           destruct focus as [bs1' [bs_mid' [H_step1_main [H_step1_aux1 H_step1_aux2]]]].
+           assert (eqbs1: bs1 = bs1'). {
+            destruct bs1. destruct bs1'.
+            simpl in H_step1_aux1. simpl in C1. rewrite C1. rewrite H_step1_aux1. 
+            destruct H_step1_aux2 as [_ [m1 m2]]. simpl in m1. rewrite m1. 
+            simpl in C3.
+            rewrite BBnow'_prop in C3. simpl in C3. rewrite C3. reflexivity.
+           }
+           assert (eqbs_mid: bs_mid = bs_mid'). {
+            subst bs_mid. destruct bs_mid'.
+            destruct H_step1_aux2 as [m0 [m1 m2]]. simpl in m2. rewrite m2.
+            simpl in m0. rewrite m0. rewrite BBnow_mid_num_prop. reflexivity. 
+           }
+           rewrite <- eqbs1 in *. rewrite <- eqbs_mid in *. clear eqbs1 eqbs_mid.
+           simpl in H_step1_main. sets_unfold in H_step1_main.
+           destruct H_step1_main as [H_step1_state [H_step1_head [H_step1_nat H_step1_tail]]].
+           simpl. sets_unfold. exists (S H_step1_nat). simpl. sets_unfold.
+           exists H_step1_state. split.
+            + unfold BB_sem_union. simpl. sets_unfold. left. exists bs1. split.
+              * rewrite HeqBBnow_start. simpl. sets_unfold. tauto.
+              * rewrite HeqBBnow_start. simpl. tauto.
+            + rewrite HeqBBnow_start. simpl.
+              pose proof (Iter_shrink BBswo_ BBnow'_ H_step1_nat H_step1_state bs_mid H_step1_tail). tauto.
+          - specialize (H_step2 a_mid a0). destruct H_step2 as [_ focus]. 
+         }
          destruct H_sep as [bb_mid [H_step1_main H_step2_main]].
          cbn[cmd_list_sem]. cbn[nrm]. sets_unfold. exists bb_mid.(st).
          (* 这个时候我们就分两步，分别使用H_step1和H_step2来走 *)
          specialize (H_step1 a bb_mid.(st)).
+
 
          assert (now_mid_block_num: BBnow_mid.(block_num) = (S (S BBnum))). {
           rewrite HeqBBnow_mid. simpl. reflexivity.
@@ -515,47 +553,57 @@ Proof.
 
 
          }
-         
-         destruct H_step1 as [H_step1_forward T4]. clear T4. split. apply H_step1_forward.
-         exists bs1. exists bb_mid.
+
          assert (sep_prop: separate_property BBnow'_ BBs). {
-          unfold separate_property. 
-          (*A2*) 
-          admit.
-         }
+         unfold separate_property. 
+         (*A2*) 
+         admit.
+        }
+
          assert (Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bb_mid -> Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bb_mid) as M1. {
-            (*TODO
-              使用引理BDenote_concat_equiv_BB_list_sem
-              转换关系应该是对的，但是需要把前提都找出来
-              *)
-            pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBs bs1 bb_mid sep_prop.
-            pose proof BB_restrict_sound.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况*)
-            admit.
+         (*TODO
+           使用引理BDenote_concat_equiv_BB_list_sem
+           转换关系应该是对的，但是需要把前提都找出来
+           *)
+         pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBs bs1 bb_mid sep_prop.
+         pose proof BB_restrict_sound.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况 TODO*)
+         admit.
+      }
+
+         assert(step1: (exists bs1 bs2 : BB_state,
+         Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bs2 /\
+         st bs1 = a /\
+         st bs2 = st bb_mid /\
+         BB_num bs1 = BBnow.(block_num) /\ BB_num bs2 = S (S BBnum))). {
+          exists bs1. exists bb_mid.
+          repeat split; try tauto.
+          rewrite C3. rewrite BBnow'_prop. simpl. reflexivity.
          }
-         repeat split. apply M1. apply H_step1_main.
-         apply C1. rewrite C3. rewrite BBnow'_prop. simpl. reflexivity.
 
-         apply key_num_eq.
+        destruct H_step1 as [r _]. specialize (r step1). 
+         
+        split. tauto.
 
-         specialize (H_step2 bb_mid.(st) a0).
-         destruct H_step2 as [H_step2_forward T4]. clear T4.
-         apply H_step2_forward. exists bb_mid. exists bs2.
-         simpl in H_step2_forward.
-         cbn[Bnrm]. repeat split.
-         * unfold BB_list_sem in H_step2_main. 
-           cbn[Bnrm] in H_step2_main. sets_unfold in H_step2_main.
-           assert (BBnow_mid.(cmd) = nil). {
-              pose proof if_cmdgen_prop1 e c1 c2 BBs BBnow BBnum as t.
-              rewrite <- HeqBBnow_mid in t. tauto.
-              (*CIf性质 *)
-           }
-           rewrite H2 in B3. rewrite append_nil_l in B3.
-           rewrite <- B3. apply H_step2_main.
-         * apply C2.
-         * rewrite B4. rewrite key_num_eq. pose proof if_BBn_num_prop e c1 c2 BBs BBnow BBnum as t.
-           rewrite <- HeqBBnow_mid in t. rewrite t. reflexivity.
-         * rewrite C4. pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2) as t. 
-           rewrite <- HeqBBnow_mid in t. rewrite <- t. reflexivity.
+        (*分支2*)
+        specialize (H_step2 bb_mid.(st) a0).
+        destruct H_step2 as [H_step2_forward T4]. clear T4.
+        apply H_step2_forward. exists bb_mid. exists bs2.
+        simpl in H_step2_forward.
+        cbn[Bnrm]. repeat split.
+        * unfold BB_list_sem in H_step2_main. 
+          cbn[Bnrm] in H_step2_main. sets_unfold in H_step2_main.
+          assert (BBnow_mid.(cmd) = nil). {
+            pose proof if_cmdgen_prop1 e c1 c2 BBs BBnow BBnum as t.
+            rewrite <- HeqBBnow_mid in t. tauto.
+            (*CIf性质 *)
+          }
+          rewrite H2 in B3. rewrite append_nil_l in B3.
+          rewrite <- B3. apply H_step2_main.
+        * apply C2.
+        * rewrite B4. rewrite key_num_eq. pose proof if_BBn_num_prop e c1 c2 BBs BBnow BBnum as t.
+          rewrite <- HeqBBnow_mid in t. rewrite t. reflexivity.
+        * rewrite C4. pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2) as t. 
+          rewrite <- HeqBBnow_mid in t. rewrite <- t. reflexivity.
       -- intros. (* 这半边应该是完全类似的 *)
          cbn[cmd_list_sem] in H2. cbn[nrm] in H2.
          sets_unfold in H2. destruct H2 as [? [H_step1_main H_step2_main]].

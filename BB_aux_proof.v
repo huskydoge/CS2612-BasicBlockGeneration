@@ -1727,3 +1727,34 @@ Proof.
   intros. 
   admit. (*TODO easy*) 
 Admitted.
+
+
+(*语义上的一些引理*)
+
+Lemma Iter_shrink:
+  forall (BBs: list BasicBlock)(BBnow'_: BasicBlock) (n: nat) (bs1 bs2: BB_state),
+  Iter_nrm_BBs_n (BB_sem_union BBs) n bs1 bs2 ->
+  (Iter_nrm_BBs_n
+  {|
+    Bnrm :=
+      fun a1 a2 : BB_state =>
+      (exists i : BB_state,
+         Rels.id a1 i /\
+         Bnrm
+           (BJump_sem BBnow'_.(block_num) (jump_dest_1 BBnow'_.(jump_info))
+              (jump_dest_2 BBnow'_.(jump_info))
+              (eval_cond_expr (jump_condition BBnow'_.(jump_info)))) i a2) \/
+      Bnrm (BB_sem_union BBs) a1 a2;
+    Berr := fun _ : BB_state => False;
+    Binf := fun _ : BB_state => False
+  |} n bs1 bs2).
+Proof.
+  intros. revert bs1 bs2 H. 
+  induction n. 
+  - simpl. tauto.
+  - intros.  simpl. destruct H as [? [? ?]]. sets_unfold. sets_unfold in H. sets_unfold in H0.
+    exists x. split.
+    + tauto.
+    + specialize (IHn x bs2). specialize (IHn H0). tauto.
+Qed.
+  
