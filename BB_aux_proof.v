@@ -1720,7 +1720,7 @@ Proof.
   intros. revert l1 l2 H.
   induction l3. 
   - intros. 
-  (*TODO*)
+  (*TODO BUG*)
 Admitted.
 
 

@@ -319,7 +319,7 @@ Proof.
   + intros. my_destruct H0.
     unfold BB_list_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. destruct H1 as [? ?].
     pose proof BB_list_sem_unfold_bs1_and_simpl BB2 BBs x0 bs2.
-    assert (x0 <> bs2). admit.
+    assert (x0 <> bs2). admit. (*?????*)
     assert (BBnum_set (BB2 :: nil) ∩ BBjmp_dest_set (BB2 :: BBs) == ∅). admit.
     assert (BBnum_set (BB2 :: nil) ∩ BBnum_set BBs == ∅). admit.
     assert (Bnrm (BB_list_sem (BB2 :: BBs)) x0 bs2). admit.
