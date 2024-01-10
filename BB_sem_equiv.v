@@ -117,7 +117,6 @@ Proof.
 Admitted.
 
 
-(* Changed how we split everything *)
 (* 只拆分一个cmd *)
 Lemma BBs_sem_Asgn_split:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock) (BBcmds: list BB_cmd) (x: var_name) (e: expr) (bs1 bs2: BB_state),
@@ -138,6 +137,10 @@ Proof.
   + admit.
   + intros. my_destruct H0.
     unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
+    unfold BB_list_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. destruct H1 as [? ?].
+    exists x1. 
+    pose proof simplify_listsem_with_mismatch_num bs1 bs2 BB2 BBs.
+    assert (BB2.(block_num) <> BB_num bs1).
 Admitted.
     
 

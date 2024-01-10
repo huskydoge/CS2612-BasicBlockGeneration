@@ -937,8 +937,12 @@ Lemma BBs_bs1_in_BB_num_set:
     Bnrm (BB_list_sem BBs) bs1 bs2 -> BBnum_set BBs (BB_num bs1) \/ bs1 = bs2.
 Proof.
   intros. unfold BBnum_set.
-  admit. (* TODO *)
-Admitted.
+  pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H.
+  destruct H0 as [? | ?].
+  - my_destruct H0. left. exists x. split. apply H0.
+    pose proof BB_sem_start_BB_num bs1 x0 x H1. rewrite H3. tauto.
+  - right. apply H0.
+Qed.
 
 (*
 对于所有的BBnow，BBs，和两个BB_state, 如果：
@@ -1715,6 +1719,7 @@ Lemma extract_head_from_list:
 Proof.
   intros. revert l1 l2 H.
   induction l3. 
+  - intros. 
   (*TODO*)
 Admitted.
 
@@ -1724,9 +1729,11 @@ Lemma destruct_in_BBnum_set:
   forall (BBnow: BasicBlock) (BBs: list BasicBlock) (BBnum: nat),
   BBnum_set(BBnow::BBs) (BBnum) -> BBnum = BBnow.(block_num) \/ BBnum_set(BBs) (BBnum).
 Proof.
-  intros. 
-  admit. (*TODO easy*) 
-Admitted.
+  intros. unfold BBnum_set in H. my_destruct H.
+  unfold In in H. destruct H as [? | ?].
+  - left. rewrite <- H0. rewrite H. tauto.
+  - right. rewrite <- H0. unfold BBnum_set. exists x. split. apply H. tauto.
+Qed.
 
 
 (*语义上的一些引理*)
