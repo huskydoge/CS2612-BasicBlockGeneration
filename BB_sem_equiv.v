@@ -147,7 +147,23 @@ Proof.
       }
       pose proof H2 H5. tauto.
     + specialize (IHx x0). 
-      assert (BB_num x0 ∈ BBnum_set BBs). admit. (*TODO 利用H1 and H3 *)
+      assert (BB_num x0 ∈ BBnum_set BBs). {
+        (*TODO use H1 and H3 *)
+        sets_unfold. 
+        pose proof BBs_bs1_in_BB_num_set (BBnow :: BBs) x0 bs2.
+        assert (Bnrm (BB_list_sem (BBnow :: BBs)) x0 bs2). { 
+          unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists x. apply H3.
+        }
+        pose proof H4 H5. clear H4. destruct H6.
+        unfold BBnum_set in H4. my_destruct H4. unfold In in H4.
+        - destruct H4 as [? | ?]. sets_unfold in H2. specialize (H2 x0.(BB_num)).
+          destruct H2. clear H7. 
+          assert (BBnum_set (BBnow :: nil) (BB_num x0) /\ BBnum_set BBs (BB_num x0)). {
+            split. unfold BBnum_set. exists BBnow. split. unfold In. left. tauto.
+            rewrite H4. apply H6. sets_unfold in H. admit.
+          }
+          admit.
+      }
       pose proof IHx H4 H3. destruct H5.
       sets_unfold. exists (S x1). simpl. sets_unfold.
       exists x0. split. apply H1. apply H5.
@@ -171,10 +187,29 @@ Proof.
       specialize (H6 x BBs). pose proof H6 H3 as H6.
       sets_unfold in H6.
       pose proof BB_sem_start_BB_num bs1 x0 x H4.
-      (*TODO easy, Ht & H6 & H7 contra*)
-      admit.
+      assert (BBnum_set BBs bs1.(BB_num)). {
+        unfold BBnum_set. exists x. split. unfold In.
+        apply H3. rewrite H7. tauto. 
+      }
+
+      assert (BBnum_set (BBnow :: nil) bs1.(BB_num)). {
+        unfold BBnum_set. exists BBnow. split. unfold In. left. tauto.
+        rewrite H. tauto.
+      }
+
+      sets_unfold in Ht. specialize (Ht bs1.(BB_num)). destruct Ht.
+      clear H11. assert (BBnum_set (BBnow :: nil) (BB_num bs1) /\ BBnum_set BBs (BB_num bs1)). { 
+        split. apply H9. apply H8.
+      }
+
+      pose proof H10 H11. tauto.
     + pose proof BB_list_sem_spin_in_BBs BBnow BBs x0 bs2.
-      assert (BB_num x0 ∈ BBnum_set BBs). admit. (*TODO 要用H5以及一些前提推一下*)
+      assert (BB_num x0 ∈ BBnum_set BBs). {
+        (*TODO 用H5以及一些前提推一下*)
+        sets_unfold.
+        pose proof BBs_bs1_in_BB_num_set (BBnow :: BBs) x0 bs2 H5.
+        admit.
+      }
       pose proof H6 H7 H1 H5 Ht. apply H8.
   - contradiction.
 Admitted.
@@ -267,7 +302,7 @@ Lemma P_cons:
   Qb c -> P cmds cmd_BB_gen -> P (c :: cmds) (cmd_BB_gen).
 Proof.
   intros.
-  rename H into Qb_prop. rename` H0 into P_prop. (* ! P_prop描述的是c::cmds中cmds的性质*)
+  rename H into Qb_prop. rename H0 into P_prop. (* ! P_prop描述的是c::cmds中cmds的性质*)
   unfold Qb in Qb_prop. unfold P in P_prop. simpl in *.
   destruct c eqn:?.
   - unfold P. intros.
