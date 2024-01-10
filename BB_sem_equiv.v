@@ -125,6 +125,7 @@ Proof.
 Qed.
 
 
+(* 满足分离条件的BBnow和BBs，如果一开始在BBs中，就会一直在BBs中 *)
 Lemma BB_list_sem_spin_in_BBs: 
   forall (BBnow : BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state),
     bs1.(BB_num) ∈ BBnum_set BBs 
@@ -182,7 +183,7 @@ Proof.
 Qed.
 
 
-
+(* 对于满足分离条件的BBnow和BBs，从BBnow出发的BB_state最终会一直在BBs中 *)
 Lemma BB_list_sem_unfold_bs1_and_simpl: 
   forall (BBnow : BasicBlock) (BBs: list BasicBlock) (bs1 bs2: BB_state),
     bs1.(BB_num) = BBnow.(block_num) -> bs1 <> bs2 
@@ -217,7 +218,6 @@ Proof.
       pose proof H10 H11. tauto.
     + pose proof BB_list_sem_spin_in_BBs BBnow BBs x0 bs2.
       assert (x0 <> bs2 -> BB_num x0 ∈ BBnum_set BBs). {
-        (*TODO 用H5以及一些前提推一下*)
         sets_unfold.
         pose proof BBs_bs1_in_BB_num_set (BBnow :: BBs) x0 bs2 H5.
         unfold In in H3. destruct H3.
