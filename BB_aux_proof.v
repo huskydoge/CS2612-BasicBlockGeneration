@@ -1799,7 +1799,7 @@ Lemma an_over_pass_bridge:
   (exists x,
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\
   Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2).
-Proof.
+Proof. 
   (*TODO! IMPORTANT! lyz*)
 Admitted.
 
