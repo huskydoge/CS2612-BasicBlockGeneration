@@ -281,8 +281,41 @@ Lemma BBs_sem_Asgn_split:
      bs1.(BB_num) = BBnow.(block_num) -> ((Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2)).
 Proof.
   intros. split.
-  + intros. admit.
-
+  + intros. 
+    assert ((exists x, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2)). {
+      admit. (*TODO 使用BB_list_sem_unfold_bs1_and_simpl*)
+    }
+    my_destruct H1.
+    unfold BB_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. my_destruct H1.
+    unfold BB_cmds_sem in H1. cbn[Bnrm] in H1.
+    assert (exists x: BB_state, Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BAsgn_list_sem BBcmds) x x1). {
+      subst BB1. simpl in H1. sets_unfold in H1. 
+      destruct H1 as [? [[? ?] ?]].
+      exists x2. split. subst BBcmd. simpl. sets_unfold. exists x2. repeat split. apply H1. apply H4. apply H5.
+    }
+    my_destruct H4. exists x2. split. apply H4.
+    assert ((exists bs: BB_state, Bnrm (BB_sem BB2) x2 bs /\ Bnrm (BB_list_sem BBs) bs bs2) -> Bnrm (BB_list_sem (BB2 :: BBs)) x2 bs2). {
+      intros. my_destruct H6. unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
+      unfold BB_list_sem in H7. cbn[Bnrm] in H7. sets_unfold in H7. my_destruct H7.
+      exists (S x4). cbn[Iter_nrm_BBs_n]. sets_unfold. exists x3.
+      split. unfold BB_sem_union. cbn[Bnrm]. sets_unfold. left. apply H6.
+      assert(forall (n: nat), Iter_nrm_BBs_n (BB_sem_union BBs) n ⊆ Iter_nrm_BBs_n (BB_sem_union (BB2 :: BBs)) n).
+      {
+        intros. induction n. simpl. sets_unfold. tauto.
+        cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H8.
+        exists x5. split. 
+        + pose proof BB_sem_child_prop BBs (BB2::BBs) a x5. 
+          apply H10. intros. unfold In. right. apply H11. apply H8.
+        + sets_unfold in IHn. pose proof IHn x5 a0 H9. apply H10. 
+      }
+      specialize (H8 x4). sets_unfold in H8. specialize (H8 x3 bs2).
+      pose proof H8 H7. apply H9.
+    }
+    apply H6.
+    exists x0. split.
+    -- unfold BB_sem. cbn[Bnrm]. sets_unfold. unfold BB_cmds_sem. cbn[Bnrm].
+       exists x1. subst BB2. simpl. split. apply H5. apply H3.
+    -- apply H2.
   + intros. my_destruct H0.
     unfold BB_list_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. destruct H1 as [? ?].
     pose proof BB_list_sem_unfold_bs1_and_simpl BB2 BBs x0 bs2.
@@ -319,9 +352,7 @@ Proof.
       cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H12.
       exists x5. split. 
       + pose proof BB_sem_child_prop BBs (BB1::BBs) a x5. 
-        apply H14. intros. unfold In. right. apply H15.
-        sets_unfold in IHn.
-        pose proof IHn x5 a0. apply H12. 
+        apply H14. intros. unfold In. right. apply H15. apply H12.
       + sets_unfold in IHn. pose proof IHn x5 a0 H13. apply H14. 
     }
 
