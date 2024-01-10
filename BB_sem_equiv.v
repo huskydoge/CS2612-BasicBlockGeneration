@@ -1034,8 +1034,16 @@ Proof.
          rewrite T4 in C1. rewrite T5 in C1.
          assert (Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bs3 -> Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bs3) as M1. {
             intros.
-            admit. 
-            
+            unfold BDenote_concate in H2. simpl in H2. sets_unfold in H2.
+            rename H2 into pre.
+            destruct pre as [pre_st pre_conds]. destruct pre_conds as [pre_conds1 pre_conds2].
+            destruct pre_conds2 as [iter_n sem].
+            rewrite HeqBBnow_start. simpl. sets_unfold.
+            exists (S iter_n). simpl. sets_unfold. exists pre_st. split.
+            - left. exists bs1. split.
+              + tauto.
+              + tauto.
+            - pose proof Iter_shrink BBswo_ BBnow'_ iter_n pre_st bs3 sem. tauto.
          }
          apply M1. apply C1.
 

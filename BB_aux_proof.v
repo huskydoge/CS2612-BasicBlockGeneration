@@ -1738,6 +1738,7 @@ Qed.
 
 (*语义上的一些引理 ===================*)
 
+(*对于任意步语义，在BBs的语义中总能推出在BBnow::BBs的语义中*)
 Lemma Iter_shrink:
   forall (BBs: list BasicBlock)(BBnow'_: BasicBlock) (n: nat) (bs1 bs2: BB_state),
   Iter_nrm_BBs_n (BB_sem_union BBs) n bs1 bs2 ->
