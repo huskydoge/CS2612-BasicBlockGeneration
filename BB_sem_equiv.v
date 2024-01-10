@@ -148,7 +148,6 @@ Proof.
       pose proof H2 H5. tauto.
     + specialize (IHx x0). 
       assert (x0 <> bs2 -> BB_num x0 ∈ BBnum_set BBs). {
-        (*TODO use H1 and H3 *)
         sets_unfold. 
         pose proof BBs_bs1_in_BB_num_set (BBnow :: BBs) x0 bs2.
         assert (Bnrm (BB_list_sem (BBnow :: BBs)) x0 bs2). { 
@@ -217,15 +216,51 @@ Proof.
 
       pose proof H10 H11. tauto.
     + pose proof BB_list_sem_spin_in_BBs BBnow BBs x0 bs2.
-      assert (BB_num x0 ∈ BBnum_set BBs). {
+      assert (x0 <> bs2 -> BB_num x0 ∈ BBnum_set BBs). {
         (*TODO 用H5以及一些前提推一下*)
         sets_unfold.
         pose proof BBs_bs1_in_BB_num_set (BBnow :: BBs) x0 bs2 H5.
-        admit.
+        unfold In in H3. destruct H3.
+        - rewrite <- H3 in H4. unfold BB_sem in H4. cbn[Bnrm] in H4.
+          sets_unfold in H4. my_destruct H4.
+          pose proof BB_jmp_sem_num_in_BBjmp_dest_set BBnow x1 x0 H8.
+           (*有了这个条件之后就自然可以排除x0.(BB_num)为BBnow.(block_num)  *)
+          destruct H7.
+          + unfold BBnum_set in H7. my_destruct H7. unfold In in H7.
+            destruct H7.
+            * rewrite <- H7 in H10. sets_unfold in H1. specialize (H1 x0.(BB_num)).
+              destruct H1. clear H11.
+              assert (False). {
+                apply H1. split. unfold BBnum_set. exists BBnow.
+                unfold In. split. left. tauto. apply H10.
+                sets_unfold in H9. unfold BBjmp_dest_set. 
+                unfold BBjmp_dest_set in H9. my_destruct H9. exists x3.
+                split. unfold In. left. unfold In in H9. destruct H9.
+                apply H9. tauto. apply H11.
+              }
+              tauto.
+            * intros. unfold BBnum_set. exists x2. split. apply H7. apply H10.
+          + intros. contradiction.
+        - pose proof BB_sem_start_BB_num bs1 x0 x H4. rewrite H in H8.
+          destruct H7. 
+          + intros. unfold BBnum_set in H7. my_destruct H7. unfold In in H7.
+            destruct H7. 
+            * rewrite <- H7 in H10. sets_unfold in Ht. unfold BBnum_set in Ht.
+              specialize (Ht BBnow.(block_num)). destruct Ht. clear H12.
+              assert (False). {
+                apply H11. split.
+                exists BBnow. unfold In. split. left. tauto. tauto.
+                exists x. split. apply H3. rewrite H8. tauto.
+              }
+              tauto.
+            * unfold BBnum_set. exists x1. split. apply H7. apply H10.
+          + intros. contradiction. 
       }
-      pose proof H6 H7 H1 H5 Ht. apply H8.
+      pose proof classic (x0 = bs2). destruct H8.
+      rewrite H8. simpl. sets_unfold. exists O. simpl. sets_unfold. tauto.
+      pose proof H7 H8 as H7. pose proof H6 H7 H1 H5 Ht. apply H9.
   - contradiction.
-Admitted.
+Qed.
 
 
 
@@ -246,20 +281,7 @@ Lemma BBs_sem_Asgn_split:
      bs1.(BB_num) = BBnow.(block_num) -> ((Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2)).
 Proof.
   intros. split.
-  + intros. 
-    assert ((exists x, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2)). {
-      admit. (*TODO 使用BB_list_sem_unfold_bs1_and_simpl*)
-    }
-    my_destruct H1.
-    unfold BB_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. my_destruct H1.
-    unfold BB_cmds_sem in H1. cbn[Bnrm] in H1.
-    assert (exists x: BB_state, Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BAsgn_list_sem BBcmds) x x1). {
-      subst BB1. simpl in H1. sets_unfold in H1. 
-      destruct H1 as [? [[? ?] ?]].
-      exists x2. split. subst BBcmd. simpl. sets_unfold. exists x2. repeat split. apply H1. apply H4. apply H5.
-    }
-    my_destruct H4. exists x2.
-    split. apply H4. admit. (*证了一圈啥也没证出来，循环论证了*) 
+  + intros. admit.
 
   + intros. my_destruct H0.
     unfold BB_list_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. destruct H1 as [? ?].
