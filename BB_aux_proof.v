@@ -1770,7 +1770,7 @@ Qed.
 (*如果一个BB在一串列表里，但是它的num只和第一个head匹配，那它就是这个head*)
 Lemma must_be_head_with_num_restriction:
 forall (BBhead BBnow: BasicBlock) (BBs: list BasicBlock),
-  In BBnow (BBhead :: BBs) -> BBnow.(block_num) = BBhead.(block_num) -> ~ BBhead.(block_num) ∈ BBnum_set (BBs)
+  In BBnow (BBhead :: nil ++ BBs) -> BBnow.(block_num) = BBhead.(block_num) -> ~ BBhead.(block_num) ∈ BBnum_set (BBs)
   -> BBnow = BBhead.
 Proof.
 Admitted. (*TODO*)
