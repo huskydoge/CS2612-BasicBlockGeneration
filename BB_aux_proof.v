@@ -1774,7 +1774,14 @@ forall (BBhead BBnow: BasicBlock) (BBs: list BasicBlock),
   In BBnow (BBhead :: nil ++ BBs) -> BBnow.(block_num) = BBhead.(block_num) -> ~ BBhead.(block_num) ∈ BBnum_set (BBs)
   -> BBnow = BBhead.
 Proof.
-Admitted. (*TODO*)
+  intros. unfold In in H. destruct H.
+  - rewrite H. tauto.
+  - unfold not in H1. sets_unfold in H1. assert (False). {
+      apply H1. unfold BBnum_set. exists BBnow. split.
+      apply H. apply H0.
+    }
+    tauto.
+Qed. 
 
 
 (*对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
