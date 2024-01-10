@@ -529,7 +529,7 @@ Proof.
               转换关系应该是对的，但是需要把前提都找出来
               *)
             pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBs bs1 bb_mid sep_prop.
-            pose proof BB_restrict_sound.  (*这里要考虑c1和c2到底能不能是不是空*)
+            pose proof BB_restrict_sound.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况*)
             admit.
          }
          repeat split. apply M1. apply H_step1_main.
@@ -612,7 +612,7 @@ Proof.
       -- admit. (* inf case *)
       -- admit. (* inf case *)
       -- pose proof JmpInfo_inherit_for_list BBs BBnow BBnum (CIf e c1 c2 :: cmds). tauto.
-    - admit.
+    - admit. (* 2024/1/9，和老师沟通后，确认while地情况不需要在归纳或互递归中考虑。*)
 Admitted. 
 
 

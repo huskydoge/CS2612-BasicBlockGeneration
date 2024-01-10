@@ -1470,7 +1470,7 @@ Proof.
            simpl. tauto.
         }
 
-        assert (diff_st: st x1 <> st x2). admit. (*TODO*)
+        assert (diff_st: st x1 <> st x2). admit. (* 这个地方和老师沟通过了，我们默认c1和c2不全为空，那么这个地方是一定成立的。我们直接admit*)
 
         specialize (H24 tmp_pre3 tmp_pre4 tmp_pre5 diff_st).
         clear tmp_pre tmp_pre2 tmp_pre3 tmp_pre4 tmp_pre5 diff_st.
