@@ -147,27 +147,40 @@ Proof.
       }
       pose proof H2 H5. tauto.
     + specialize (IHx x0). 
-      assert (BB_num x0 ∈ BBnum_set BBs). {
+      assert (x0 <> bs2 -> BB_num x0 ∈ BBnum_set BBs). {
         (*TODO use H1 and H3 *)
         sets_unfold. 
         pose proof BBs_bs1_in_BB_num_set (BBnow :: BBs) x0 bs2.
         assert (Bnrm (BB_list_sem (BBnow :: BBs)) x0 bs2). { 
           unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists x. apply H3.
         }
-        pose proof H4 H5. clear H4. destruct H6.
-        unfold BBnum_set in H4. my_destruct H4. unfold In in H4.
-        - destruct H4 as [? | ?]. sets_unfold in H2. specialize (H2 x0.(BB_num)).
-          destruct H2. clear H7. 
-          assert (BBnum_set (BBnow :: nil) (BB_num x0) /\ BBnum_set BBs (BB_num x0)). {
-            split. unfold BBnum_set. exists BBnow. split. unfold In. left. tauto.
-            rewrite H4. apply H6. sets_unfold in H. admit.
-          }
-          admit.
+        pose proof H4 H5. clear H4.
+        pose proof BBs_sem_union_jmp_dest bs1 x0 BBs H1.
+        (* 这个时候，我们就可以从H6中把BBnum x0在BBnow的情况试图排除了 *)
+        destruct H6.
+        - unfold BBnum_set in H6. my_destruct H6. unfold In in H6.
+          destruct H6. (*此时有两种情况，有一种是矛盾的*)
+          rewrite <- H6 in H7.
+          sets_unfold in H0. specialize (H0 x0.(BB_num)). destruct H0.
+          + clear H8. assert (False). {
+              apply H0. split. unfold BBnum_set. exists BBnow.
+              split. unfold In. left. tauto. apply H7.
+              unfold BBjmp_dest_set. unfold BBjmp_dest_set in H4.
+              my_destruct H4. exists x2. split. unfold In. right. apply H4.
+              apply H8.
+            }
+            tauto.
+          + unfold BBnum_set. exists x1. split. apply H6. apply H7.
+        - intros. contradiction.
       }
-      pose proof IHx H4 H3. destruct H5.
-      sets_unfold. exists (S x1). simpl. sets_unfold.
-      exists x0. split. apply H1. apply H5.
-Admitted.
+      pose proof classic (x0 = bs2). destruct H5.
+      * exists (S O). simpl. rewrite H5 in H1. sets_unfold. exists bs2.
+        split. apply H1. tauto.
+      * pose proof H4 H5 as H4. 
+        pose proof IHx H4 H3. destruct H6.
+        sets_unfold. exists (S x1). simpl. sets_unfold.
+        exists x0. split. apply H1. apply H6.
+Qed.
 
 
 
