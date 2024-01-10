@@ -848,8 +848,8 @@ Proof.
         }
 
         assert (wo_disjoint_prop: ~ BBnow_start.(block_num) ∈ BBnum_set (BBswo_)). {
-          pose proof disjoint_num_prop_wo_last_if.
-          admit. (*TODO*)
+          pose proof disjoint_num_prop_wo_last_if BBs BBswo_ BBnow BBnow'_ BBnum e c1 c2 A3 as key. rewrite HeqBBnow_start. simpl. simpl in key. rewrite BBnow'_prop.
+          simpl. tauto.
         }
 
         sets_unfold in wo_disjoint_prop. unfold not in wo_disjoint_prop.
@@ -863,10 +863,39 @@ Proof.
 
         assert (sep_prop: separate_property BBnow'_ BBs'_). {
         unfold separate_property.
-        pose proof A2. 
-        (*A2*) 
-        admit.
-        (*TODO*)
+        sets_unfold. intros.
+        split.
+        - pose proof BBgen_range_single_soundness_correct c as Q_prop. unfold Q_BBgen_range in Q_prop.
+          specialize (Q_prop BBnum BBnum'_ BBs BBnow (BBnow'_ :: BBs'_)).
+          assert (m1: jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None). tauto.
+          assert (m2: to_result (cmd_BB_gen c BBs BBnow BBnum) = BBs ++ BBnow'_ :: BBs'_). {
+          pose proof Q_add_BBs_in_generation_reserves_BB_sound c BBs BBnow BBnum as nil_eq.
+          rewrite nil_eq. rewrite <- A2. unfold to_result.
+          assert(eq: (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks) = ({|
+            block_num := BBnow.(block_num);
+            commands := BBnow.(cmd);
+            jump_info :=
+              {| jump_kind := CJump; jump_dest_1 := BBnum; jump_dest_2 := Some (S BBnum); jump_condition := Some e |}
+            |} :: then_res ++ else_res)). {
+            rewrite Heqthen_res. rewrite Heqelse_res. 
+            rewrite Heqc0.
+            cbn [cmd_BB_gen]. simpl. reflexivity.
+            }
+          rewrite eq. rewrite HeqBBnow_mid. rewrite Heqc0. reflexivity.
+          }
+          rewrite <- Heqc0 in A4.
+          symmetry in A4.
+          specialize (Q_prop m1 A4 m2 H0). destruct Q_prop as [_ [_ focus]]. 
+          sets_unfold in focus. specialize (focus a1). 
+          intros. rename H2 into intr.
+          destruct intr as [intr1 intr2].
+          specialize (focus intr2). unfold BBnum_set in intr1. destruct intr1 as [iBB [cond1 cond2]].
+          simpl in cond1. destruct cond1 as [cond11 | cond12].
+          -- rewrite <- cond11 in cond2. rewrite BBnow'_prop in cond2. simpl in cond2. destruct focus as [case1 | case2].
+            ** unfold section in case1. lia.
+            ** unfold unit_set in case2. lia.
+          -- tauto.
+        - intros. tauto. 
       }
 
         assert (sep_prop_wo: separate_property BBnow'_ BBswo_). {
