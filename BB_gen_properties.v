@@ -1692,3 +1692,12 @@ Proof.
   unfold not_eq_to_any_BBnum in H1.
 (*TODO*)
 Admitted.
+
+
+(*对于CIf，其BBnow的num肯定和新生成的BBs(去掉最后BBn)的num不交*)
+Lemma disjoint_num_prop_wo_last_if:
+  forall (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum: nat) (e: expr) (c1 c2: list cmd),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) =
+     BBs ++ BBnow'_ :: BBswo_ -> ~ BBnow.(block_num) ∈ BBnum_set BBswo_.
+Proof.
+Admitted.

@@ -794,6 +794,20 @@ Proof.
             inversion case_b. rename H3 into tmp. rewrite BBnow'_prop in tmp. simpl in tmp. tauto.
         }
 
+        assert (wo_disjoint_prop: ~ BBnow_start.(block_num) ∈ BBnum_set (BBswo_)). {
+          pose proof disjoint_num_prop_wo_last_if.
+          admit. (*TODO*)
+        }
+
+        sets_unfold in wo_disjoint_prop. unfold not in wo_disjoint_prop.
+
+        assert (neq_bs1_bbmid: bs1 <> bb_mid).
+        {
+          intros contra. 
+          rewrite <-  contra in key_num_eq. rewrite C3 in key_num_eq. rewrite BBnow'_prop in key_num_eq.
+          cbn [block_num] in key_num_eq. lia.
+        }
+
         assert (sep_prop: separate_property BBnow'_ BBs'_). {
         unfold separate_property.
         pose proof A2. 
@@ -810,19 +824,56 @@ Proof.
         specialize (sep_prop a1).
         destruct sep_prop as [sep_prop1 sep_prop2].
         split. 
-        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy*)
+        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy use wo_sep*)
           tauto.
         - intros. tauto. 
         }
 
         assert (Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bb_mid -> Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bb_mid) as M1. {
-        (*TODO
-          使用引理BDenote_concat_equiv_BB_list_sem
-          转换关系应该是对的，但是需要把前提都找出来
-          *)
-        pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBswo_ bs1 bb_mid sep_prop_wo as cur_1.
-        pose proof BB_restrict_sound BBnow BBnow'_. admit.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况 TODO*)
-      }
+        
+        (* 
+          思路:
+          1. bs1不能是bb_mid, 所以一定要走一步
+          2. 走一步的话，bs1的num是BBnow_start的num，所以只能从BBnow_start出发
+        *)
+        intros.
+        rename H2 into pre.
+        pose proof BBs_list_sem_exists_BB_bs1_x (BBnow_start :: nil ++ BBswo_) bs1 bb_mid pre as pre_stepin.
+        clear pre.
+        destruct pre_stepin as [case1 | case2].
+        - destruct case1 as [case1_BB [case1_bbstate [case1_cond1 [case1_cond2 case1_cond3]]]].
+          pose proof single_step_jmp_property_for_bs1 case1_BB bs1 case1_bbstate case1_cond2 as step1. 
+          assert (tmp: case1_BB.(block_num) = BBnow_start.(block_num)). {
+            rewrite HeqBBnow_start. simpl. rewrite step1. rewrite C3. reflexivity.
+          }
+          pose proof must_be_head_with_num_restriction BBnow_start case1_BB BBswo_ case1_cond1 tmp wo_disjoint_prop as step2.
+          clear tmp. clear case1_cond1.
+          rewrite step2 in *.
+          unfold BDenote_concate. simpl. sets_unfold. exists case1_bbstate. split.
+          + unfold BB_sem in case1_cond2. simpl in case1_cond2. sets_unfold in case1_cond2. 
+            destruct case1_cond2 as [mid_x conds].
+            destruct conds as [c1_ c2_].
+            rewrite HeqBBnow_start in c1_. simpl in c1_. sets_unfold in c1_.
+            rewrite <- c1_ in c2_. rewrite HeqBBnow_start in c2_. simpl in c2_. tauto.
+          + pose proof simplify_listsem_with_mismatch_num case1_bbstate bb_mid BBnow_start BBswo_ as step3.
+            assert (pre1: BBnow_start.(block_num) <> BB_num case1_bbstate). {
+              rewrite HeqBBnow_start. simpl. unfold BB_sem in case1_cond2.
+              simpl in case1_cond2. sets_unfold in case1_cond2. destruct case1_cond2 as [mid_x conds].
+              destruct conds as [c1_ c2_]. rewrite HeqBBnow_start in c1_. simpl in c1_. sets_unfold in c1_.
+              rewrite <- c1_ in c2_. rewrite HeqBBnow_start in c2_. simpl in c2_. unfold BJump_sem in c2_.
+              admit. (*TODO easy*)
+            }
+
+            assert (pre2: BBnum_set (BBnow_start :: nil) ∩ BBjmp_dest_set (BBnow_start :: BBswo_) == ∅). {
+
+            unfold separate_property in sep_prop_wo. 
+            admit. (*TODO, easy*)
+            }
+            specialize (step3 pre1 pre2 case1_cond3). tauto.
+        
+        - tauto. (*矛盾*)
+  
+      } 
 
          assert(step1: (exists bs1 bs2 : BB_state,
          Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bs2 /\
