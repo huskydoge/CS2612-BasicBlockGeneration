@@ -428,7 +428,7 @@ Proof.
             }
            rewrite H. apply H_step2.
            assert (x2.(BB_num) = x4.(BB_num)) as T1. {
-            (*Use H_step1 easy *)
+            (* Use H_step1 easy lyz *)
             simpl in H_step1. sets_unfold in H_step1. destruct H_step1 as [BBstate_ cond].
             destruct cond as [[cond1 cond2] cond3]. rewrite cond2. rewrite cond3. tauto.
            }
@@ -846,7 +846,7 @@ Proof.
         specialize (sep_prop a1).
         destruct sep_prop as [sep_prop1 sep_prop2].
         split. 
-        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy use wo_sep*)
+        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy lyz use wo_sep*)
           tauto.
         - intros. tauto. 
         }
@@ -883,13 +883,13 @@ Proof.
               simpl in case1_cond2. sets_unfold in case1_cond2. destruct case1_cond2 as [mid_x conds].
               destruct conds as [c1_ c2_]. rewrite HeqBBnow_start in c1_. simpl in c1_. sets_unfold in c1_.
               rewrite <- c1_ in c2_. rewrite HeqBBnow_start in c2_. simpl in c2_. unfold BJump_sem in c2_.
-              admit. (*TODO easy*)
+              admit. (*TODO easy lyz*)
             }
 
             assert (pre2: BBnum_set (BBnow_start :: nil) ∩ BBjmp_dest_set (BBnow_start :: BBswo_) == ∅). {
 
             unfold separate_property in sep_prop_wo. 
-            admit. (*TODO, easy*)
+            admit. (*TODO, easy lyz*)
             }
             specialize (step3 pre1 pre2 case1_cond3). tauto.
         
