@@ -1871,10 +1871,31 @@ Proof.
   + cbn[Iter_nrm_BBs_n] in H0.  
     exists (add x0 (S x1)). simpl. sets_unfold. sets_unfold in H0.
     my_destruct H0. 
-    pose proof Iter_nrm_BBs_n_add_expansion (BBs1 ++ BBs2) bs1 bs2 x0 (S x1).
-    exists x. split.
-    - pose proof BB_sem_child_prop BBs2 (BBs1 ++ BBs2).
-      specialize (H2 bs1 x). apply H2.
-      intros. apply In_sublist_then_in_list_last. apply H3.
-
-Admitted.
+    pose proof Iter_nrm_BBs_n_add_expansion (BBs1 ++ BBs2) bs1 bs2 x0 (S x1). destruct H2. clear H2.
+    apply H3. exists x. split.
+    - assert(forall (n: nat), Iter_nrm_BBs_n (BB_sem_union BBs1) n ⊆ Iter_nrm_BBs_n (BB_sem_union (BBs1 ++ BBs2)) n).
+      {
+        intros. induction n. simpl. sets_unfold. tauto.
+        cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H2.
+        exists x3. split. 
+        + pose proof BB_sem_child_prop BBs1 (BBs1 ++ BBs2) a x3. 
+          apply H5. intros. unfold In. apply In_sublist_then_in_list_head. apply H6. apply H2.
+        + sets_unfold in IHn. specialize (IHn x3 a0). apply IHn. apply H4.
+      }
+      specialize (H2 x0). sets_unfold in H2. specialize (H2 bs1 x).
+      apply H2. apply H.
+    - simpl. sets_unfold. exists x2.
+      pose proof BB_sem_child_prop BBs2 (BBs1 ++ BBs2) x x2.
+      split. apply H2. intros. apply In_sublist_then_in_list_last. apply H4. apply H0. 
+      assert(forall (n: nat), Iter_nrm_BBs_n (BB_sem_union BBs2) n ⊆ Iter_nrm_BBs_n (BB_sem_union (BBs1 ++ BBs2)) n).
+      {
+        intros. induction n. simpl. sets_unfold. tauto.
+        cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H4.
+        exists x3. split. 
+        + pose proof BB_sem_child_prop BBs2 (BBs1 ++ BBs2) a x3. 
+          apply H6. intros. unfold In. apply In_sublist_then_in_list_last. apply H7. apply H4.
+        + sets_unfold in IHn. specialize (IHn x3 a0). apply IHn. apply H5.
+      }
+      specialize (H4 x1). sets_unfold in H4. specialize (H4 x2 bs2). 
+      apply H4. apply H1.
+Qed.
