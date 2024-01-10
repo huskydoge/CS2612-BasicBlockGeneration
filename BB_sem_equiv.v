@@ -617,7 +617,14 @@ Proof.
           commands := nil;
           jump_info := BBnow'_.(jump_info) |}) as BBnow_start.
          (* 前一种情况切一刀的反向版本 *)
-         assert ((exists (x: BB_state), Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 x /\ Bnrm (BB_list_sem (BBnow'_p :: BBs'_p)) x bs2) -> Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_ ++ BBnow'_p :: BBs'_p)) bs1 bs2) as H_sep. admit. (*TODO 可能比上一种情况简单一点*)
+         assert ((exists (x: BB_state), Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 x /\ Bnrm (BB_list_sem (BBnow'_p :: BBs'_p)) x bs2) -> Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_ ++ BBnow'_p :: BBs'_p)) bs1 bs2) as H_sep. {
+          intros. unfold BB_list_sem. cbn[Bnrm].
+          destruct H2 as [? [H_aux1 H_aux2]]. unfold BB_list_sem in H_aux1.
+          unfold BB_list_sem in H_aux2. cbn[Bnrm] in H_aux1. cbn[Bnrm] in H_aux2.
+          sets_unfold in H_aux1. sets_unfold in H_aux2.
+          destruct H_aux1 as [? H_aux1]. destruct H_aux2 as [? H_aux2].
+          sets_unfold. admit.
+         }
          apply H_sep. clear H_sep. 
          (* 这个时候就拿H_step1/H_step2的中间状态 *)
          exists {| st := x; BB_num := BBnow'_p.(block_num) |}.
@@ -632,11 +639,25 @@ Proof.
          specialize (H_step1 a x). destruct H_step1 as [T4 H_step1_inv]. clear T4.
          pose proof H_step1_inv H_step1_main as H_step1_inv.
          destruct H_step1_inv as [? [? [C1 [C2 [C3 [C4 C5]]]]]].
-         assert (x0 = bs1) as T4. admit. (*TODO easy*)
-         assert (x1 = bs3) as T5. admit. (*TODO easy*)
+         assert (x0 = bs1) as T4. {
+          subst bs1. destruct x0. simpl in C2. rewrite C2. 
+          simpl in C4. rewrite C4. rewrite BBnow'_prop. simpl. tauto.
+         }
+         assert (x1 = bs3) as T5. {
+          subst bs3. destruct x1. simpl in C3. simpl in C5.
+          rewrite C3. rewrite B4. rewrite C5.
+          pose proof if_BBn_num_prop e c1 c2 BBs BBnow BBnum.
+          rewrite <- H2. subst BBnow_mid. tauto.
+         }
          rewrite T4 in C1. rewrite T5 in C1.
          assert (Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bs3 -> Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bs3) as M1. {
-            admit. (*TODO 同上，应该是对的*)
+            intros. 
+            pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBswo_ bs1 bs3.
+            subst BBnow_start. apply H3.
+            + unfold separate_property. admit.
+            + admit.
+            + admit.
+            + apply H2.
          }
          apply M1. apply C1.
 
@@ -645,8 +666,16 @@ Proof.
          destruct H_step2 as [T4 H_step2_inv]. clear T4.
          pose proof H_step2_inv H_step2_main as H_step2_inv.
          destruct H_step2_inv as [? [? [C1 [C2 [C3 [C4 C5]]]]]].
-         assert (x0 = bs3) as T4. admit. (*TODO easy*)
-         assert (x1 = bs2) as T5. admit. (*TODO easy*)
+         assert (x0 = bs3) as T4. {
+          subst bs3. destruct x0. simpl in C2. rewrite C2. 
+          simpl in C4. rewrite C4. tauto.
+         }
+         assert (x1 = bs2) as T5. {
+          subst bs2. destruct x1. simpl in C3. simpl in C5. 
+          rewrite C3. rewrite C5. 
+          pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2).
+          subst BBnow_mid. rewrite <- H2. tauto.
+         }
          rewrite T4 in C1. rewrite T5 in C1.
          cbn[Bnrm] in C1.
          assert (BBcmds'_p = BBnow'_p.(cmd)) as T6. {
