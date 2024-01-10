@@ -565,7 +565,6 @@ Proof.
 
       destruct T4 as [B1 [B2 [B3 [B4 [B5 [H_cmd_equiv B6]]]]]].
 
-      (* ! Check. *)
       exists (BBswo_ ++ BBnow'_p :: BBs'_p).
       exists BBnow'_. exists nil. exists (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(next_block_num). exists BBendnum_. 
       simpl in A2. 
@@ -675,42 +674,110 @@ Proof.
         block_num := BBnow'_.(block_num);
         commands := nil;
         jump_info := BBnow'_.(jump_info) |}) as BBnow_start.
-        assert (exists (x: BB_state), Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 x /\ Bnrm (BB_list_sem (BBnow'_p :: BBs'_p)) x bs2) as H_sep. {
-        assert (amid: exists a_mid, (cmd_sem (CIf e c1 c2)).(nrm) a a_mid). {
-          (*显然存在这样一个a_mid的，在程序不出错的情况下 TODO *)
-          admit.
-        } 
-        destruct amid as [a_mid H_amid].
-        set(bs_mid:={| st := a_mid; BB_num := BBnow_mid.(block_num) |}).
-        exists bs_mid. split.
-        - specialize (H_step1 a a_mid). destruct H_step1 as [_ focus].
-          specialize (focus H_amid).
-          destruct focus as [bs1' [bs_mid' [H_step1_main [H_step1_aux1 H_step1_aux2]]]].
-          assert (eqbs1: bs1 = bs1'). {
-          destruct bs1. destruct bs1'.
-          simpl in H_step1_aux1. simpl in C1. rewrite C1. rewrite H_step1_aux1. 
-          destruct H_step1_aux2 as [_ [m1 m2]]. simpl in m1. rewrite m1. 
-          simpl in C3.
-          rewrite BBnow'_prop in C3. simpl in C3. rewrite C3. reflexivity.
-          }
-          assert (eqbs_mid: bs_mid = bs_mid'). {
-          subst bs_mid. destruct bs_mid'.
-          destruct H_step1_aux2 as [m0 [m1 m2]]. simpl in m2. rewrite m2.
-          simpl in m0. rewrite m0. rewrite BBnow_mid_num_prop. reflexivity. 
-          }
-          rewrite <- eqbs1 in *. rewrite <- eqbs_mid in *. clear eqbs1 eqbs_mid.
-          simpl in H_step1_main. sets_unfold in H_step1_main.
-          destruct H_step1_main as [H_step1_state [H_step1_head [H_step1_nat H_step1_tail]]].
-          simpl. sets_unfold. exists (S H_step1_nat). simpl. sets_unfold.
-          exists H_step1_state. split.
-          + unfold BB_sem_union. simpl. sets_unfold. left. exists bs1. split.
-            * rewrite HeqBBnow_start. simpl. sets_unfold. tauto.
-            * rewrite HeqBBnow_start. simpl. tauto.
-          + rewrite HeqBBnow_start. simpl.
-            pose proof (Iter_shrink BBswo_ BBnow'_ H_step1_nat H_step1_state bs_mid H_step1_tail). tauto.
-        - specialize (H_step2 a_mid a0). destruct H_step2 as [_ focus]. 
-          admit. (*TODO*)
+
+(* !Range的性质引入  ==========================================================================================  *)
+
+      pose proof BBgen_range_list_soundness_correct cmds as P_prop.
+      pose proof BBgen_range_single_soundness_correct c as Q_prop.
+      unfold Q_BBgen_range in Q_prop. unfold P_BBgen_range in P_prop.
+      specialize (Q_prop BBnum BBnum'_ BBs BBnow (BBnow'_ :: BBs'_)).
+      assert (m1: jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None). tauto.
+      assert (m2: to_result (cmd_BB_gen c BBs BBnow BBnum) = BBs ++ BBnow'_ :: BBs'_). {
+      pose proof Q_add_BBs_in_generation_reserves_BB_sound c BBs BBnow BBnum as nil_eq.
+      rewrite nil_eq. rewrite <- A2. unfold to_result.
+      assert(eq: (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks) = ({|
+        block_num := BBnow.(block_num);
+        commands := BBnow.(cmd);
+        jump_info :=
+          {| jump_kind := CJump; jump_dest_1 := BBnum; jump_dest_2 := Some (S BBnum); jump_condition := Some e |}
+        |} :: then_res ++ else_res)). {
+        rewrite Heqthen_res. rewrite Heqelse_res. 
+        rewrite Heqc0.
+        cbn [cmd_BB_gen]. simpl. reflexivity.
         }
+      rewrite eq. rewrite HeqBBnow_mid. rewrite Heqc0. reflexivity.
+      }
+
+      assert (wo_tran: BBswo_ ++ (cmd_BB_gen c BBs BBnow BBnum).(BBn)::nil = BBs'_).
+      {
+      unfold to_result in m2. rewrite Heqc0. rewrite Heqc0 in m2. 
+      rewrite A3 in m2. 
+      rewrite app_assoc_reverse in m2. 
+      assert (mid: (BBs ++ BBnow'_ :: nil) ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil =
+      (BBs ++ BBnow'_ :: nil) ++ BBs'_). {
+        assert ((BBnow'_ :: BBswo_) = (BBnow'_ :: nil) ++ BBswo_). {
+          simpl. reflexivity.
+        }
+        rewrite H2 in m2. rewrite app_assoc_reverse in m2. 
+        assert (BBnow'_ :: BBs'_ = BBnow'_ :: nil ++ BBs'_). {
+          simpl. reflexivity.
+        }
+        rewrite H3 in m2. rewrite app_assoc in m2. rewrite m2. simpl. rewrite <- app_assoc. reflexivity.
+      }
+      pose proof cut_eq_part_list_l BasicBlock (BBs ++
+      BBnow'_ :: nil) (BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) BBs'_ mid. tauto.
+      }
+
+      symmetry in A4. rewrite <- Heqc0 in A4. specialize (Q_prop m1 A4 m2 H0).
+
+      specialize (P_prop BBnum'_ BBnum'_p (BBs ++ BBnow'_ :: BBswo_) BBnow_mid (BBnow'_p :: BBs'_p)).
+      assert(n1: jump_kind BBnow_mid.(jump_info) = UJump /\ jump_dest_2 BBnow_mid.(jump_info) = None). tauto.
+      assert(n2: to_result (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_) =
+      (BBs ++ BBnow'_ :: BBswo_) ++ BBnow'_p :: BBs'_p). {
+        pose proof add_BBs_in_generation_reserves_BB cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_ as key.
+        unfold to_result in key. simpl in key.
+        rewrite key in B5. 
+        unfold to_result. rewrite <- B5. rewrite key. reflexivity.
+      }
+      specialize (P_prop n1 B2 n2).
+
+
+(* !Range的性质引入结束  ==========================================================================================  *)
+
+
+        assert (neq_1_2: bs1 <> bs2). {
+          destruct bs1. destruct bs2. simpl. unfold not. intros. inversion H2.
+          simpl in C4.  simpl in C3. rewrite BBnow'_prop in C3. simpl in C3. rewrite C3 in H4. rewrite C4 in H4. tauto.
+        }
+
+        assert (disjoint_num_set: BBnum_set (BBnow_start :: nil ++ BBswo_) ∩ BBnum_set (BBnow'_p :: nil ++ BBs'_p) == ∅). {
+          destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
+          destruct Q_prop as [Q_prop1 [Q_prop2 Q_prop3]].
+          (*用Q_props和P_props*)
+          admit.
+          (*TODO*)
+        }
+
+        assert (disjoint_jmp_dest_set: BBjmp_dest_set (BBnow_start :: nil ++ BBswo_) ∩ BBjmp_dest_set (BBnow'_p :: nil ++ BBs'_p) == ∅).
+        {
+          destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
+          destruct Q_prop as [Q_prop1 [Q_prop2 Q_prop3]].
+          (*用Q_props和P_props*)
+          admit.
+          (*TODO*)
+        }
+
+        assert (in_prop1: BB_num bs1 ∈ BBnum_set (BBnow_start :: nil ++ BBswo_)).
+        {
+          admit.
+          (*TODO easy lyz*)
+        }
+
+        assert (in_prop2: BB_num bs2 ∈ BBjmp_dest_set (BBnow'_p :: nil ++ BBs'_p)).
+        {
+          admit.
+          (*TODO*)
+        }
+
+        
+        assert (exists (x: BB_state), Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 x /\ Bnrm (BB_list_sem (BBnow'_p :: BBs'_p)) x bs2) as H_sep. {
+          pose proof an_over_pass_bridge BBswo_ BBs'_p BBnow_start BBnow'_p bs1 bs2 H_sem_full neq_1_2 disjoint_num_set as bridge.
+          specialize (bridge disjoint_jmp_dest_set).
+          specialize (bridge in_prop1).
+          specialize (bridge in_prop2).
+          tauto.
+        }
+
         destruct H_sep as [bb_mid [H_step1_main H_step2_main]].
         cbn[cmd_list_sem]. cbn[nrm]. sets_unfold. exists bb_mid.(st).
         (* 这个时候我们就分两步，分别使用H_step1和H_step2来走 *)
@@ -728,59 +795,9 @@ Proof.
         2. 由H_step2_main得到BB_mid的num一定在((BBnow'_p :: BBs'_p)) 的num之中，而我们也有其范围。
         两个范围唯一的交点就是S (S BBnum)
         *)
-        pose proof BBgen_range_list_soundness_correct cmds as P_prop.
-        pose proof BBgen_range_single_soundness_correct c as Q_prop.
-        unfold Q_BBgen_range in Q_prop. unfold P_BBgen_range in P_prop.
-        specialize (Q_prop BBnum BBnum'_ BBs BBnow (BBnow'_ :: BBs'_)).
-        assert (m1: jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None). tauto.
-        assert (m2: to_result (cmd_BB_gen c BBs BBnow BBnum) = BBs ++ BBnow'_ :: BBs'_). {
-        pose proof Q_add_BBs_in_generation_reserves_BB_sound c BBs BBnow BBnum as nil_eq.
-        rewrite nil_eq. rewrite <- A2. unfold to_result.
-        assert(eq: (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks) = ({|
-          block_num := BBnow.(block_num);
-          commands := BBnow.(cmd);
-          jump_info :=
-            {| jump_kind := CJump; jump_dest_1 := BBnum; jump_dest_2 := Some (S BBnum); jump_condition := Some e |}
-          |} :: then_res ++ else_res)). {
-          rewrite Heqthen_res. rewrite Heqelse_res. 
-          rewrite Heqc0.
-          cbn [cmd_BB_gen]. simpl. reflexivity.
-          }
-        rewrite eq. rewrite HeqBBnow_mid. rewrite Heqc0. reflexivity.
-        }
-         
-        assert (wo_tran: BBswo_ ++ (cmd_BB_gen c BBs BBnow BBnum).(BBn)::nil = BBs'_).
-        {
-        unfold to_result in m2. rewrite Heqc0. rewrite Heqc0 in m2. 
-        rewrite A3 in m2. 
-        rewrite app_assoc_reverse in m2. 
-        assert (mid: (BBs ++ BBnow'_ :: nil) ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil =
-        (BBs ++ BBnow'_ :: nil) ++ BBs'_). {
-          assert ((BBnow'_ :: BBswo_) = (BBnow'_ :: nil) ++ BBswo_). {
-            simpl. reflexivity.
-          }
-          rewrite H2 in m2. rewrite app_assoc_reverse in m2. 
-          assert (BBnow'_ :: BBs'_ = BBnow'_ :: nil ++ BBs'_). {
-            simpl. reflexivity.
-          }
-          rewrite H3 in m2. rewrite app_assoc in m2. rewrite m2. simpl. rewrite <- app_assoc. reflexivity.
-        }
-        pose proof cut_eq_part_list_l BasicBlock (BBs ++
-        BBnow'_ :: nil) (BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) BBs'_ mid. tauto.
-        }
 
-        symmetry in A4. rewrite <- Heqc0 in A4. specialize (Q_prop m1 A4 m2 H0).
-        
-        specialize (P_prop BBnum'_ BBnum'_p (BBs ++ BBnow'_ :: BBswo_) BBnow_mid (BBnow'_p :: BBs'_p)).
-        assert(n1: jump_kind BBnow_mid.(jump_info) = UJump /\ jump_dest_2 BBnow_mid.(jump_info) = None). tauto.
-        assert(n2: to_result (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_) =
-        (BBs ++ BBnow'_ :: BBswo_) ++ BBnow'_p :: BBs'_p). {
-          pose proof add_BBs_in_generation_reserves_BB cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_ as key.
-          unfold to_result in key. simpl in key.
-          rewrite key in B5. 
-          unfold to_result. rewrite <- B5. rewrite key. reflexivity.
-        }
-        specialize (P_prop n1 B2 n2).
+
+
         destruct Q_prop as [_ [_ Q_prop]]. destruct P_prop as [P_prop [_ _]].
         pose proof BBs_bs2_in_BB_jmp_set (BBnow_start :: nil ++ BBswo_) bs1 bb_mid H_step1_main as key1. 
         pose proof BBs_bs1_in_BB_num_set (BBnow'_p :: BBs'_p) bb_mid bs2 H_step2_main as key2.
@@ -829,6 +846,7 @@ Proof.
                 -- tauto.
              }
              tauto.
+             
         + (* case_b: bs1 = bb_mid*) destruct key2 as [case_a' | case_b'].
           * unfold BBnum_set in case_a'. destruct case_a' as [case_a'_bb case_a'_cond].
             specialize P_prop with (BB_num bb_mid).
@@ -865,27 +883,7 @@ Proof.
         unfold separate_property.
         sets_unfold. intros.
         split.
-        - pose proof BBgen_range_single_soundness_correct c as Q_prop. unfold Q_BBgen_range in Q_prop.
-          specialize (Q_prop BBnum BBnum'_ BBs BBnow (BBnow'_ :: BBs'_)).
-          assert (m1: jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None). tauto.
-          assert (m2: to_result (cmd_BB_gen c BBs BBnow BBnum) = BBs ++ BBnow'_ :: BBs'_). {
-          pose proof Q_add_BBs_in_generation_reserves_BB_sound c BBs BBnow BBnum as nil_eq.
-          rewrite nil_eq. rewrite <- A2. unfold to_result.
-          assert(eq: (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks) = ({|
-            block_num := BBnow.(block_num);
-            commands := BBnow.(cmd);
-            jump_info :=
-              {| jump_kind := CJump; jump_dest_1 := BBnum; jump_dest_2 := Some (S BBnum); jump_condition := Some e |}
-            |} :: then_res ++ else_res)). {
-            rewrite Heqthen_res. rewrite Heqelse_res. 
-            rewrite Heqc0.
-            cbn [cmd_BB_gen]. simpl. reflexivity.
-            }
-          rewrite eq. rewrite HeqBBnow_mid. rewrite Heqc0. reflexivity.
-          }
-          rewrite <- Heqc0 in A4.
-          symmetry in A4.
-          specialize (Q_prop m1 A4 m2 H0). destruct Q_prop as [_ [_ focus]]. 
+        -  destruct Q_prop as [_ [_ focus]]. 
           sets_unfold in focus. specialize (focus a1). 
           intros. rename H2 into intr.
           destruct intr as [intr1 intr2].

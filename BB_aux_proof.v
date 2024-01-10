@@ -1774,3 +1774,30 @@ forall (BBhead BBnow: BasicBlock) (BBs: list BasicBlock),
   -> BBnow = BBhead.
 Proof.
 Admitted. (*TODO*)
+
+
+(*对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
+1. (bs1, bs2) 在 BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) 中
+2. bs1 不等于 bs2
+3. BBnow1 :: nil ++ BBs1 和 BBnow2 :: nil ++ BBs2 的BBnum_set不交
+4. BBnow1 :: nil ++ BBs1 和 BBnow2 :: nil ++ BBs2 的BBjmp_dest_set不交
+5. bs1的BBnum在 BBnow1 :: nil ++ BBs1 的numset中
+6. bs2的BBnum在 BBnow2 :: nil ++ BBs2 的jmpset中
+那么存在一个x，使得:
+1. (bs1, x) 在 BB_list_sem (BBnow1 :: nil ++ BBs1) 中
+2. (x, bs2) 在 BB_list_sem (BBnow2 :: BBs2) 中
+*)
+Lemma an_over_pass_bridge: 
+  forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
+  Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
+  bs1 <> bs2 ->
+  BBnum_set (BBnow1 :: nil ++ BBs1) ∩ BBnum_set (BBnow2 :: nil ++ BBs2) == ∅ ->
+  BBjmp_dest_set (BBnow1 :: nil ++ BBs1) ∩ BBjmp_dest_set (BBnow2 :: nil ++ BBs2) == ∅ ->
+  bs1.(BB_num) ∈  BBnum_set (BBnow1 :: nil ++ BBs1) ->
+  bs2.(BB_num) ∈  BBjmp_dest_set (BBnow2 :: nil ++ BBs2) ->
+  (exists x,
+  Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\
+  Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2).
+Proof.
+  (*TODO! IMPORTANT! lyz*)
+Admitted.
