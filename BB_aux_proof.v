@@ -1720,7 +1720,7 @@ Proof.
   intros. revert l1 l2 H.
   induction l3. 
   - intros. 
-  (*TODO*)
+  (*TODO BUG*)
 Admitted.
 
 
@@ -1738,6 +1738,7 @@ Qed.
 
 (*语义上的一些引理 ===================*)
 
+(*对于任意步语义，在BBs的语义中总能推出在BBnow::BBs的语义中*)
 Lemma Iter_shrink:
   forall (BBs: list BasicBlock)(BBnow'_: BasicBlock) (n: nat) (bs1 bs2: BB_state),
   Iter_nrm_BBs_n (BB_sem_union BBs) n bs1 bs2 ->
@@ -1828,4 +1829,12 @@ Proof.
       tauto.
   - contradiction.
   (*TODO! IMPORTANT! lyz*)
+Admitted.
+
+Lemma an_over_pass_bridge_reverse:
+  forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
+  (exists x, Bnrm (BB_list_sem (BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBs2)) x bs2) ->
+  Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2.
+Proof.
+  (*TODO! IMPORTANT!*)
 Admitted.
