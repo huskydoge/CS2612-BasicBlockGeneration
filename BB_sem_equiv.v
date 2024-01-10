@@ -524,7 +524,10 @@ Proof.
           assert(n1: jump_kind BBnow_mid.(jump_info) = UJump /\ jump_dest_2 BBnow_mid.(jump_info) = None). tauto.
           assert(n2: to_result (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_) =
           (BBs ++ BBnow'_ :: BBswo_) ++ BBnow'_p :: BBs'_p). {
-            admit. (* TODO Same, just use list version of Q_add_BBs_in_generation_reserves_BB_sound *)
+            pose proof add_BBs_in_generation_reserves_BB cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_ as key.
+            unfold to_result in key. simpl in key.
+            rewrite key in B5. 
+            unfold to_result. rewrite <- B5. rewrite key. reflexivity.
           }
           specialize (P_prop n1 B2 n2).
           destruct Q_prop as [_ [_ Q_prop]]. destruct P_prop as [P_prop [_ _]].
@@ -558,6 +561,7 @@ Proof.
          unfold separate_property. 
          (*A2*) 
          admit.
+         (*TODO*)
         }
 
          assert (Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bb_mid -> Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bb_mid) as M1. {
