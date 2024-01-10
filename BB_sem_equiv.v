@@ -744,8 +744,55 @@ Proof.
           destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
           destruct Q_prop as [Q_prop1 [Q_prop2 Q_prop3]].
           (*用Q_props和P_props*)
-          admit.
-          (*TODO*)
+          sets_unfold. intros. split.
+          - intros. rename H2 into key. 
+            destruct key as [cond1 cond2].
+            unfold BBnum_set in cond1. destruct cond1 as [cond1_BB cond1_conds].
+            destruct cond1_conds as [cond1_1 cond1_2].
+            unfold BBnum_set in cond2. destruct cond2 as [cond2_BB cond2_conds].
+            destruct cond2_conds as [cond2_1 cond2_2].
+            destruct cond1_1 as [case1 | case2].
+            * destruct cond2_1 as [case1' | case2'].
+              ++ rewrite <- cond1_2 in cond2_2. rewrite <- case1 in cond2_2. rewrite <- case1' in cond2_2. 
+                 rewrite B4 in cond2_2. rewrite BBnow_mid_num_prop in cond2_2. rewrite HeqBBnow_start in cond2_2. simpl in cond2_2. 
+                 rewrite BBnow'_prop in cond2_2. simpl in cond2_2. lia. 
+              ++ simpl in case2'. simpl in P_prop1. unfold all_ge in P_prop1. specialize (P_prop1 cond2_BB.(block_num)).
+                assert (t: BBnum_set BBs'_p cond2_BB.(block_num)). {
+                  unfold BBnum_set. exists cond2_BB. split. tauto. tauto. 
+                }
+                specialize (P_prop1 t). 
+                rewrite <- cond1_2 in cond2_2. rewrite <- case1 in cond2_2. rewrite cond2_2 in P_prop1. 
+                rewrite HeqBBnow_start in P_prop1. simpl in P_prop1. rewrite BBnow'_prop in P_prop1. simpl in P_prop1. 
+                rewrite BBnow_mid_num_prop in T2. lia.
+            * destruct cond2_1 as [case1' | case2']. 
+              simpl in case2. simpl in Q_prop2. unfold all_ge in Q_prop2. specialize (Q_prop2 cond1_BB.(block_num)).
+              assert (t: BBnum_set BBs'_ cond1_BB.(block_num)).
+              {
+                unfold BBnum_set. exists cond1_BB. split. rewrite <- wo_tran. 
+                pose proof In_tail_inclusive BBswo_ cond1_BB (cmd_BB_gen c BBs BBnow BBnum).(BBn) case2. tauto.
+                tauto.
+              }
+              specialize (Q_prop2 t). rewrite <- cond1_2 in cond2_2.
+              rewrite <- case1' in cond2_2. rewrite B4 in cond2_2. rewrite BBnow_mid_num_prop in cond2_2. 
+              rewrite <- cond2_2 in Q_prop2. 
+              rewrite BBnow_mid_num_prop in T2. 
+              pose proof neq_ssnum BBs BBswo_ cond1_BB BBnow BBnow'_ BBnum e c1 c2 A3 case2. lia.
+              simpl in case2. simpl in case2'. 
+              unfold all_ge in P_prop1. specialize (P_prop1 cond2_BB.(block_num)).
+              assert (t: BBnum_set BBs'_p cond2_BB.(block_num)). {
+                unfold BBnum_set. exists cond2_BB. split. tauto. tauto. 
+              }
+              specialize (P_prop1 t).
+              unfold all_lt in Q_prop2. specialize (Q_prop2 cond1_BB.(block_num)).
+              assert (t': BBnum_set (tl (BBnow'_ :: BBs'_)) cond1_BB.(block_num)).
+              {
+                unfold BBnum_set. exists cond1_BB. split. rewrite <- wo_tran. 
+                pose proof In_tail_inclusive BBswo_ cond1_BB (cmd_BB_gen c BBs BBnow BBnum).(BBn) case2. tauto.
+                tauto.
+              }
+              specialize (Q_prop2 t').
+              lia.
+          - intros. tauto.
         }
 
         assert (disjoint_jmp_dest_set: BBjmp_dest_set (BBnow_start :: nil ++ BBswo_) ∩ BBjmp_dest_set (BBnow'_p :: nil ++ BBs'_p) == ∅).
@@ -753,8 +800,59 @@ Proof.
           destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
           destruct Q_prop as [Q_prop1 [Q_prop2 Q_prop3]].
           (*用Q_props和P_props*)
-          admit.
-          (*TODO*)
+          sets_unfold. intros. split.
+          - intros. rename H2 into key. destruct key as [key1 key2].
+            sets_unfold in P_prop3. specialize (P_prop3 a1 key2).
+            sets_unfold in Q_prop3. specialize (Q_prop3 a1).
+            assert (t: BBjmp_dest_set (BBnow'_ :: BBs'_) a1). {
+              unfold BBjmp_dest_set in key1. destruct key1 as [key1_BB key1_conds].
+              destruct key1_conds as [key1_1 key1_2].
+              unfold BBjmp_dest_set. simpl in key1_1. destruct key1_1 as [case1 | case2] .
+              exists BBnow'_. split. left. tauto. rewrite <- case1 in key1_2. rewrite HeqBBnow_start in key1_2. simpl in key1_2. tauto.
+              exists key1_BB. split. right. 
+              rewrite <- wo_tran. pose proof In_tail_inclusive BBswo_ key1_BB (cmd_BB_gen c BBs BBnow BBnum).(BBn) case2. tauto.
+              tauto.
+            }
+            specialize (Q_prop3 t).
+            destruct P_prop3 as [P_prop3_1 | P_prop3_2].
+            assert (contra: BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_) a1).
+            {
+              unfold BBjmp_dest_set. simpl.  
+              unfold BBjmp_dest_set in key1.
+              destruct key1 as [key1_BB key1_conds]. destruct key1_conds as [key1_1 key1_2].
+              destruct key1_1 as [case1 | case2].
+              exists BBnow'_. split.
+              - left. tauto.
+              - rewrite <- case1 in key1_2. rewrite HeqBBnow_start in key1_2. simpl in key1_2. tauto.
+              - exists key1_BB. split.
+                + right. simpl in case2. tauto. 
+                + tauto. 
+            }
+            * destruct Q_prop3 as [Q_prop3_1 | Q_prop3_2]; unfold section in *.
+              ++ lia.
+              ++ unfold unit_set in Q_prop3_2. pose proof unique_endinfo_if BBs BBswo_  BBs'_ e c1 c2 BBnow BBnow'_ BBnum A3.
+                symmetry in wo_tran. rewrite Heqc0 in wo_tran. specialize (H2 wo_tran  endinfo_prop). sets_unfold in H2.
+                rewrite <- Q_prop3_2 in H2. 
+                specialize (H2 contra). lia.
+            * unfold unit_set in P_prop3_2. pose proof JmpInfo_inherit BBs BBnow BBnum c. rewrite Heqc0 in H2.
+              assert (contra: BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_) a1).
+              {
+                unfold BBjmp_dest_set. simpl.  
+                unfold BBjmp_dest_set in key1.
+                destruct key1 as [key1_BB key1_conds]. destruct key1_conds as [key1_1 key1_2].
+                destruct key1_1 as [case1 | case2].
+                exists BBnow'_. split.
+                - left. tauto.
+                - rewrite <- case1 in key1_2. rewrite HeqBBnow_start in key1_2. simpl in key1_2. tauto.
+                - exists key1_BB. split.
+                  + right. simpl in case2. tauto. 
+                  + tauto. 
+              }
+              rewrite <- HeqBBnow_mid in H2. rewrite H2 in P_prop3_2.
+              pose proof unique_endinfo_if BBs BBswo_  BBs'_ e c1 c2 BBnow BBnow'_ BBnum A3.
+              symmetry in wo_tran. rewrite Heqc0 in wo_tran. specialize (H3 wo_tran  endinfo_prop). sets_unfold in H3.
+              rewrite <- P_prop3_2 in H3. tauto.
+          - tauto.
         }
 
         assert (in_prop1: BB_num bs1 ∈ BBnum_set (BBnow_start :: nil ++ BBswo_)).
