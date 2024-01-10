@@ -584,11 +584,24 @@ Proof.
          specialize (H_step1 a x). destruct H_step1 as [T4 H_step1_inv]. clear T4.
          pose proof H_step1_inv H_step1_main as H_step1_inv.
          destruct H_step1_inv as [? [? [C1 [C2 [C3 [C4 C5]]]]]].
-         assert (x0 = bs1) as T4. admit. (*TODO easy*)
-         assert (x1 = bs3) as T5. admit. (*TODO easy*)
+         assert (x0 = bs1) as T4. {
+          subst bs1. destruct x0. simpl in C2. rewrite C2. 
+          simpl in C4. rewrite C4. rewrite BBnow'_prop. simpl. tauto.
+         }
+         assert (x1 = bs3) as T5. {
+          subst bs3. destruct x1. simpl in C3. simpl in C5.
+          rewrite C3. rewrite B4. rewrite C5.
+          admit.
+         }
          rewrite T4 in C1. rewrite T5 in C1.
          assert (Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bs3 -> Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bs3) as M1. {
-            admit. (*TODO 同上，应该是对的*)
+            intros. 
+            pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBswo_ bs1 bs3.
+            subst BBnow_start. apply H3.
+            + admit.
+            + admit.
+            + admit.
+            + apply H2.
          }
          apply M1. apply C1.
 
@@ -597,8 +610,16 @@ Proof.
          destruct H_step2 as [T4 H_step2_inv]. clear T4.
          pose proof H_step2_inv H_step2_main as H_step2_inv.
          destruct H_step2_inv as [? [? [C1 [C2 [C3 [C4 C5]]]]]].
-         assert (x0 = bs3) as T4. admit. (*TODO easy*)
-         assert (x1 = bs2) as T5. admit. (*TODO easy*)
+         assert (x0 = bs3) as T4. {
+          subst bs3. destruct x0. simpl in C2. rewrite C2. 
+          simpl in C4. rewrite C4. tauto.
+         }
+         assert (x1 = bs2) as T5. {
+          subst bs2. destruct x1. simpl in C3. simpl in C5. 
+          rewrite C3. rewrite C5. 
+          pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2).
+          subst BBnow_mid. rewrite <- H2. tauto.
+         }
          rewrite T4 in C1. rewrite T5 in C1.
          cbn[Bnrm] in C1.
          assert (BBcmds'_p = BBnow'_p.(cmd)) as T6. {
@@ -612,7 +633,7 @@ Proof.
       -- admit. (* inf case *)
       -- admit. (* inf case *)
       -- pose proof JmpInfo_inherit_for_list BBs BBnow BBnum (CIf e c1 c2 :: cmds). tauto.
-    - admit.
+    - admit. (*While Case*)
 Admitted. 
 
 
