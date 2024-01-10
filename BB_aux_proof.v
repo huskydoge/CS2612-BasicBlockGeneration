@@ -15,6 +15,7 @@ Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 Require Import Main.BB_gen_properties.
+Require Import Nat.
 
 
 Import Denotation.
@@ -1843,5 +1844,19 @@ Lemma an_over_pass_bridge_reverse:
   (exists x, Bnrm (BB_list_sem (BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBs2)) x bs2) ->
   Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2.
 Proof.
+  intros. my_destruct H.
+  unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
+  unfold BB_list_sem in H. cbn[Bnrm] in H. sets_unfold in H.
+  unfold BB_list_sem in H0. cbn[Bnrm] in H0. sets_unfold in H0.
+  my_destruct H. my_destruct H0. 
+  induction x1.
+  + pose proof BB_list_sem_child_prop BBs1 (BBs1 ++ BBs2) bs1 x.
+    simpl in H0. sets_unfold in H0. rewrite H0 in H1. apply H1.
+    intros. apply In_sublist_then_in_list_head. apply H2.
+    rewrite H0 in H. unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
+    exists x0. apply H.
+  + cbn[Iter_nrm_BBs_n] in H0.  
+
+
   (*TODO! IMPORTANT!*)
 Admitted.
