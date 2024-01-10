@@ -1799,5 +1799,33 @@ Lemma an_over_pass_bridge:
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\
   Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2).
 Proof.
+  intros. 
+  remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs.
+  pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H. destruct H5.
+  - my_destruct H5. subst BBs.
+    assert (In x (BBnow1 :: nil ++ BBs1) \/ In x (BBnow2 :: nil ++ BBs2)). admit.
+    clear H5.
+    destruct H8.
+    + exists x0. split. 
+      * unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists (S O).
+        cbn[Iter_nrm_BBs_n]. sets_unfold. exists x0. split.
+        pose proof BB_sem_child_prop (x::nil) (BBnow1::nil ++ BBs1) bs1 x0. apply H8.
+        -- intros. unfold In in H9. unfold In.  destruct H9.
+           rewrite <- H9. unfold In in H5. destruct H5 as [? | ?].
+           rewrite H9. rewrite H5. left. apply H9.
+           right. apply H5. tauto.
+        -- unfold BB_sem_union. cbn[Bnrm]. sets_unfold. left. apply H6.
+        -- tauto.
+      * pose proof BB_jmp_sem_num_in_BBjmp_dest_set.
+        admit.
+    + pose proof BB_sem_start_BB_num bs1 x0 x H6.
+      sets_unfold in H1. specialize (H1 x.(block_num)). destruct H1.
+      clear H9.
+      assert (False). {
+        apply H1. split. sets_unfold in H3. rewrite <- H8. apply H3.
+        unfold BBnum_set. exists x. split. apply H5. tauto.
+      }
+      tauto.
+  - contradiction.
   (*TODO! IMPORTANT! lyz*)
 Admitted.
