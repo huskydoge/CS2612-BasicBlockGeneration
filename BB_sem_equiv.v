@@ -630,21 +630,34 @@ Proof.
             inversion case_b. rename H3 into tmp. rewrite BBnow'_prop in tmp. simpl in tmp. tauto.
         }
 
-         assert (sep_prop: separate_property BBnow'_ BBs). {
-         unfold separate_property. 
-         (*A2*) 
-         admit.
-         (*TODO*)
+        assert (sep_prop: separate_property BBnow'_ BBs'_). {
+        unfold separate_property.
+        pose proof A2. 
+        (*A2*) 
+        admit.
+        (*TODO*)
+      }
+
+        assert (sep_prop_wo: separate_property BBnow'_ BBswo_). {
+        unfold separate_property.
+        unfold separate_property in sep_prop.
+        sets_unfold. sets_unfold in sep_prop.
+        intros.
+        specialize (sep_prop a1).
+        destruct sep_prop as [sep_prop1 sep_prop2].
+        split. 
+        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy*)
+          tauto.
+        - intros. tauto. 
         }
 
-         assert (Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bb_mid -> Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bb_mid) as M1. {
-         (*TODO
-           使用引理BDenote_concat_equiv_BB_list_sem
-           转换关系应该是对的，但是需要把前提都找出来
-           *)
-         pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBs bs1 bb_mid sep_prop.
-         pose proof BB_restrict_sound.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况 TODO*)
-         admit.
+        assert (Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bb_mid -> Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bb_mid) as M1. {
+        (*TODO
+          使用引理BDenote_concat_equiv_BB_list_sem
+          转换关系应该是对的，但是需要把前提都找出来
+          *)
+        pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBswo_ bs1 bb_mid sep_prop_wo as cur_1.
+        pose proof BB_restrict_sound BBnow BBnow'_. admit.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况 TODO*)
       }
 
          assert(step1: (exists bs1 bs2 : BB_state,
