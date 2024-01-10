@@ -250,7 +250,7 @@ BB_num2 = (list_cmd_BB_gen cmd_BB_gen pre (nil) BB_pre BB_num1).(next_block_num)
 BB_now_pre.(block_num) = BB_pre_num ->
 BB_now_body.(block_num) = BB_body_num ->
 lt BBnow.(block_num) BBnum  -> (*BBnow的num小于下一个分配的num*)
-BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) -> (*BBnow不会无条件跳转到自身*)
+BBnow.(block_num) <> (jump_dest_1 BBnow.(jump_info)) -> (*BBnow不会无条件跳转到自身*)
 (* Other info needed can be written here *)
 
 (* disjoint properties can be added here *)

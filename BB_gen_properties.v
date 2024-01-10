@@ -1674,3 +1674,21 @@ Qed.
 
 (* ============================================================================================================ *)
 
+(*特殊符号性质：BBnow的传入的endinfo其实不能算在BBnumset里, 这个定义的目的是让这个num仅仅只能通过“传递”拿到，而不可能和其他任何num重叠。*)
+(*当然，我们已经意识到，这个条件其实太强了；但是也很好地帮我们解决了一些逻辑上显然的情况*)
+Definition not_eq_to_any_BBnum (end_info: nat) := 
+  forall (n: nat), end_info <> n.
+
+
+(*如果BBnow的endinfo满足特殊符号性质，那么对于任何新生成的的一串BB（BBs)，它只能在BBs的最后一个Block里，也就是(res.(BBn)的jmpdest里*)
+Lemma unique_endinfo_if:
+  forall (BBs BBswo_ BBs'_: list BasicBlock)  (e: expr) (c1 c2: list cmd) (BBnow BBnow'_: BasicBlock) (BBnum: nat),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_ ->
+  BBs'_ =  BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil ->
+  not_eq_to_any_BBnum (BBnow.(jump_info).(jump_dest_1)) ->
+  ~ (BBnow.(jump_info).(jump_dest_1) ∈ BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_)).
+Proof.
+  intros.
+  unfold not_eq_to_any_BBnum in H1.
+(*TODO*)
+Admitted.

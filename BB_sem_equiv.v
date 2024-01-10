@@ -305,7 +305,16 @@ Proof.
       -- admit. (* inf case *) 
       -- simpl. rewrite B1. pose proof JmpInfo_inherit_for_list BBs x0 BBnum cmds. rewrite H. rewrite <- B1.  simpl. tauto.
     + destruct Qb_if_while as [contra _]. unfold is_asgn in contra. tauto.
-  - unfold P. intros.  
+  - unfold P. intros.
+    assert (endinfo_prop: not_eq_to_any_BBnum BBnow.(jump_info).(jump_dest_1)). {
+    (* 我们需要让传入的BBnow的endinfo，其实不是任何num，更多的是像一种标志。这个性质会在后面用到。
+      本来我们可以这样解决这个问题：让所有BBnum从1开始，把endinfo设置为0，这样在Q和P中仅仅加入一条
+      jmp_dest_1 BBnow.(jump_info) < BBnow.(block_num) 就可以解决了。
+    *)
+    (* !然而, 在构思初期，我们就在BBgen里，让其顺序排为BBnum = BBthen_num < BBelse_num < BBnext_num, 
+    导致在BBthen的跳转目标为BBnext_num的情况下，我们不能用同一个Q或P去推理。因为不满足jmp_dest_1 BBnow.(jump_info) < BBnow.(block_num) *)
+      admit.  
+    }
     specialize (Qb_prop BBs BBnow BBnum).
     destruct H as [bbnow_T1 [bbnow_T2 bbnow_T3]].
     assert (jump_kind BBnow.(jump_info) = UJump /\
@@ -483,6 +492,7 @@ Proof.
           + rewrite HeqBBnow_start. simpl.
             pose proof (Iter_shrink BBswo_ BBnow'_ H_step1_nat H_step1_state bs_mid H_step1_tail). tauto.
         - specialize (H_step2 a_mid a0). destruct H_step2 as [_ focus]. 
+          admit. (*TODO*)
         }
         destruct H_sep as [bb_mid [H_step1_main H_step2_main]].
         cbn[cmd_list_sem]. cbn[nrm]. sets_unfold. exists bb_mid.(st).
@@ -510,15 +520,15 @@ Proof.
         pose proof Q_add_BBs_in_generation_reserves_BB_sound c BBs BBnow BBnum as nil_eq.
         rewrite nil_eq. rewrite <- A2. unfold to_result.
         assert(eq: (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks) = ({|
-        block_num := BBnow.(block_num);
-        commands := BBnow.(cmd);
-        jump_info :=
-          {| jump_kind := CJump; jump_dest_1 := BBnum; jump_dest_2 := Some (S BBnum); jump_condition := Some e |}
-      |} :: then_res ++ else_res)). {
+          block_num := BBnow.(block_num);
+          commands := BBnow.(cmd);
+          jump_info :=
+            {| jump_kind := CJump; jump_dest_1 := BBnum; jump_dest_2 := Some (S BBnum); jump_condition := Some e |}
+          |} :: then_res ++ else_res)). {
           rewrite Heqthen_res. rewrite Heqelse_res. 
           rewrite Heqc0.
           cbn [cmd_BB_gen]. simpl. reflexivity.
-        }
+          }
         rewrite eq. rewrite HeqBBnow_mid. rewrite Heqc0. reflexivity.
         }
          
@@ -560,6 +570,7 @@ Proof.
         sets_unfold in Q_prop. specialize Q_prop with (BB_num bb_mid).
         unfold all_ge in P_prop. unfold tl in P_prop. 
         destruct key1 as [case_a | case_b].
+        (*BBjmp_dest_set (BBnow_start :: nil ++ BBswo_) (BB_num bb_mid)*)
         + destruct key2 as [case_a' | case_b'].
           ++ assert (subseteq: BBjmp_dest_set (BBnow'_ :: BBs'_) (BB_num bb_mid)). {
           (* 显然成立，因为case_a*)
@@ -576,19 +587,35 @@ Proof.
           }
           specialize (Q_prop subseteq). 
           destruct Q_prop as [case1 | case2].
+          (* section BBnum BBnum'_ (BB_num bb_mid) *)
           * unfold section in case1. simpl in case1. destruct case1 as [_ cond].
             pose proof destruct_in_BBnum_set BBnow'_p BBs'_p (BB_num bb_mid) case_a' as key.
             destruct key as [case1 | case2].
             ** rewrite B4 in case1. rewrite case1. tauto.
             ** specialize (P_prop (BB_num bb_mid) case2). lia.
-          * unfold unit_set in case2. (* ! 需要证明BBnow的jmpinfo最后只会在BBn中, 不妨假设输入的BBnow的跳转目的地是一个最小的BBnum TODO HARD*) admit.
-          ++ assert (subseteq: BBjmp_dest_set (BBnow'_ :: BBs'_) (BB_num bb_mid)). {
-          (*TODO 显然成立，因为case_a*)
-            admit.
-          }
+          (* unit_set (jump_dest_1 BBnow.(jump_info)) (BB_num bb_mid) *)
+          * unfold unit_set in case2. (* ! 需要证明BBnow的jmpinfo(即endinfo，最后只会在BBn中, 不会在任何其他block里。从而根据BBs'_ = BBswo_ ++ BBn::nil 导出矛盾*) 
+            unfold not_eq_to_any_BBnum in endinfo_prop. specialize endinfo_prop with (BB_num bb_mid). lia.
+          (* bb_mid = bs2, bs2的num就是endinfo，但是从case-a中知道，bb_mid不可能拿到endinfo，因为它并不在BBn的jmpdest里*)
+            ++ symmetry in wo_tran. rewrite Heqc0 in wo_tran. pose proof unique_endinfo_if BBs BBswo_ BBs'_ e c1 c2 BBnow BBnow'_ BBnum A3 wo_tran endinfo_prop as key.
+             sets_unfold in key. rewrite case_b' in case_a. rewrite C4 in case_a.
+             assert (contra_: BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_) (jump_dest_1 BBnow.(jump_info))). {
+              rewrite HeqBBnow_start in case_a. unfold BBjmp_dest_set in case_a. 
+              destruct case_a as [focus_bb cond]. 
+              destruct cond as [cond1 cond2].
+              destruct cond1 as [cond11 | cond12].
+              unfold BBjmp_dest_set. simpl. exists BBnow'_. split.
+              ** left. tauto.
+              ** rewrite <- cond11 in cond2. simpl in cond2. tauto.
+              ** unfold BBjmp_dest_set. simpl. exists focus_bb. split.
+                -- right. tauto.
+                -- tauto.
+             }
+             tauto.
+        + admit.
+        }
 
 
-         }
 
          assert (sep_prop: separate_property BBnow'_ BBs). {
          unfold separate_property. 
