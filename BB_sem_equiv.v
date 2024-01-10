@@ -630,6 +630,20 @@ Proof.
             inversion case_b. rename H3 into tmp. rewrite BBnow'_prop in tmp. simpl in tmp. tauto.
         }
 
+        assert (wo_disjoint_prop: ~ BBnow_start.(block_num) ∈ BBnum_set (BBswo_)). {
+          pose proof disjoint_num_prop_wo_last_if.
+          admit. (*TODO*)
+        }
+
+        sets_unfold in wo_disjoint_prop. unfold not in wo_disjoint_prop.
+
+        assert (neq_bs1_bbmid: bs1 <> bb_mid).
+        {
+          intros contra. 
+          rewrite <-  contra in key_num_eq. rewrite C3 in key_num_eq. rewrite BBnow'_prop in key_num_eq.
+          cbn [block_num] in key_num_eq. lia.
+        }
+
         assert (sep_prop: separate_property BBnow'_ BBs'_). {
         unfold separate_property.
         pose proof A2. 
@@ -646,19 +660,48 @@ Proof.
         specialize (sep_prop a1).
         destruct sep_prop as [sep_prop1 sep_prop2].
         split. 
-        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy*)
+        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy use wo_sep*)
           tauto.
         - intros. tauto. 
         }
 
         assert (Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bb_mid -> Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bb_mid) as M1. {
+        
+        (* 
+          思路:
+          1. bs1不能是bb_mid, 所以一定要走一步
+          2. 走一步的话，bs1的num是BBnow_start的num，所以只能从BBnow_start出发
+        *)
+        intros.
+        rename H2 into pre.
+        pose proof BBs_list_sem_exists_BB_bs1_x (BBnow_start :: nil ++ BBswo_) bs1 bb_mid pre as pre_stepin.
+        clear pre.
+        destruct pre_stepin as [case1 | case2].
+        - destruct case1 as [case1_BB [case1_bbstate [case1_cond1 [case1_cond2 case1_cond3]]]].
+          pose proof single_step_jmp_property_for_bs1 case1_BB bs1 case1_bbstate case1_cond2 as step1. admit. 
+        
+        - tauto. (*矛盾*)
+  
+
         (*TODO
           使用引理BDenote_concat_equiv_BB_list_sem
           转换关系应该是对的，但是需要把前提都找出来
           *)
         pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBswo_ bs1 bb_mid sep_prop_wo as cur_1.
-        pose proof BB_restrict_sound BBnow BBnow'_. admit.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况 TODO*)
-      }
+        (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况*)
+        pose proof BB_restrict_sound BBnow BBnow'_ BBnum BBswo_ bs1 bb_mid c as cur_2.
+        assert (cond1: (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks) = (BBnow'_ :: nil) ++ BBswo_). {
+          simpl. pose proof Q_add_BBs_in_generation_reserves_BB_sound c BBs BBnow BBnum as tmp.
+          unfold to_result in tmp. rewrite Heqc0 in tmp. rewrite A3 in tmp.  rewrite app_assoc_reverse in tmp.
+          pose proof cut_eq_part_list_l BasicBlock BBs ((BBnow'_ :: BBswo_) ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) ((cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks) ++
+          (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BBn) :: nil) tmp as tran.
+          pose proof eq_BBn2 BBs nil BBnow BBnum c as eq_bbn. rewrite Heqc0 in eq_bbn. rewrite eq_BBn in tran. 
+          pose proof cut_eq_part_list_r BasicBlock ((cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BBn) :: nil) (BBnow'_ :: BBswo_) (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks) tran as key.
+          rewrite key. rewrite Heqc0. reflexivity.
+        } 
+
+        assert 
+      } 
 
          assert(step1: (exists bs1 bs2 : BB_state,
          Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bs2 /\
