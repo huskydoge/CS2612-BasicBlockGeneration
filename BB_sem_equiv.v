@@ -233,65 +233,13 @@ Lemma BBs_sem_Asgn_split:
      bs1.(BB_num) = BBnow.(block_num) -> ((Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2)).
 Proof.
   intros. split.
-  + intros. 
-    assert ((exists x, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2)). {
-      admit. (*TODO 使用BB_list_sem_unfold_bs1_and_simpl*)
-    }
-    my_destruct H1.
-    unfold BB_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. my_destruct H1.
-    unfold BB_cmds_sem in H1. cbn[Bnrm] in H1.
-    assert (exists x: BB_state, Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BAsgn_list_sem BBcmds) x x1). {
-      subst BB1. simpl in H1. sets_unfold in H1. 
-      destruct H1 as [? [[? ?] ?]].
-      exists x2. split. subst BBcmd. simpl. sets_unfold. exists x2. repeat split. apply H1. apply H4. apply H5.
-    }
-    my_destruct H4. exists x2.
-    split. apply H4. admit. (*证了一圈啥也没证出来，循环论证了*) 
-
+  + admit.
   + intros. my_destruct H0.
-    unfold BB_list_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. destruct H1 as [? ?].
-    pose proof BB_list_sem_unfold_bs1_and_simpl BB2 BBs x0 bs2.
-    assert (x0 <> bs2). admit.
-    assert (BBnum_set (BB2 :: nil) ∩ BBjmp_dest_set (BB2 :: BBs) == ∅). admit.
-    assert (BBnum_set (BB2 :: nil) ∩ BBnum_set BBs == ∅). admit.
-    assert (Bnrm (BB_list_sem (BB2 :: BBs)) x0 bs2). admit.
-    assert (BB_num x0 = BB2.(block_num)). admit.
-    pose proof H2 H7 H3 H4 H5 H6. my_destruct H8.
-
-    assert (exists x : BB_state, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2). {
-      exists x2. split.
-      - unfold BB_sem. cbn[Bnrm]. sets_unfold. 
-        unfold BB_sem in H8. cbn[Bnrm] in H8. sets_unfold in H8. my_destruct H8.
-        exists x3. unfold BB_cmds_sem.
-        cbn[Bnrm]. subst BB1. split.
-        + unfold BAsgn_list_sem. simpl.
-          sets_unfold. exists x0. split. subst BBcmd. simpl in H0. 
-          sets_unfold in H0. destruct H0 as [? [[? ?] ?]]. repeat split.
-          rewrite <- H12. apply H0. rewrite <- H12. apply H11. apply H8.
-        + apply H10.
-      - apply H9. 
-    }
-
-    my_destruct H10.
     unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
-    unfold BB_list_sem in H11. cbn[Bnrm] in H11. sets_unfold in H11.
-    my_destruct H11. exists (S x4). cbn[Iter_nrm_BBs_n].
-    sets_unfold. exists x3. split. unfold BB_sem_union. cbn[Bnrm].
-    sets_unfold. left. apply H10. 
-    assert(forall (n: nat), Iter_nrm_BBs_n (BB_sem_union BBs) n ⊆ Iter_nrm_BBs_n (BB_sem_union (BB1 :: BBs)) n).
-    {
-      intros. induction n. simpl. sets_unfold. tauto.
-      cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H12.
-      exists x5. split. 
-      + pose proof BB_sem_child_prop BBs (BB1::BBs) a x5. 
-        apply H14. intros. unfold In. right. apply H15.
-        sets_unfold in IHn.
-        pose proof IHn x5 a0. apply H12. 
-      + sets_unfold in IHn. pose proof IHn x5 a0 H13. apply H14. 
-    }
-
-    specialize (H12 x4). sets_unfold in H12. specialize (H12 x3 bs2).
-    pose proof H12 H11 as H12. apply H12.
+    unfold BB_list_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. destruct H1 as [? ?].
+    exists x1. 
+    pose proof simplify_listsem_with_mismatch_num bs1 bs2 BB2 BBs.
+    assert (BB2.(block_num) <> BB_num bs1).
 Admitted.
     
 
@@ -656,8 +604,8 @@ Proof.
         }
 
         assert(key_num_eq: BB_num bb_mid = S (S BBnum)). {
-         (*利用H_step2_main + 分离性质*)
-         (*TODO 这个可能会超级麻烦
+        (*利用H_step2_main + 分离性质*)
+        (* 
         1. 由H_step1_main得到BB_mid的num一定在(BBnow_start :: nil ++ BBswo_)的jmpdest之中，而我们有其范围
         2. 由H_step2_main得到BB_mid的num一定在((BBnow'_p :: BBs'_p)) 的num之中，而我们也有其范围。
         两个范围唯一的交点就是S (S BBnum)
@@ -745,7 +693,7 @@ Proof.
             ** rewrite B4 in case1. rewrite case1. tauto.
             ** specialize (P_prop (BB_num bb_mid) case2). lia.
           (* unit_set (jump_dest_1 BBnow.(jump_info)) (BB_num bb_mid) *)
-          * unfold unit_set in case2. (* ! 需要证明BBnow的jmpinfo(即endinfo，最后只会在BBn中, 不会在任何其他block里。从而根据BBs'_ = BBswo_ ++ BBn::nil 导出矛盾*) 
+          * unfold unit_set in case2. (* 需要证明BBnow的jmpinfo(即endinfo，最后只会在BBn中, 不会在任何其他block里。从而根据BBs'_ = BBswo_ ++ BBn::nil 导出矛盾*) 
             unfold not_eq_to_any_BBnum in endinfo_prop. specialize endinfo_prop with (BB_num bb_mid). lia.
           (* bb_mid = bs2, bs2的num就是endinfo，但是从case-a中知道，bb_mid不可能拿到endinfo，因为它并不在BBn的jmpdest里*)
             ++ symmetry in wo_tran. rewrite Heqc0 in wo_tran. pose proof unique_endinfo_if BBs BBswo_ BBs'_ e c1 c2 BBnow BBnow'_ BBnum A3 wo_tran endinfo_prop as key.
@@ -763,26 +711,52 @@ Proof.
                 -- tauto.
              }
              tauto.
-        + admit.
+        + (* case_b: bs1 = bb_mid*) destruct key2 as [case_a' | case_b'].
+          * unfold BBnum_set in case_a'. destruct case_a' as [case_a'_bb case_a'_cond].
+            specialize P_prop with (BB_num bb_mid).
+            destruct case_a'_cond as [case_a'_cond1 case_a'_cond2].
+            destruct case_a'_cond1 as [case_a'_cond1_1 | case_a'_cond1_2].
+            - rewrite <- case_a'_cond1_1 in case_a'_cond2. rewrite B4 in case_a'_cond2. rewrite <- BBnow_mid_num_prop. rewrite case_a'_cond2. tauto.
+            - assert (tran: BBnum_set BBs'_p (BB_num bb_mid)). {
+              unfold BBnum_set. exists case_a'_bb. split.
+              ** tauto.
+              ** tauto.
+              }
+              specialize (P_prop tran). rewrite <- case_b in P_prop. rewrite C3 in P_prop. 
+              rewrite BBnow'_prop in P_prop. simpl in P_prop. lia.
+          * rewrite case_b' in case_b. 
+            destruct bs1. destruct bs2. simpl in *. rewrite C3 in case_b. rewrite C4 in case_b. 
+            inversion case_b. rename H3 into tmp. rewrite BBnow'_prop in tmp. simpl in tmp. tauto.
         }
 
+        assert (sep_prop: separate_property BBnow'_ BBs'_). {
+        unfold separate_property.
+        pose proof A2. 
+        (*A2*) 
+        admit.
+        (*TODO*)
+      }
 
-
-         assert (sep_prop: separate_property BBnow'_ BBs). {
-         unfold separate_property. 
-         (*A2*) 
-         admit.
-         (*TODO*)
+        assert (sep_prop_wo: separate_property BBnow'_ BBswo_). {
+        unfold separate_property.
+        unfold separate_property in sep_prop.
+        sets_unfold. sets_unfold in sep_prop.
+        intros.
+        specialize (sep_prop a1).
+        destruct sep_prop as [sep_prop1 sep_prop2].
+        split. 
+        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy*)
+          tauto.
+        - intros. tauto. 
         }
 
-         assert (Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bb_mid -> Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bb_mid) as M1. {
-         (*TODO
-           使用引理BDenote_concat_equiv_BB_list_sem
-           转换关系应该是对的，但是需要把前提都找出来
-           *)
-         pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBs bs1 bb_mid sep_prop.
-         pose proof BB_restrict_sound.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况 TODO*)
-         admit.
+        assert (Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bb_mid -> Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bb_mid) as M1. {
+        (*TODO
+          使用引理BDenote_concat_equiv_BB_list_sem
+          转换关系应该是对的，但是需要把前提都找出来
+          *)
+        pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBswo_ bs1 bb_mid sep_prop_wo as cur_1.
+        pose proof BB_restrict_sound BBnow BBnow'_. admit.  (*这里要考虑c1和c2到底能不能是不是空. 2024/1/9, 问询过老师后，说不考虑为空的情况 TODO*)
       }
 
          assert(step1: (exists bs1 bs2 : BB_state,
