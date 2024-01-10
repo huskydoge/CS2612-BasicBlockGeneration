@@ -1801,3 +1801,11 @@ Lemma an_over_pass_bridge:
 Proof.
   (*TODO! IMPORTANT! lyz*)
 Admitted.
+
+Lemma an_over_pass_bridge_reverse:
+  forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
+  (exists x, Bnrm (BB_list_sem (BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBs2)) x bs2) ->
+  Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2.
+Proof.
+  (*TODO! IMPORTANT!*)
+Admitted.

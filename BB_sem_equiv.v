@@ -1003,12 +1003,9 @@ Proof.
           jump_info := BBnow'_.(jump_info) |}) as BBnow_start.
          (* 前一种情况切一刀的反向版本 *)
          assert ((exists (x: BB_state), Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 x /\ Bnrm (BB_list_sem (BBnow'_p :: BBs'_p)) x bs2) -> Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_ ++ BBnow'_p :: BBs'_p)) bs1 bs2) as H_sep. {
-          intros. unfold BB_list_sem. cbn[Bnrm].
-          destruct H2 as [? [H_aux1 H_aux2]]. unfold BB_list_sem in H_aux1.
-          unfold BB_list_sem in H_aux2. cbn[Bnrm] in H_aux1. cbn[Bnrm] in H_aux2.
-          sets_unfold in H_aux1. sets_unfold in H_aux2.
-          destruct H_aux1 as [? H_aux1]. destruct H_aux2 as [? H_aux2].
-          sets_unfold. admit.
+          intros.
+          pose proof an_over_pass_bridge_reverse (BBnow_start :: nil ++ BBswo_) (BBnow'_p :: BBs'_p) bs1 bs2 as bridge.
+          specialize (bridge H2). tauto.
          }
          apply H_sep. clear H_sep. 
          (* 这个时候就拿H_step1/H_step2的中间状态 *)
@@ -1036,13 +1033,9 @@ Proof.
          }
          rewrite T4 in C1. rewrite T5 in C1.
          assert (Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bs3 -> Bnrm (BB_list_sem (BBnow_start :: nil ++ BBswo_)) bs1 bs3) as M1. {
-            intros. 
-            pose proof BDenote_concat_equiv_BB_list_sem BBnow'_ BBswo_ bs1 bs3.
-            subst BBnow_start. apply H3.
-            + unfold separate_property. admit.
-            + admit.
-            + admit.
-            + apply H2.
+            intros.
+            admit. 
+            
          }
          apply M1. apply C1.
 
