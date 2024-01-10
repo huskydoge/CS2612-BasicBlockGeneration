@@ -1736,7 +1736,7 @@ Proof.
 Qed.
 
 
-(*语义上的一些引理*)
+(*语义上的一些引理 ===================*)
 
 Lemma Iter_shrink:
   forall (BBs: list BasicBlock)(BBnow'_: BasicBlock) (n: nat) (bs1 bs2: BB_state),
@@ -1765,3 +1765,8 @@ Proof.
     + specialize (IHn x bs2). specialize (IHn H0). tauto.
 Qed.
   
+(*===================*)
+
+Lemma 
+
+
