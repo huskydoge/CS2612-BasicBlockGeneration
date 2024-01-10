@@ -571,85 +571,94 @@ Qed.
 
 (*如果BBnow的num小于分配的num，那么总有最后所在的BB的num小于下一个分配的num*)
 
-Definition Q_inherit_lt_num_prop (c: cmd): Prop :=
+Definition Q_inherit_lt_num_prop_mutual (c: cmd): Prop :=
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
     (lt BBnow.(block_num) BBnum) -> le BBnum (cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
 
-Definition P_inherit_lt_num_prop (cmds: list cmd): Prop := 
+Definition P_inherit_lt_num_prop_mutual (cmds: list cmd): Prop := 
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     (lt BBnow.(block_num) BBnum) -> le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
 
-Lemma Q_inherit_lt_num_prop_asgn: 
+Lemma Q_inherit_lt_num_prop_mutual_asgn: 
   forall (x: var_name) (e: expr),
-    Q_inherit_lt_num_prop (CAsgn x e).
+    Q_inherit_lt_num_prop_mutual (CAsgn x e).
 Proof.
   Admitted.
 
-Lemma Q_inherit_lt_num_prop_if:
+Lemma Q_inherit_lt_num_prop_mutual_if:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
-    P_inherit_lt_num_prop c1 -> P_inherit_lt_num_prop c2 -> Q_inherit_lt_num_prop (CIf e c1 c2).
+    P_inherit_lt_num_prop_mutual c1 -> P_inherit_lt_num_prop_mutual c2 -> Q_inherit_lt_num_prop_mutual (CIf e c1 c2).
 Proof.
   Admitted.
 
-Lemma Q_inherit_lt_num_prop_while:
+Lemma Q_inherit_lt_num_prop_mutual_while:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
-    P_inherit_lt_num_prop c1 -> P_inherit_lt_num_prop c2 -> Q_inherit_lt_num_prop (CWhile c1 e c2).
+    P_inherit_lt_num_prop_mutual c1 -> P_inherit_lt_num_prop_mutual c2 -> Q_inherit_lt_num_prop_mutual (CWhile c1 e c2).
 Proof.
   Admitted.
 
-Lemma P_inherit_lt_num_prop_nil:
-  P_inherit_lt_num_prop nil.
+Lemma P_inherit_lt_num_prop_mutual_nil:
+  P_inherit_lt_num_prop_mutual nil.
 Proof.
   Admitted.
 
-Lemma P_inherit_lt_num_prop_cons:
+Lemma P_inherit_lt_num_prop_mutual_cons:
   forall (c: cmd) (cmds: list cmd),
-    Q_inherit_lt_num_prop c ->
-    P_inherit_lt_num_prop cmds ->
-    P_inherit_lt_num_prop (c :: cmds).
+    Q_inherit_lt_num_prop_mutual c ->
+    P_inherit_lt_num_prop_mutual cmds ->
+    P_inherit_lt_num_prop_mutual (c :: cmds).
 Proof.
   Admitted.
 
-Section inherit_lt_num_prop.
+Section inherit_lt_num_prop_mutual.
 
-Variable inherit_lt_num_prop: forall (c: cmd), Q_inherit_lt_num_prop c.
+Variable inherit_lt_num_prop_mutual: forall (c: cmd), Q_inherit_lt_num_prop_mutual c.
 
-Fixpoint inherit_lt_num_prop_list (cmds: list cmd): P_inherit_lt_num_prop cmds :=
+Fixpoint inherit_lt_num_prop_mutual_list (cmds: list cmd): P_inherit_lt_num_prop_mutual cmds :=
   match cmds with
-  | nil => P_inherit_lt_num_prop_nil
-  | c :: cmds0 => P_inherit_lt_num_prop_cons c cmds0 (inherit_lt_num_prop c) (inherit_lt_num_prop_list cmds0)
+  | nil => P_inherit_lt_num_prop_mutual_nil
+  | c :: cmds0 => P_inherit_lt_num_prop_mutual_cons c cmds0 (inherit_lt_num_prop_mutual c) (inherit_lt_num_prop_mutual_list cmds0)
   end.
 
-End inherit_lt_num_prop.
+End inherit_lt_num_prop_mutual.
 
-Fixpoint inherit_lt_num_prop (c: cmd): Q_inherit_lt_num_prop c :=
+Fixpoint inherit_lt_num_prop_mutual (c: cmd): Q_inherit_lt_num_prop_mutual c :=
   match c with 
-  | CAsgn x e => Q_inherit_lt_num_prop_asgn x e
+  | CAsgn x e => Q_inherit_lt_num_prop_mutual_asgn x e
   | CIf e cmds1 cmds2 =>
-      Q_inherit_lt_num_prop_if e cmds1 cmds2
-        (inherit_lt_num_prop_list inherit_lt_num_prop cmds1)
-        (inherit_lt_num_prop_list inherit_lt_num_prop cmds2)
+      Q_inherit_lt_num_prop_mutual_if e cmds1 cmds2
+        (inherit_lt_num_prop_mutual_list inherit_lt_num_prop_mutual cmds1)
+        (inherit_lt_num_prop_mutual_list inherit_lt_num_prop_mutual cmds2)
   | CWhile cmds1 e cmds2 =>
-      Q_inherit_lt_num_prop_while e cmds1 cmds2
-        (inherit_lt_num_prop_list inherit_lt_num_prop cmds1)
-        (inherit_lt_num_prop_list inherit_lt_num_prop cmds2)
+      Q_inherit_lt_num_prop_mutual_while e cmds1 cmds2
+        (inherit_lt_num_prop_mutual_list inherit_lt_num_prop_mutual cmds1)
+        (inherit_lt_num_prop_mutual_list inherit_lt_num_prop_mutual cmds2)
   end.
 
-Lemma inherit_lt_num_prop_sound:
+
+
+Lemma inherit_lt_num_prop_mutual_sound:
   forall (c: cmd),
-    Q_inherit_lt_num_prop c.
+    Q_inherit_lt_num_prop_mutual c.
 Proof.
-  apply inherit_lt_num_prop.
+  apply inherit_lt_num_prop_mutual.
 Qed.
 
-Lemma inherit_lt_num_prop_list_sound:
+Lemma inherit_lt_num_prop_mutual_list_sound:
   forall (cmds: list cmd),
-    P_inherit_lt_num_prop cmds.
+    P_inherit_lt_num_prop_mutual cmds.
 Proof.
-  apply inherit_lt_num_prop_list.
-  pose proof inherit_lt_num_prop_sound.
+  apply inherit_lt_num_prop_mutual_list.
+  pose proof inherit_lt_num_prop_mutual_sound.
   apply H.
 Qed.
+
+(*如果BBnow的num小于分配的num，那么总有最后所在的BB的num小于下一个分配的num*)
+Lemma inherit_lt_num_prop:
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    (lt BBnow.(block_num) BBnum) -> (lt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (cmd_BB_gen c BBs BBnow BBnum).(next_block_num)).
+Proof.
+Admitted.
 
 Lemma bbnum_le_next_num_single_cmd:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
