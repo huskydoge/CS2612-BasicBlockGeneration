@@ -863,8 +863,25 @@ Proof.
 
         assert (in_prop2: BB_num bs2 ∈ BBjmp_dest_set (BBnow'_p :: nil ++ BBs'_p)).
         {
-          admit.
-          (*TODO*)
+          sets_unfold. unfold BBjmp_dest_set. simpl. destruct BBs'_p. 
+          + simpl. exists BBnow'_p. split. left. tauto. simpl. left. destruct B1 as [B11 B12]. 
+            rewrite B11. pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2) as inherit_jmp.
+            rewrite <- HeqBBnow_mid in inherit_jmp. rewrite inherit_jmp.
+             rewrite C4. tauto.
+          + 
+            exists (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn).
+            split.
+            - right. pose proof exact_tail_from_list BasicBlock (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BasicBlocks) (BBs ++ BBnow'_ :: BBswo_) (b :: BBs'_p).
+              specialize (H2 (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) BBnow'_p).
+              assert(not_nil: b :: BBs'_p <> nil). {
+                unfold not. intros. discriminate H3.
+              }
+              specialize (H2 B5 not_nil). tauto.
+            - pose proof JmpInfo_inherit_for_list (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_ cmds as jmp_info.
+              rewrite jmp_info.  
+              pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2) as inherit_jmp.
+              rewrite <- HeqBBnow_mid in inherit_jmp. rewrite inherit_jmp.
+              left. rewrite C4. tauto. 
         }
 
         
