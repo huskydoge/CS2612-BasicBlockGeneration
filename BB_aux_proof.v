@@ -15,6 +15,7 @@ Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 Require Import Main.BB_gen_properties.
+Require Import Nat.
 
 
 Import Denotation.
@@ -1813,7 +1814,7 @@ Lemma an_over_pass_bridge:
 Proof.
   intros. 
   remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs.
-  pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H. destruct H5.
+  pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H. rename H5 into Hn1. rename H6 into Hn2. rename H7 into H5. destruct H5.
   - my_destruct H5. subst BBs.
     assert (In x (BBnow1 :: nil ++ BBs1) \/ In x (BBnow2 :: nil ++ BBs2)). admit.
     clear H5.
@@ -1842,10 +1843,38 @@ Proof.
   (*TODO! IMPORTANT! lyz*)
 Admitted.
 
+
+Lemma Iter_nrm_BBs_n_add_expansion:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a b: nat),
+    Iter_nrm_BBs_n (BB_sem_union BBs) (add a b) bs1 bs2
+    <-> (exists x, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 x /\ Iter_nrm_BBs_n (BB_sem_union BBs) b x bs2).
+Proof.
+  intros.
+  Admitted.
+
 Lemma an_over_pass_bridge_reverse:
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
   (exists x, Bnrm (BB_list_sem (BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBs2)) x bs2) ->
   Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2.
 Proof.
-  (*TODO! IMPORTANT!*)
+  intros. my_destruct H.
+  unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
+  unfold BB_list_sem in H. cbn[Bnrm] in H. sets_unfold in H.
+  unfold BB_list_sem in H0. cbn[Bnrm] in H0. sets_unfold in H0.
+  my_destruct H. my_destruct H0. 
+  induction x1.
+  + pose proof BB_list_sem_child_prop BBs1 (BBs1 ++ BBs2) bs1 x.
+    simpl in H0. sets_unfold in H0. rewrite H0 in H1. apply H1.
+    intros. apply In_sublist_then_in_list_head. apply H2.
+    rewrite H0 in H. unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
+    exists x0. apply H.
+  + cbn[Iter_nrm_BBs_n] in H0.  
+    exists (add x0 (S x1)). simpl. sets_unfold. sets_unfold in H0.
+    my_destruct H0. 
+    pose proof Iter_nrm_BBs_n_add_expansion (BBs1 ++ BBs2) bs1 bs2 x0 (S x1).
+    exists x. split.
+    - pose proof BB_sem_child_prop BBs2 (BBs1 ++ BBs2).
+      specialize (H2 bs1 x). apply H2.
+      intros. apply In_sublist_then_in_list_last. apply H3.
+
 Admitted.
