@@ -1716,24 +1716,6 @@ Proof.
 Qed.
 
 
-(*如果a::l1 = b::l2，那么无论l1和l2如何，a肯定首先要等于b*)
-Lemma head_eq_prop:
-  forall (A: Type) (l1 l2: list A) (a b: A),
-  a::l1 = b::l2 -> a = b.
-Proof.
-  intros. inversion H. reflexivity.
-Qed.
-
-
-
-
-
-Lemma tail_eq_prop:
-  forall (A: Type) (l1 l2: list A) (a b: A),
-  l1 ++ a::nil = l2 ++ b::nil -> a = b.
-Proof.
-  apply app_inj_tail_iff.
-Qed.
 
 
 (*如果l1 ++ l2 = a :: l3，那么a肯定是l1的头*)

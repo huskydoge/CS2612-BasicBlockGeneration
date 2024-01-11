@@ -662,12 +662,13 @@ Proof.
   intros. inversion H. reflexivity.
 Qed.
 
+
 Lemma tl_eq_prop:
   forall (A: Type) (l1 l2: list A) (a b: A),
   l1 ++ a :: nil  = l2 ++ b :: nil -> a = b.
 Proof.
-  Admitted. (*TODO bh*)
-
+  apply tail_eq_prop.
+Qed.
 
 Lemma if_wont_be_nil:
   forall (e: expr) (c1 c2: list cmd) (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum : nat),
