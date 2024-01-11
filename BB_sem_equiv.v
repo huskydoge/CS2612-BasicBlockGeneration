@@ -278,12 +278,22 @@ Lemma BBs_sem_Asgn_split:
       jump_info := BBnow.(jump_info)
     |} in
     let BBcmd := {| X := x ; E := e|} in
-     bs1.(BB_num) = BBnow.(block_num) -> ((Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2)).
+     bs1.(BB_num) = BBnow.(block_num) -> 
+     BBnum_set (BB2 :: nil) ∩ BBjmp_dest_set (BB2 :: BBs) == ∅ ->
+     (BBnum_set (BB2 :: nil) ∩ BBnum_set BBs == ∅) ->
+     bs1 <> bs2 ->
+     ((Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2)).
 Proof.
-  intros. split.
+  intros. rename H0 into Hn1. rename H1 into Hn2. rename H2 into Hn3. split.
   + intros. 
     assert ((exists x, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2)). {
-      admit. (*TODO 使用BB_list_sem_unfold_bs1_and_simpl*)
+      pose proof BB_list_sem_unfold_bs1_and_simpl BB1 BBs bs1 bs2.
+      apply H1.
+      - subst BB1. simpl. apply H.
+      - apply Hn3.
+      - admit. (*TODO lyz easy. BB2 and BB1 should behave the same *)
+      - admit. (*TODO lyz easy. same*)
+      - apply H0.    
     }
     my_destruct H1.
     unfold BB_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. my_destruct H1.
@@ -320,11 +330,15 @@ Proof.
     unfold BB_list_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. destruct H1 as [? ?].
     pose proof BB_list_sem_unfold_bs1_and_simpl BB2 BBs x0 bs2.
     assert (x0 <> bs2). admit. (*?????*)
-    assert (BBnum_set (BB2 :: nil) ∩ BBjmp_dest_set (BB2 :: BBs) == ∅). admit.
-    assert (BBnum_set (BB2 :: nil) ∩ BBnum_set BBs == ∅). admit.
-    assert (Bnrm (BB_list_sem (BB2 :: BBs)) x0 bs2). admit.
-    assert (BB_num x0 = BB2.(block_num)). admit.
-    pose proof H2 H7 H3 H4 H5 H6. my_destruct H8.
+    assert (Bnrm (BB_list_sem (BB2 :: BBs)) x0 bs2). {
+      unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists x1. apply H1.
+    }
+    assert (BB_num x0 = BB2.(block_num)). {
+      unfold BAsgn_list_sem in H0. cbn[Bnrm] in H0. sets_unfold in H0.
+      unfold BAsgn_denote in H0. cbn[Bnrm] in H0. my_destruct H0.
+      rewrite H5 in H6. subst BB2. simpl. rewrite <- H. rewrite H6. tauto. 
+    } 
+    pose proof H2 H5 H3 Hn1 Hn2 H4. my_destruct H8.
 
     assert (exists x : BB_state, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2). {
       exists x2. split.
