@@ -682,6 +682,13 @@ Proof.
   intros. inversion H. reflexivity.
 Qed.
 
+Lemma tl_eq_prop:
+  forall (A: Type) (l1 l2: list A) (a b: A),
+  l1 ++ a :: nil  = l2 ++ b :: nil -> a = b.
+Proof.
+  Admitted. (*TODO bh*)
+
+
 Lemma if_wont_be_nil:
   forall (e: expr) (c1 c2: list cmd) (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum : nat),
   (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_
@@ -1673,14 +1680,14 @@ Proof.
     pose proof hd_A_and_B_is_hd_A_if_A_not_nil (e0 ++ e1) e2 as hd_position.
     assert (e0_not_nil: (e0 ++ e1) <> nil).
     {
-      (*对c1是否为空进行分类讨论, 但是可能有点麻烦*)
       pose proof classic (e0 = nil) as He0_nil. destruct He0_nil as [He0_nil | He0_nnil].
       - rewrite He0_nil. rewrite app_nil_l. rewrite Heqe1. unfold not. intros.
         inversion H1.
       - unfold not. intros. destruct e0. tauto. discriminate H1.   
     }
     pose proof hd_position e0_not_nil as hd_position.
-Admitted.
+    (*TODO continue finishing it *)
+Admitted. 
 
 
 Lemma if_separate_for_pcons1:
@@ -1695,6 +1702,43 @@ Proof.
   intros.
 Admitted. (*TODO bh*)
 
+
+Lemma BBn_determined_by_cmds_BBn_single_cmd (BBnow: BasicBlock) (c: cmd) (BBs: list BasicBlock) (BBnum: nat):
+  forall (BBs': list BasicBlock),
+  (cmd_BB_gen c BBs BBnow BBnum).(BBn) = (cmd_BB_gen c BBs' BBnow BBnum).(BBn).
+Proof.
+  intros. destruct c.
+  - simpl. tauto.
+  - cbn[cmd_BB_gen]. simpl. tauto.
+  - cbn[cmd_BB_gen]. simpl. tauto.
+Qed.
+
+
+Lemma BBnum_determined_by_cmds_single_cmd (BBnow: BasicBlock) (c: cmd) (BBs: list BasicBlock) (BBnum: nat):
+  forall (BBs': list BasicBlock),
+  (cmd_BB_gen c BBs BBnow BBnum).(next_block_num) = (cmd_BB_gen c BBs' BBnow BBnum).(next_block_num).
+Proof.
+  intros. destruct c.
+    - simpl. tauto.
+    - cbn[cmd_BB_gen]. simpl. tauto.
+    - cbn[cmd_BB_gen]. simpl. tauto.
+Qed.
+
+Lemma BBn_determined_by_cmds_BBn (BBnow: BasicBlock) (cmds: list cmd) (BBs: list BasicBlock) (BBnum: nat):
+  forall (BBs': list BasicBlock),
+    (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn) = (list_cmd_BB_gen cmd_BB_gen cmds BBs' BBnow BBnum).(BBn).
+Proof.
+  intros. revert BBs BBs' BBnow BBnum. induction cmds; intros.
+  - cbn[list_cmd_BB_gen]. simpl. tauto.
+  - cbn[list_cmd_BB_gen]. 
+    pose proof BBn_determined_by_cmds_BBn_single_cmd BBnow a BBs BBnum BBs'.
+    rewrite H. 
+    specialize (IHcmds (cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks) (cmd_BB_gen a BBs' BBnow BBnum).(BasicBlocks) (cmd_BB_gen a BBs' BBnow BBnum).(BBn) (cmd_BB_gen a BBs BBnow BBnum).(next_block_num)). rewrite IHcmds.
+    pose proof BBnum_determined_by_cmds_single_cmd BBnow a BBs BBnum BBs'.
+    rewrite H0. tauto.
+Qed.
+    
+
 Lemma if_separate_for_pcons2:
   forall (e: expr) (c1 c2 cmds: list cmd) (BBs BBswo_ : list BasicBlock)(BBnow BBnow'_ BBnow_mid : BasicBlock)(BBnum BBnum'_: nat),
   BBnow_mid = (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) ->
@@ -1705,6 +1749,28 @@ Lemma if_separate_for_pcons2:
   (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) :: nil.
 Proof.
   intros.
+  pose proof add_BBs_in_generation_reserves_BB cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_. unfold to_result in H2.
+  assert ((list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) :: nil = (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow_mid BBnum'_).(BBn) :: nil). {
+    pose proof tl_eq_prop BasicBlock (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BasicBlocks) ((BBs ++ BBnow'_ :: BBswo_) ++
+    (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow_mid BBnum'_).(BasicBlocks)) (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow_mid BBnum'_).(BBn).
+    rewrite <- app_assoc in H3.
+    pose proof H3 H2. clear H3. clear H2.
+    f_equal. apply H4.
+  }
+  clear H2.
+  pose proof add_BBs_in_generation_reserves_BB (CIf e c1 c2 :: cmds) BBs BBnow BBnum.
+  unfold to_result in H2.
+  assert ((list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(BBn) :: nil = (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) nil BBnow BBnum).(BBn) :: nil). {
+    pose proof tl_eq_prop BasicBlock (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(BasicBlocks) (BBs ++
+    (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) nil BBnow BBnum).(BasicBlocks)) (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(BBn) (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) nil BBnow BBnum).(BBn).
+    rewrite <- app_assoc in H4.
+    pose proof H4 H2. f_equal. apply H5.
+  }
+
+  clear H2.
+  rewrite H4. rewrite H3.
+  cbn[list_cmd_BB_gen]. f_equal.
+  rewrite H.
 Admitted. (*TODO bh*)
 
 
