@@ -571,12 +571,68 @@ Proof.
          repeat split; try tauto. cbn[Bnrm].
          remember ({| BB_num := BBnow'_.(block_num); st := a |}) as bs1.
          remember ({| BB_num := jump_dest_1 BBnow.(jump_info); st := a0 |}) as bs2.
+
+        (*引入range性质*)
+        pose proof BBgen_range_list_soundness_correct cmds as P_prop.
+        pose proof BBgen_range_single_soundness_correct c as Q_prop.
+        unfold Q_BBgen_range in Q_prop. unfold P_BBgen_range in P_prop.
+
+        specialize (P_prop BBnum BBnum'_ BBs x0 (BBnow'_::nil ++ BBs_)). 
+        assert (m1: jump_kind x0.(jump_info) = UJump /\ jump_dest_2 x0.(jump_info) = None).
+        {
+          rewrite <- B1. tauto.
+        }
+
+        assert (m2: to_result (list_cmd_BB_gen cmd_BB_gen cmds BBs x0 BBnum) = BBs ++ BBnow'_::nil ++ BBs_).
+        {
+          unfold to_result. rewrite C6. simpl. reflexivity. 
+        }
+
+        specialize (P_prop m1 C2 m2). clear m1 m2. destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
+
+
          pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e bs1 bs2 as T1. destruct T1 as [T2 H_cmds_equiv_inv]. subst bs1. simpl. tauto. 
          (* 使用这个定理的四个条件 *)
-         admit.
-         admit.
-         admit.
-         unfold not. intros. admit.       
+         sets_unfold in P_prop3. 
+         sets_unfold. intros. specialize (P_prop3 a1). split.
+         * intros. rename H into focus. destruct focus as [cond1 cond2].
+         unfold BBnum_set in cond1. destruct cond1 as [cond1_BB cond12].
+         destruct cond12 as [cond12_1 cond12_2]. simpl in cond12_1.
+         destruct cond12_1 as [cond12_1 | cond12_1]. rewrite <- cond12_1 in cond12_2. simpl in cond12_2.
+         assert (m1: BBjmp_dest_set (BBnow'_ :: nil ++ BBs_) a1). {
+           unfold BBjmp_dest_set in cond2. unfold BBjmp_dest_set. 
+           destruct cond2 as [cBB [c1_ c2_]].
+           destruct c1_ as [c1_ | c1_].
+           exists BBnow'_. split. unfold In. left. tauto. rewrite <- c1_ in c2_. simpl in c2_. apply c2_.
+           exists cBB. split. right. tauto. tauto.
+         }
+         specialize (P_prop3 m1). clear m1. destruct P_prop3 as [case1 | case2].
+         --- unfold section in case1. rewrite C5 in cond12_2. rewrite <- B1 in cond12_2. simpl in cond12_2.
+             rewrite <- cond12_2 in case1. lia.
+         --- unfold unit_set in case2. rewrite C5 in cond12_2. rewrite <- B1 in cond12_2. simpl in cond12_2.
+             rewrite <- cond12_2 in case2. rewrite <- B1 in case2. simpl in case2. tauto.
+         --- tauto.
+         * intros. tauto. 
+         * unfold all_ge in P_prop1. simpl in P_prop1. sets_unfold. intros. split.
+           --- intros. rename H into focus.
+             destruct focus as [cond1 cond2].
+             specialize (P_prop1 a1 cond2). unfold BBnum_set in cond1. simpl in cond1. destruct cond1 as [cond1_bb cond1].
+             destruct cond1 as [cond1_1 cond1_2]. destruct cond1_1 as [cond1_1 | cond1_1]. 
+             rewrite <- cond1_1 in cond1_2. simpl in cond1_2. rewrite <- cond1_2 in P_prop1. 
+             rewrite C5 in P_prop1. rewrite <- B1 in P_prop1. simpl in P_prop1. lia.
+             tauto. 
+           --- intros. tauto.
+ 
+         (* x2 <> x3 *)
+         * intros contra. rewrite contra in Heqbs1. rewrite Heqbs1 in Heqbs2. inversion Heqbs2. rewrite C5 in H2. rewrite <- B1 in H2. simpl in H2. tauto.
+         * sets_unfold. unfold not. intros. rename H into focus. 
+           unfold BBnum_set in focus. destruct focus as [focus_BB focus]. 
+           destruct focus as [focus_1 focus_2]. simpl in focus_1. destruct focus_1 as [focus_1 | focus_1].
+           --- rewrite <- focus_1 in focus_2. simpl in focus_2. rewrite C5 in focus_2. rewrite <- B1 in focus_2. simpl in focus_2. 
+                rewrite Heqbs2 in focus_2. simpl in focus_2. lia.
+           --- tauto.
+         
+         *  
          clear T2.
          apply H_cmds_equiv_inv. 
 
