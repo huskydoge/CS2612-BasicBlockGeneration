@@ -293,8 +293,22 @@ Proof.
       apply H1.
       - subst BB1. simpl. apply H.
       - apply Hn3.
-      - admit. (*TODO lyz easy. BB2 and BB1 should behave the same. Consider sets_unfold everything *)
-      - admit. (*TODO lyz easy. same*)
+      - sets_unfold. intros. split. ++ sets_unfold in Hn2. specialize (Hn2 a). intro contra.
+        unfold BBnum_set in contra. my_destruct contra. unfold In in contra. destruct contra.
+        rewrite <- H4 in H3. simpl in H3. sets_unfold in Hn1. specialize (Hn1 a).
+        unfold BBnum_set in Hn1.  unfold In in Hn1.  apply Hn1. split.
+        exists BB2. split. tauto. simpl. rewrite H3. tauto.
+        unfold BBjmp_dest_set. unfold BBjmp_dest_set in H2.
+        destruct H2. cbn[In] in H2. my_destruct H2. cbn[In].
+        destruct H2. exists BB2. split. left. tauto. rewrite <- H2 in H5. simpl in H5. simpl. tauto.
+        exists x1. split. right. tauto. tauto. tauto.   
+        ++ tauto.
+      - sets_unfold. intros. split. ++ sets_unfold in Hn2. specialize (Hn2 a). intro contra.
+         unfold BBnum_set in contra. my_destruct contra. unfold In in contra. destruct contra.
+        rewrite <- H5 in H3. simpl in H3. apply Hn2. split.
+        unfold BBnum_set. exists BB2. unfold In. simpl. tauto.
+        unfold BBnum_set. exists x1. tauto. tauto.
+        ++ tauto. 
       - apply H0.    
     }
     my_destruct H1.
@@ -395,7 +409,7 @@ Proof.
 
     specialize (H12 x4). sets_unfold in H12. specialize (H12 x3 bs2).
     pose proof H12 H11 as H12. apply H12.
-Admitted.
+Qed.
     
 
 
