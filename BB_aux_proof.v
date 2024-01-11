@@ -16,6 +16,8 @@ Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 Require Import Main.BB_gen_properties.
 Require Import Nat.
+Require Import Main.utils.
+
 
 
 Import Denotation.
@@ -28,7 +30,7 @@ Lemma never_go_wrong:
    forall (e: EDenote) (s: state),
   (exists (i : int64), (e).(nrm) s i).
 Proof.
-Admitted.
+Admitted. (*DONT CARE*)
 
 Lemma true_or_false:
   forall (e: EDenote) (s: state),
@@ -323,14 +325,54 @@ Proof.
 Qed.
 
 
+(*先走一步，再走n步和先走n步，再走1步是一样的！*)
+Lemma S_pos_move1:
+  forall (a: nat) (bs1 bs2: BB_state) (BBs: list BasicBlock),
+  ((Bnrm (BB_sem_union BBs) ∘ Iter_nrm_BBs_n (BB_sem_union BBs) a) bs1 bs2 :Prop) 
+  -> 
+  ((Iter_nrm_BBs_n (BB_sem_union BBs) (a) ∘ Bnrm (BB_sem_union BBs) ) bs1 bs2 :Prop).
+Proof.
+  intros. 
+  revert bs1 bs2 H. induction a.
+  - intros. simpl. sets_unfold. sets_unfold in H. simpl in H. exists bs1. split. tauto. 
+    destruct H. destruct H. sets_unfold in H0. rewrite H0 in H. tauto.
+  - intros. sets_unfold in H. my_destruct H. simpl in H0. specialize IHa with x bs2. specialize (IHa H0). clear H0.
+    sets_unfold. sets_unfold in IHa. my_destruct IHa. exists x0. split.
+    + simpl. sets_unfold. exists x. split. apply H. tauto.
+    + tauto.
+Qed.
+
+
+(*先走一步，再走n步和先走n步，再走1步是一样的！*)
+Lemma S_pos_move2:
+  forall (a: nat) (bs1 bs2: BB_state) (BBs: list BasicBlock),
+  ((Iter_nrm_BBs_n (BB_sem_union BBs) (a) ∘ Bnrm (BB_sem_union BBs) ) bs1 bs2 :Prop) 
+  -> 
+  ((Bnrm (BB_sem_union BBs) ∘ Iter_nrm_BBs_n (BB_sem_union BBs) a) bs1 bs2 :Prop).
+Proof.
+  intros. 
+  revert bs1 bs2 H. induction a.
+  - intros. simpl. sets_unfold. sets_unfold in H. simpl in H. my_destruct H. rewrite <- H in H0. exists bs2. split. tauto. tauto. 
+  - intros. sets_unfold in H. my_destruct H. 
+    simpl in H. sets_unfold in H. my_destruct H. 
+    specialize (IHa x0 bs2).
+    assert (t: (Iter_nrm_BBs_n (BB_sem_union BBs) a ∘ Bnrm (BB_sem_union BBs)) x0 bs2: Prop). {
+      sets_unfold. exists x. split. tauto. tauto.
+    } 
+    specialize (IHa t). sets_unfold. exists x0. split.
+    -- tauto.
+    -- simpl. tauto.
+Qed.
+
+
 Lemma Iter_nrm_BBs_n_inv_expansion:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a: nat),
     Iter_nrm_BBs_n (BB_sem_union BBs) (S a) bs1 bs2 ->
     exists i, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 i /\ Bnrm (BB_sem_union BBs) i bs2.
 Proof.
-  intros. simpl in H. sets_unfold in H.
-  (*TODO*)
-Admitted.
+  intros. simpl in H. 
+  apply S_pos_move1. tauto.
+Qed.
 
 
 Lemma BBs_list_sem_exists_BB_bs1_x_tl:
@@ -738,7 +780,7 @@ Qed.
 Lemma No_err_and_inf_for_expr:
   forall (e: expr) (bs: BB_state),
   (exists i : int64, EDenote.nrm (eval_expr e) (st bs) i).
-Admitted.
+Admitted. (*DONTCARE*)
 
 (*如果bs1的num不在BBs的num中，那bs1不能作为BBs单步语义的起点！*)
 Lemma cannot_start_with:
@@ -1153,18 +1195,6 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       /\ (BBjmp_dest_set (BB_now_else :: nil ++ BBs_else) ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅). (*分离性质6*)
  
 
-(*如果在BBs里，那么一定在BBs ++ tl里*)
-Lemma In_tail_inclusive:
-  forall (BBs : list BasicBlock) (BB tl : BasicBlock),
-    In BB BBs -> In BB (BBs ++ tl::nil).
-Proof.
-  intros. induction BBs.
-  - unfold In in H. tauto.
-  - unfold In. simpl.
-    unfold In in H. destruct H as [? | ?].
-    + left. apply H.
-    + right. pose proof IHBBs H. apply H0.
-Qed. 
 
 Lemma Sx_not_equal_x:
   forall (a : nat),
@@ -1686,6 +1716,7 @@ Proof.
 Qed.
 
 
+(*如果a::l1 = b::l2，那么无论l1和l2如何，a肯定首先要等于b*)
 Lemma head_eq_prop:
   forall (A: Type) (l1 l2: list A) (a b: A),
   a::l1 = b::l2 -> a = b.
@@ -1693,45 +1724,38 @@ Proof.
   intros. inversion H. reflexivity.
 Qed.
 
-(*如果l = l1 + l2，l1不为空，那么l不为空*)
-Lemma not_nil_l:
-  forall (A: Type) (l1 l2: list A),
-  l1 <> nil -> l1 ++ l2 <> nil.
-Proof.
-  intros. unfold not. intros. destruct l1.
-  - apply H. reflexivity.
-  - inversion H0.
-Qed.
 
-(*如果l = l1 + l2，l2不为空，那么l不为空*)
-Lemma not_nil_r:
-  forall (A: Type) (l1 l2: list A),
-  l2 <> nil -> l1 ++ l2 <> nil.
-Proof.
-  intros. unfold not. intros. destruct l1.
-  - inversion H0. simpl in H0. tauto.
-  - inversion H0.
-Qed.
 
 (*如果l1 ++ l2 = a :: l3，那么a肯定是l1的头*)
 Lemma extract_head_from_list:
   forall (A: Type) (l1 l2 l3: list A) (a: A)(d: A),
-  l1 ++ l2 = a :: l3 -> a = hd d l1.
+  l1 <> nil -> l1 ++ l2 = a :: l3 -> a = hd d l1.
 Proof.
-  intros. revert l1 l2 H.
-  induction l3. 
+  intros. revert l1 l3 H H0.
+  induction l2.
+  - intros. rewrite app_nil_r in H0. rewrite H0. simpl. reflexivity.
   - intros. 
-  (*TODO BUG*)
-Admitted.
-
-Lemma exact_tail_from_list:
-  forall (A: Type) (l1 l2 l3: list A) (a b: A),
-  l1 ++ a::nil = l2 ++ b::l3 -> l3 <> nil -> In a l3.
-Proof.
-  intros. revert l1 l2 H.
-  (*TODO*)
-Admitted.
-
+    assert (l1 ++ a0 :: l2 = l1 ++ a0::nil ++ l2).
+    {
+      simpl. reflexivity.
+    }
+    rewrite H1 in H0. specialize (IHl2 (l1 ++ a0 :: nil) l3).
+    assert (l1 ++ a0 :: nil <> nil). {
+      apply not_nil_l. apply H.
+    }
+    specialize (IHl2 H2). 
+    assert ((l1 ++ a0 :: nil) ++ l2 = a :: l3).
+    {
+      rewrite <- H0. rewrite <- app_assoc. simpl. reflexivity.
+    }
+    specialize (IHl2 H3). rewrite IHl2. simpl. unfold hd. 
+    destruct (l1 ++ a0 :: nil). tauto. 
+    destruct l1. tauto. simpl in IHl2.
+    assert (a2 = a). {
+      inversion H0. reflexivity.
+    }
+    rewrite H4. rewrite IHl2. reflexivity.
+Qed.
 
 
 (*如果num在BBnum_set(BBnow::BBs)中，那么为在BBnow的num，要么在BBs的num中*)
@@ -1794,17 +1818,24 @@ Proof.
 Qed. 
 
 
-(*对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
-1. (bs1, bs2) 在 BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) 中
-2. bs1 不等于 bs2
-3. BBnow1 :: nil ++ BBs1 和 BBnow2 :: nil ++ BBs2 的BBnum_set不交
-4. BBnow1 :: nil ++ BBs1 和 BBnow2 :: nil ++ BBs2 的BBjmp_dest_set不交
-5. bs1的BBnum在 BBnow1 :: nil ++ BBs1 的numset中
-6. bs2的BBnum在 BBnow2 :: nil ++ BBs2 的jmpset中
-那么存在一个x，使得:
-1. (bs1, x) 在 BB_list_sem (BBnow1 :: nil ++ BBs1) 中
-2. (x, bs2) 在 BB_list_sem (BBnow2 :: BBs2) 中
+(*
+对于BBs1和BBs2两串BasicBlock，bs1和bs2两个BBstate，如果bs1的num不在BBs1中，
+但 (bs1, bs2) 在 (BBs1 ++ BBs2) 但语义中
+那么 (bs1, bs2)就在BBs2的语义中
 *)
+Lemma BB_list_sem_simplify_r:
+  forall (BBs1 BBs2: list BasicBlock) (bs1 bs2: BB_state),
+  Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2 -> 
+  (~ (bs1.(BB_num) ∈ BBnum_set (BBs1))) ->
+  (Bnrm (BB_list_sem (BBs2)) bs1 bs2).
+Proof.
+  intros. revert bs1 bs2 H H0.
+  induction BBs1.
+  - intros. simpl in *. tauto.
+  - admit. (*Combined with  an_over_pass_bridge, let it go first*)
+Admitted.
+
+
 Lemma an_over_pass_bridge: 
   forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
@@ -1848,6 +1879,133 @@ Proof.
   (*TODO! IMPORTANT! lyz*)
 Admitted.
 
+
+(*对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
+1. (bs1, bs2) 在 BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) 中
+2. bs1 不等于 bs2
+3. BBnow1 :: nil ++ BBs1 和 BBnow2 :: nil ++ BBs2 的BBnum_set不交
+4. BBnow1 :: nil ++ BBs1 和 BBnow2 :: nil ++ BBs2 的BBjmp_dest_set不交
+5. bs1的BBnum在 BBnow1 :: nil ++ BBs1 的numset中
+6. bs2的BBnum在 BBnow2 :: nil ++ BBs2 的jmpset中
+7. 没有办法从 BBnow1 :: nil ++ BBs1 跳转到 BBs2
+8. 没有办法从 BBnow2 :: nil ++ BBs2 跳转到 BBnow1 :: nil ++ BBs1
+那么存在一个x，使得:
+1. (bs1, x) 在 BB_list_sem (BBnow1 :: nil ++ BBs1) 中
+2. (x, bs2) 在 BB_list_sem (BBnow2 :: BBs2) 中
+*)
+(*
+Lemma an_over_pass_bridge: 
+  forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
+  Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
+  bs1 <> bs2 ->
+  BBnum_set (BBnow1 :: nil ++ BBs1) ∩ BBnum_set (BBnow2 :: nil ++ BBs2) == ∅ ->
+  BBjmp_dest_set (BBnow1 :: nil ++ BBs1) ∩ BBjmp_dest_set (BBnow2 :: nil ++ BBs2) == ∅ ->
+  bs1.(BB_num) ∈  BBnum_set (BBnow1 :: nil ++ BBs1) ->
+  bs2.(BB_num) ∈  BBjmp_dest_set (BBnow2 :: nil ++ BBs2) ->
+  BBjmp_dest_set (BBnow1 :: nil ++ BBs1) ∩ BBnum_set (BBs2) == ∅ ->
+  BBjmp_dest_set (BBnow2 :: nil ++ BBs2) ∩ BBnum_set (BBnow1 :: nil ++ BBs1) == ∅ ->
+  (exists x,
+  Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\
+  Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2).
+Proof.
+  intros. 
+  remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs. 
+  pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H. rename H5 into Hn1. rename H6 into Hn2. rename H7 into H5. destruct H5.
+  - my_destruct H5. subst BBs.
+    assert (In x (BBnow1 :: nil ++ BBs1) \/ In x (BBnow2 :: nil ++ BBs2)). {
+      pose proof In_l1_or_l2 BasicBlock (BBnow1 :: nil ++ BBs1) (BBnow2 :: nil ++ BBs2) x H5.
+      tauto.
+    } 
+    clear H5.
+    destruct H8.
+    + exists x0. split. 
+      * unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists (S O).
+        cbn[Iter_nrm_BBs_n]. sets_unfold. exists x0. split.
+        pose proof BB_sem_child_prop (x::nil) (BBnow1::nil ++ BBs1) bs1 x0. apply H8.
+        -- intros. unfold In in H9. unfold In.  destruct H9.
+           rewrite <- H9. unfold In in H5. destruct H5 as [? | ?].
+           rewrite H9. rewrite H5. left. apply H9.
+           right. apply H5. tauto.
+        -- unfold BB_sem_union. cbn[Bnrm]. sets_unfold. left. apply H6.
+        -- tauto.
+      * pose proof BB_jmp_sem_num_in_BBjmp_dest_set. 
+        assert (notin: ~ (x0.(BB_num)) ∈ (BBnum_set (BBnow1 :: BBs1))). 
+        {
+          unfold not. intros. rename H9 into focus. unfold BBnum_set in focus.
+          sets_unfold in focus.
+        } (*Failure*)
+        pose proof BB_list_sem_simplify_r (BBnow1::BBs1) (BBnow2::BBs2) x0 bs2 H7 notin. tauto.
+    + pose proof BB_sem_start_BB_num bs1 x0 x H6.
+      sets_unfold in H1. specialize (H1 x.(block_num)). destruct H1.
+      clear H9.
+      assert (False). {
+        apply H1. split. sets_unfold in H3. rewrite <- H8. apply H3.
+        unfold BBnum_set. exists x. split. apply H5. tauto.
+      }
+      tauto.
+  - contradiction.
+Admitted.
+ 
+*)
+
+Lemma Iter_nrm_BBs_n_add_expansion_tran:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a b: nat),
+  (exists x, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 x /\ Iter_nrm_BBs_n (BB_sem_union BBs) (S b) x bs2)
+    <-> (exists x, Iter_nrm_BBs_n (BB_sem_union BBs) (S a) bs1 x /\ Iter_nrm_BBs_n (BB_sem_union BBs) b x bs2).
+Proof.
+  intros.
+  split.
+  - intros. my_destruct H. my_destruct H. simpl in H0. sets_unfold in H0. destruct H0 as [mid cond].
+    exists mid. destruct cond as [cond1 cond2]. 
+    assert (Iter_nrm_BBs_n (BB_sem_union BBs) (S a) bs1 mid). {
+      simpl. apply S_pos_move2. sets_unfold. exists x. split; try tauto.
+    }
+     split.
+    + tauto.
+    + tauto.
+  - intros. my_destruct H. simpl in H. pose proof S_pos_move1 a bs1 x BBs H. sets_unfold in H1.
+    destruct H1 as [bb cond]. destruct cond as [cond1 cond2].
+    exists bb. split.
+    * tauto.
+    * simpl. sets_unfold. exists x. split; try tauto.
+Qed.
+
+Lemma Iter_nrm_BBs_n_add_expansion:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a b: nat),
+    Iter_nrm_BBs_n (BB_sem_union BBs) (a + b) bs1 bs2
+    <-> (exists x, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 x /\ Iter_nrm_BBs_n (BB_sem_union BBs) b x bs2).
+Proof.
+  intros. 
+  split.
+  - intros.
+    revert a b H. 
+    induction a. 
+    + intros. simpl in H. exists bs1. split. simpl. sets_unfold. tauto. apply H.
+    + intros. simpl in H. sets_unfold in H. specialize (IHa (S b)). destruct H as [? [? ?]]. 
+      assert (Iter_nrm_BBs_n (BB_sem_union BBs) (S (a + b)) bs1 bs2).
+      {
+        simpl. sets_unfold. exists x. split; tauto.
+      }
+      assert (S (a+b) = (a + (S b))%nat). {
+        lia.
+      }
+      rewrite H2 in H1. pose proof (IHa H1).
+      pose proof Iter_nrm_BBs_n_add_expansion_tran BBs bs1 bs2 a b.
+      destruct H4 as [focus _]. specialize (focus H3). 
+      destruct focus as [? ?]. exists x0. tauto.
+  - intros.
+    revert a b H. 
+    induction a.
+    + intros. simpl. my_destruct H. simpl in H. sets_unfold in H. rewrite <- H in H0. tauto.
+    + intros. pose proof Iter_nrm_BBs_n_add_expansion_tran BBs bs1 bs2 a b. 
+      destruct H0 as [_ focus]. specialize (focus H). clear H. specialize (IHa (S b) focus).
+      assert((a + S b)%nat = (S a + b)%nat). {
+        lia.
+      }
+      rewrite H in *.
+      tauto.
+Qed.
+
 Lemma an_over_pass_bridge_reverse:
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
   (exists x, Bnrm (BB_list_sem (BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBs2)) x bs2) ->
@@ -1865,7 +2023,33 @@ Proof.
     rewrite H0 in H. unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
     exists x0. apply H.
   + cbn[Iter_nrm_BBs_n] in H0.  
-
-
-  (*TODO! IMPORTANT!*)
-Admitted.
+    exists (x0 + (S x1))%nat. simpl. sets_unfold. sets_unfold in H0.
+    my_destruct H0. 
+    pose proof Iter_nrm_BBs_n_add_expansion (BBs1 ++ BBs2) bs1 bs2 x0 (S x1). destruct H2. clear H2.
+    apply H3. exists x. split.
+    - assert(forall (n: nat), Iter_nrm_BBs_n (BB_sem_union BBs1) n ⊆ Iter_nrm_BBs_n (BB_sem_union (BBs1 ++ BBs2)) n).
+      {
+        intros. induction n. simpl. sets_unfold. tauto.
+        cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H2.
+        exists x3. split. 
+        + pose proof BB_sem_child_prop BBs1 (BBs1 ++ BBs2) a x3. 
+          apply H5. intros. unfold In. apply In_sublist_then_in_list_head. apply H6. apply H2.
+        + sets_unfold in IHn. specialize (IHn x3 a0). apply IHn. apply H4.
+      }
+      specialize (H2 x0). sets_unfold in H2. specialize (H2 bs1 x).
+      apply H2. apply H.
+    - simpl. sets_unfold. exists x2.
+      pose proof BB_sem_child_prop BBs2 (BBs1 ++ BBs2) x x2.
+      split. apply H2. intros. apply In_sublist_then_in_list_last. apply H4. apply H0. 
+      assert(forall (n: nat), Iter_nrm_BBs_n (BB_sem_union BBs2) n ⊆ Iter_nrm_BBs_n (BB_sem_union (BBs1 ++ BBs2)) n).
+      {
+        intros. induction n. simpl. sets_unfold. tauto.
+        cbn[Iter_nrm_BBs_n] . sets_unfold. intros. my_destruct H4.
+        exists x3. split. 
+        + pose proof BB_sem_child_prop BBs2 (BBs1 ++ BBs2) a x3. 
+          apply H6. intros. unfold In. apply In_sublist_then_in_list_last. apply H7. apply H4.
+        + sets_unfold in IHn. specialize (IHn x3 a0). apply IHn. apply H5.
+      }
+      specialize (H4 x1). sets_unfold in H4. specialize (H4 x2 bs2). 
+      apply H4. apply H1.
+Qed.

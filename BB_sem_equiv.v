@@ -19,6 +19,7 @@ Require Import Main.BB_sem_asgn_equiv.
 Require Import Main.BB_sem_while_equiv.
 Require Import Main.BB_sem_if_equiv.
 Require Import Main.BB_gen_properties.
+Require Import Main.utils.
 
 
 Import Denotation.
@@ -813,7 +814,9 @@ Proof.
             pose proof not_nil_l BasicBlock BBswo_ (BBnow'_p :: BBs'_p) H2. tauto.
          ++ (*BBswo_的头就是BBthen！成立的！*)
             (*引理1: 从Heql中得到b就是head BBswo_*)
-            pose proof extract_head_from_list BasicBlock BBswo_ (BBnow'_p :: BBs'_p) l b empty_block Heql as head_wo.
+            assert(tmp: BBswo_ <> nil). pose proof if_wont_be_nil e c1 c2 BBs BBswo_ BBnow BBnow'_ BBnum A3. tauto. 
+            pose proof extract_head_from_list BasicBlock BBswo_ (BBnow'_p :: BBs'_p) l b empty_block tmp Heql as head_wo.
+            clear.
             (*引理2: 用A3得到BBswo_的头就是BBthen*)
             pose proof if_head_prop e c1 c2 BBswo_ BBs BBnow BBnow'_ BBnum A3 as num_prop.
             rewrite <- head_wo in num_prop. rewrite num_prop. rewrite BBnow'_prop. simpl. reflexivity. 

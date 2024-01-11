@@ -14,109 +14,7 @@ Require Import Main.cmd_denotations.
 Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
-
-
-Lemma cut_nil_r:
-  forall (A: Type) (x y:  A),
-  x::nil = y::nil <-> x = y.
-Proof.
-  intros. split; intros.
-  - inversion H. reflexivity.
-  - rewrite H. reflexivity.
-Qed.
-
-Lemma cut_eq_part_l:
-  forall (A: Type) (a b: A) (l1 l2: list A),
-  l1 ++ a :: l2 = l1 ++ b :: l2 -> a = b.
-Proof.
-  intros.
-  induction l1.
-  - simpl in H. inversion H. reflexivity.
-  - simpl in H. inversion H. apply IHl1. apply H1.
-Qed.
-
-Lemma cut_eq_part_r:
-  forall (A: Type) (a b: A) (l1 l2: list A),
-  l1 ++ a :: l2 = l1 ++ b :: l2 -> a = b.
-Proof.
-  intros.
-  induction l1.
-  - simpl in H. inversion H. reflexivity.
-  - simpl in H. inversion H. apply IHl1. apply H1.
-Qed.
-
-Lemma cut_eq_part_list_l:
-  forall (A: Type) (l1 l2 l3: list A),
-  l1 ++ l2 = l1 ++ l3 -> l2 = l3.
-Proof.
-  intros.
-  induction l1.
-  - simpl in H. inversion H. reflexivity.
-  - simpl in H. inversion H. apply IHl1. apply H1.
-Qed.
-
-
-(*a obvious transform*)
-Lemma tran_ele:
-  forall (A: Type)(l1 l2: list A)(a: A),
-  l1 ++ a::l2 = l1 ++ a::nil ++ l2.
-Proof.
-  intros. 
-  simpl.
-  reflexivity.
-Qed.
-
-Lemma eli_nil:
-  forall(A: Type) (l1 l2: list A)(a: A),
-  l1 ++ a::nil = l2 ++ a::nil -> l1 = l2.
-Proof.
-  intros.
-Admitted.
-
-
-Lemma cut_eq_part_list_r:
-  forall (A: Type) (l1 l2 l3: list A),
-  l2 ++ l1 = l3 ++ l1 -> l2 = l3.
-Proof.
-  intros. revert l2 l3 H.
-  induction l1.
-  - intros. rewrite app_nil_r in H. rewrite app_nil_r in H. apply H.
-  - intros. inversion H.
-    pose proof tran_ele A l2 l1 a. 
-    pose proof tran_ele A l3 l1 a. 
-    rewrite H0 in H. rewrite H2 in H.
-    pose proof IHl1 (l2 ++ a :: nil) (l3 ++ a :: nil).
-    assert ( (l2 ++ a :: nil) ++ l1 = (l3 ++ a :: nil) ++ l1).
-    {
-      rewrite app_assoc_reverse.
-      rewrite <- app_assoc.
-      simpl.
-      simpl in H. tauto.
-    }
-    pose proof H3 H4.
-    pose proof IHl1 l2 l3.
-    pose proof eli_nil A l2 l3 a H5. tauto.
-Qed.
-
-Lemma cut_eq_part_list_r':
-  forall (A: Type) (l1 l2 l3: list A),
-  l2 = l3 -> l2 ++ l1 = l3 ++ l1.
-Proof.
-  intros. revert l2 l3 H.
-  induction l1.
-  - simpl. intros. rewrite app_nil_r. rewrite app_nil_r. apply H.
-  - intros. simpl. 
-    pose proof tran_ele A l2 l1 a. rewrite H0.
-    pose proof tran_ele A l3 l1 a. rewrite H1.
-    assert (l2 ++ a :: nil = l3 ++ a :: nil).
-    {
-      rewrite H. reflexivity.
-    }
-    specialize (IHl1 (l2 ++ a :: nil) (l3 ++ a :: nil) H2).
-    rewrite <- app_assoc in IHl1. simpl in IHl1. 
-    rewrite <- app_assoc in IHl1. simpl in IHl1. tauto.
-Qed.
-
+Require Import Main.utils.
 
 Definition BB_num_set := nat -> Prop.
 
@@ -476,7 +374,7 @@ Lemma Q_inherit_not_jmp_to_self_while:
   P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
   Q_inherit_not_jmp_to_self (CWhile c1 e c2).
 Proof.
-Admitted. 
+Admitted.  (*DONT CARE for while*)
 
 Lemma P_inherit_not_jmp_to_self_nil:
   P_inherit_not_jmp_to_self nil.
@@ -595,7 +493,7 @@ Lemma Q_inherit_lt_num_prop_mutual_while:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
     P_inherit_lt_num_prop_mutual c1 -> P_inherit_lt_num_prop_mutual c2 -> Q_inherit_lt_num_prop_mutual (CWhile c1 e c2).
 Proof.
-  Admitted.
+Admitted. (*DONT CARE for WHILE*)
 
 Lemma P_inherit_lt_num_prop_mutual_nil:
   P_inherit_lt_num_prop_mutual nil.
@@ -730,6 +628,12 @@ Admitted. (*TODO @LYZ *)
 
 (*START：列表集合的一些性质 ==================================================================================================================================================================================================================== *)
 
+Lemma head_eq_prop:
+  forall (A: Type) (l1 l2: list A) (a b: A),
+  a::l1 = b::l2 -> a = b.
+Proof.
+  intros. inversion H. reflexivity.
+Qed.
 
 Lemma if_wont_be_nil:
   forall (e: expr) (c1 c2: list cmd) (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum : nat),
@@ -737,17 +641,63 @@ Lemma if_wont_be_nil:
   ->
   BBswo_ <> nil.
 Proof.
-  (*TODO*)
-Admitted.
-
-Lemma while_wont_be_nil:
-  forall (e: expr) (c1 c2: list cmd) (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum : nat),
-  (cmd_BB_gen (CWhile c1 e c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_
-  ->
-  BBswo_ <> nil.
-Proof.
-  (*TODO*)
-Admitted.
+  intros. 
+  pose proof Q_add_BBs_in_generation_reserves_BB_sound (CIf e c1 c2) BBs BBnow BBnum.
+  unfold to_result in H0.
+  pose proof cut_eq_part_list_r BasicBlock ((cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BBn) :: nil) (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) (BBs ++
+  (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks)).
+  rewrite <- app_assoc in H1. pose proof H1 H0 as H1. clear H0.
+  rewrite H1 in H. apply cut_eq_part_list_l in H.
+  cbn[cmd_BB_gen] in H. simpl in H.
+  remember ({|
+              block_num := BBnow.(block_num);
+              commands := BBnow.(cmd);
+              jump_info := {|
+                jump_kind := CJump;
+                jump_dest_1 := BBnum;
+                jump_dest_2 := Some (S BBnum);
+                jump_condition := Some e |} |}) as BBnow_.
+  remember ({|
+            block_num := BBnum;
+            commands := nil;
+            jump_info := {|
+                         jump_kind := UJump;
+                         jump_dest_1 := S (S BBnum);
+                         jump_dest_2 := None;
+                         jump_condition := None |} |}) as BBnow_then.
+  remember ({|
+            block_num := S BBnum;
+            commands := nil;
+            jump_info := {|
+                         jump_kind := UJump;
+                         jump_dest_1 := S (S BBnum);
+                         jump_dest_2 := None;
+                         jump_condition := None |} |}) as BBnow_else.
+  remember (list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then
+  (S (S (S BBnum)))) as BBgen_then_result.
+  pose proof H.
+  apply head_eq_prop in H. rewrite <- H in H0.
+  assert (to_result BBgen_then_result ++
+          to_result
+          (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else
+            BBgen_then_result.(next_block_num)) = BBswo_). {
+  inversion H0. tauto.
+            
+  }
+  unfold to_result.
+  pose proof not_nil_l BasicBlock ((BBgen_then_result.(BasicBlocks) ++ BBgen_then_result.(BBn) :: nil)) ((list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then_result.(next_block_num)).(BasicBlocks) ++
+  (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then_result.(next_block_num)).(BBn) :: nil).
+  assert(tmp:  BBgen_then_result.(BasicBlocks) ++ BBgen_then_result.(BBn) :: nil <> nil).
+  {
+    pose proof not_nil_r BasicBlock BBgen_then_result.(BasicBlocks) (BBgen_then_result.(BBn) :: nil).
+    assert (BBgen_then_result.(BBn) :: nil <> nil).
+    {
+      intros contra. inversion contra.
+    }
+    specialize (H4 H5). tauto.
+  }
+  specialize (H3 tmp). clear tmp. unfold to_result in H2. rewrite H2 in H3. tauto.
+Qed.
 
 
 (*x在 l1 ++ l2中，那么必然在至少其中之一*)
@@ -824,27 +774,6 @@ Proof.
   simpl. right. apply H.
 Qed.
 
-Lemma append_nil_r : forall A (l : list A),
-  l ++ nil = l.
-Proof.
-  intros A l.
-  induction l as [| x xs IH].
-  - (* l = nil *)
-    simpl. reflexivity.
-  - (* l = x :: xs *)
-    simpl. rewrite IH. reflexivity.
-Qed.
-
-Lemma append_nil_l : forall A (l : list A),
-  nil ++ l = l.
-Proof.
-  intros A l.
-  induction l as [| x xs IH].
-  - (* l = nil *)
-    simpl. reflexivity.
-  - (* l = x :: xs *)
-    simpl. rewrite <- IH. reflexivity.
-Qed.
 
 (* 如果l1不为空，那么l1 ++ l2的第一个元素等于l1的第一个元素 *)
 Lemma hd_A_and_B_is_hd_A_if_A_not_nil:
@@ -885,9 +814,8 @@ Lemma BBgen_head_prop:
   let res := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum) in
   (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = BBnow.(block_num).
 Proof.
-  intros.
-  unfold res. 
-  induction cmds.
+  intros. unfold res. revert BBnow BBnum res.  
+  induction cmds; intros.
   - simpl. reflexivity.
   - unfold res in IHcmds. cbn [list_cmd_BB_gen].
     pose proof BBgen_head_prop_single_cmd a BBnow BBnum as H_BBgen_cmd.
@@ -895,8 +823,25 @@ Proof.
     pose proof add_BBs_in_generation_reserves_BB cmds ((cmd_BB_gen a nil BBnow BBnum).(BasicBlocks)) (cmd_BB_gen a nil BBnow BBnum).(BBn) (cmd_BB_gen a nil BBnow BBnum).(next_block_num) as BBs_simpl.
     unfold to_result in BBs_simpl. rewrite BBs_simpl.
     clear BBs_simpl.
-   
-Admitted.
+    remember ((cmd_BB_gen a nil BBnow BBnum)) as cmd_res.
+    remember (list_cmd_BB_gen cmd_BB_gen cmds nil cmd_res.(BBn) cmd_res.(next_block_num)) as list_cmd_res.
+    specialize (IHcmds cmd_res.(BBn) cmd_res.(next_block_num)). 
+    
+    (* 对比一下IHcmds和最终的结论，我们发现，实际上利用归纳假设只需要考虑BBnow是否在cmd_res中即可，这个是符合直觉的 *)
+    pose proof classic (cmd_res.(BasicBlocks) = nil). destruct H as [A1 | A2].
+    + rewrite A1. simpl. subst list_cmd_res. 
+      rewrite IHcmds.
+      pose proof BBgen_head_prop_single_cmd a BBnow BBnum.
+      unfold res in H.
+      subst cmd_res. rewrite A1 in H. simpl in H. apply H.
+    + rewrite hd_A_and_B_is_hd_A_if_A_not_nil.
+      pose proof BBgen_head_prop_single_cmd a BBnow BBnum.
+      unfold res in H.
+      rewrite hd_A_and_B_is_hd_A_if_A_not_nil in H.
+      * subst cmd_res. apply H.
+      * subst cmd_res. apply A2.
+      * apply A2.
+Qed.
 
 (*END: BBgen Head =========================================================================================================================================================================================*)
 
@@ -1431,7 +1376,7 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CWhile c1 e c2).
 Proof.
-Admitted.
+Admitted. (*DONT CARE, 老师说while分支都不管*)
 
 Lemma length_eq : forall (A : Type) (xs ys : list A),
   xs = ys -> length xs = length ys.
@@ -1467,22 +1412,20 @@ Qed.
 Lemma P_BBgen_nil:
     P_BBgen_range cmd_BB_gen nil.
 Proof.
-  intros. unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0. 
-  (*TODO FIX IT!*)
+  unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H1. simpl in H1. 
+  pose proof cut_eq_part_list_l BasicBlock BBs (BBnow::nil) BBdelta H1. 
+  repeat split.
+  - rewrite <- H2. simpl. unfold all_ge. intros. unfold BBnum_set in H3. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
+  - rewrite <- H2. simpl. unfold all_lt. intros. unfold BBnum_set in H3. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
+  - rewrite <- H2. simpl. unfold BBjmp_dest_set. sets_unfold. intros. destruct H3 as [BB [H3 H4]]. simpl in H3.
+    destruct H3 as [H3 | H3].
+    + right.  unfold unit_set. subst BBdelta.
+      destruct H4.
+      -- rewrite <- H2. rewrite H3 in *. reflexivity.
+      -- destruct H as [c1 c2]. rewrite <- H3 in H2. rewrite c2 in H2. discriminate H2.
+    + tauto.
+Qed.
 
-
-(* {
-  destruct BBdelta. tauto. pose proof length_eq BasicBlock (BBnow :: nil) (BBnow' :: b :: BBdelta) H1. discriminate.
-} 
-  rewrite H2. split.
-
-  - unfold BB_all_ge. intros. tauto.
-  - unfold BB_all_lt. intros. split. 
-    + intros. tauto.
-    + simpl. 
-  *)
-
-Admitted.
 
 Lemma P_BBgen_con:
     forall (c: cmd) (cmds: list cmd),
@@ -1494,6 +1437,7 @@ Proof.
   unfold P_BBgen_range in H0.
   unfold P_BBgen_range.
   intros.
+  
 Admitted.
 
 Section BB_gen_range_sound.
@@ -1781,17 +1725,42 @@ Admitted.
 (*对于CIf，其BBnow的num肯定和新生成的BBs(去掉最后BBn)的num不交*)
 Lemma disjoint_num_prop_wo_last_if:
   forall (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum: nat) (e: expr) (c1 c2: list cmd),
+  jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None ->
+  (BBnow.(block_num) < BBnum)%nat ->
   (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) =
      BBs ++ BBnow'_ :: BBswo_ -> ~ BBnow.(block_num) ∈ BBnum_set BBswo_.
 Proof.
-Admitted.
+  intros. 
+  unfold not. intros. 
+  pose proof BBgen_range_single_soundness_correct (CIf e c1 c2) as Q_prop.
+  unfold Q_BBgen_range in Q_prop.
+  specialize (Q_prop BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) BBs BBnow (BBnow'_::nil ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)::nil)).
+  specialize (Q_prop H). 
+  assert(t1: (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) =
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num)). tauto.
+  specialize (Q_prop t1).
+  assert(t2: to_result (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum) =
+  BBs ++ BBnow'_::nil ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil). {
+  unfold to_result. rewrite H1. 
+  assert((BBs ++ BBnow'_ :: BBswo_)  = BBs ++ BBnow'_ :: nil ++ BBswo_  ).
+  {
+    simpl. reflexivity.
+  }
+  rewrite H3. rewrite app_assoc. rewrite <- app_assoc. reflexivity.
+  }
 
+  specialize (Q_prop t2 H0). destruct Q_prop as [Q_prop1 [Q_prop2 Q_prop3]].
+  simpl in Q_prop1. unfold all_ge in Q_prop1.
+  sets_unfold in H2. unfold BBnum_set in H2. destruct H2 as [BB H2]. destruct H2 as [H2 H3].
+  specialize (Q_prop1 (BB.(block_num))).
+  assert(BBnum_set (BBswo_ ++ {| block_num := S (S BBnum); commands := nil; jump_info := BBnow.(jump_info) |} :: nil)
+  BB.(block_num)).
+  {
+    unfold BBnum_set. exists BB. split. 
+    pose proof In_tail_inclusive BBswo_ BB {| block_num := S (S BBnum); commands := nil; jump_info := BBnow.(jump_info) |} H2.
+    tauto. tauto.
+  }
 
-(*对于CIf，其去掉最后一个BBn的新生成的BBs, 即BBswo_，其所有的num不等于SS BBnum*)
-Lemma neq_ssnum:
-  forall (BBs BBswo_: list BasicBlock) (BB BBnow BBnow'_: BasicBlock) (BBnum: nat) (e: expr) (c1 c2: list cmd),
-  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) =
-     BBs ++ BBnow'_ :: BBswo_ -> 
-     In BB BBswo_ -> (BB.(block_num) <> (S (S BBnum))).
-Proof.
-Admitted. (*TODO IMPORTANT*)
+  specialize (Q_prop1 H4). lia.
+
+Qed.
