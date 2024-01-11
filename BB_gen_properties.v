@@ -367,6 +367,7 @@ Lemma Q_inherit_not_jmp_to_self_if:
   P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
   Q_inherit_not_jmp_to_self (CIf e c1 c2).
 Proof.
+  intros. unfold Q_inherit_not_jmp_to_self. intros.
 Admitted. (*bh*)
 
 Lemma Q_inherit_not_jmp_to_self_while:
