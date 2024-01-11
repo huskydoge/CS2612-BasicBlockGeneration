@@ -359,8 +359,10 @@ Lemma Q_inherit_not_jmp_to_self_asgn:
   forall  (x: var_name) (e: expr),
   Q_inherit_not_jmp_to_self (CAsgn x e).
 Proof. 
-
-Admitted. (*yz*)
+  unfold Q_inherit_not_jmp_to_self. intros.
+  simpl.
+  tauto.
+Qed.
 
 Lemma Q_inherit_not_jmp_to_self_if:
   forall  (e: expr) (c1: list cmd) (c2: list cmd),
@@ -390,6 +392,8 @@ forall (c: cmd) (cmds: list cmd),
   P_inherit_not_jmp_to_self cmds ->
   P_inherit_not_jmp_to_self (c :: cmds).
 Proof.
+  unfold P_inherit_not_jmp_to_self. unfold Q_inherit_not_jmp_to_self. intros.
+  
 Admitted.  (*yz*)
 
 Section inherit_not_jmp_to_self_sound.
