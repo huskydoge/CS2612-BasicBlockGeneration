@@ -1738,29 +1738,17 @@ Lemma if_separate_for_pcons2:
   (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) :: nil.
 Proof.
   intros.
-  pose proof add_BBs_in_generation_reserves_BB cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_. unfold to_result in H2.
-  assert ((list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) :: nil = (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow_mid BBnum'_).(BBn) :: nil). {
-    pose proof tl_eq_prop BasicBlock (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BasicBlocks) ((BBs ++ BBnow'_ :: BBswo_) ++
-    (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow_mid BBnum'_).(BasicBlocks)) (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow_mid BBnum'_).(BBn).
-    rewrite <- app_assoc in H3.
-    pose proof H3 H2. clear H3. clear H2.
-    f_equal. apply H4.
-  }
-  clear H2.
-  pose proof add_BBs_in_generation_reserves_BB (CIf e c1 c2 :: cmds) BBs BBnow BBnum.
-  unfold to_result in H2.
-  assert ((list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(BBn) :: nil = (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) nil BBnow BBnum).(BBn) :: nil). {
-    pose proof tl_eq_prop BasicBlock (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(BasicBlocks) (BBs ++
-    (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) nil BBnow BBnum).(BasicBlocks)) (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) BBs BBnow BBnum).(BBn) (list_cmd_BB_gen cmd_BB_gen (CIf e c1 c2 :: cmds) nil BBnow BBnum).(BBn).
-    rewrite <- app_assoc in H4.
-    pose proof H4 H2. f_equal. apply H5.
-  }
-
-  clear H2.
-  rewrite H4. rewrite H3.
+  pose proof BBn_determined_by_cmds_BBn BBnow (CIf e c1 c2 :: cmds) BBs BBnum nil. rewrite H2.
+  pose proof BBn_determined_by_cmds_BBn BBnow_mid cmds (BBs ++ BBnow'_ :: BBswo_) BBnum'_ nil. 
+  rewrite H3.
   cbn[list_cmd_BB_gen]. f_equal.
-  rewrite H.
-Admitted. (*TODO bh*)
+  pose proof BBn_determined_by_cmds_BBn_single_cmd BBnow (CIf e c1 c2) BBs BBnum nil. rewrite <- H4.
+  rewrite <- H.
+  pose proof BBn_determined_by_cmds_BBn BBnow_mid cmds (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks) (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(next_block_num) nil. rewrite H5.
+  rewrite <- H1.
+  pose proof BBnum_determined_by_cmds_single_cmd BBnow (CIf e c1 c2) BBs BBnum nil. rewrite H6.
+  tauto.
+Qed.
 
 
 (*如果cmd是CIf，那么新生成的BBs的最后一个Block，也就是BBnext，它的cmd为空*)
