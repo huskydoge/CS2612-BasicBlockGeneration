@@ -696,7 +696,7 @@ Proof.
       -- simpl. rewrite B1. pose proof JmpInfo_inherit_for_list BBs x0 BBnum cmds. rewrite H. rewrite <- B1.  simpl. tauto.
     + destruct Qb_if_while as [contra _]. unfold is_asgn in contra. tauto.
   - unfold P. intros.
-    assert (endinfo_prop: not_eq_to_any_BBnum BBnow.(jump_info).(jump_dest_1)). {
+    assert (endinfo_prop: (endinfo_property BBnow)). {
     (* 我们需要让传入的BBnow的endinfo，其实不是任何num，更多的是像一种标志。这个性质会在后面用到。
       本来我们可以这样解决这个问题：让所有BBnum从1开始，把endinfo设置为0，这样在Q和P中仅仅加入一条
       jmp_dest_1 BBnow.(jump_info) < BBnow.(block_num) 就可以解决了。
@@ -1118,7 +1118,23 @@ Proof.
             ** specialize (P_prop (BB_num bb_mid) case2). lia.
           (* unit_set (jump_dest_1 BBnow.(jump_info)) (BB_num bb_mid) *)
           * unfold unit_set in case2. (* 需要证明BBnow的jmpinfo(即endinfo，最后只会在BBn中, 不会在任何其他block里。从而根据BBs'_ = BBswo_ ++ BBn::nil 导出矛盾*) 
-            unfold not_eq_to_any_BBnum in endinfo_prop. specialize endinfo_prop with (BB_num bb_mid). lia.
+            pose proof case2 as key2.
+            symmetry in wo_tran. rewrite Heqc0 in wo_tran.
+            pose proof unique_endinfo_if BBs BBswo_ BBs'_ e c1 c2 BBnow BBnow'_ BBnum A3 wo_tran endinfo_prop. 
+            unfold not in H2. sets_unfold in H2. 
+            assert (t: BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_) (jump_dest_1 BBnow.(jump_info))).
+            {
+              unfold BBjmp_dest_set. unfold BBjmp_dest_set in case_a. destruct case_a as [sbb conds].
+              destruct conds as [cond1 cond2]. destruct cond1 as [cond1_1 | cond1_2].
+              - exists BBnow'_. split.
+                + left. tauto.
+                + rewrite <- cond1_1 in cond2. rewrite key2 in cond2. rewrite HeqBBnow_start in cond2. simpl in cond2. tauto.
+              - exists sbb. split.
+                + right. simpl. rewrite wo_tran in cond
+                + tauto.
+                + rewrite key2 in cond2. tauto.
+            }
+            specialize (H2 t). tauto.
           (* bb_mid = bs2, bs2的num就是endinfo，但是从case-a中知道，bb_mid不可能拿到endinfo，因为它并不在BBn的jmpdest里*)
             ++ symmetry in wo_tran. rewrite Heqc0 in wo_tran. pose proof unique_endinfo_if BBs BBswo_ BBs'_ e c1 c2 BBnow BBnow'_ BBnum A3 wo_tran endinfo_prop as key.
              sets_unfold in key. rewrite case_b' in case_a. rewrite C4 in case_a.
