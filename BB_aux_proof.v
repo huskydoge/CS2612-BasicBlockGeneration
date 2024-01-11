@@ -18,6 +18,7 @@ Require Import Main.BB_gen_properties.
 Require Import Nat.
 
 
+
 Import Denotation.
 Import EDenote.
 Import CDenote.
@@ -1960,7 +1961,7 @@ Proof.
     rewrite H0 in H. unfold BB_list_sem. cbn[Bnrm]. sets_unfold.
     exists x0. apply H.
   + cbn[Iter_nrm_BBs_n] in H0.  
-    exists (add x0 (S x1)). simpl. sets_unfold. sets_unfold in H0.
+    exists (x0 + (S x1))%nat. simpl. sets_unfold. sets_unfold in H0.
     my_destruct H0. 
     pose proof Iter_nrm_BBs_n_add_expansion (BBs1 ++ BBs2) bs1 bs2 x0 (S x1). destruct H2. clear H2.
     apply H3. exists x. split.
