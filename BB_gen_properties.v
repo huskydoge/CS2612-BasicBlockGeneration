@@ -619,13 +619,29 @@ Lemma bbnum_le_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     (lt BBnow.(block_num) BBnum) -> le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
 Proof.
-  intros. induction c.
+  intros BBs BBnow BBnum c. revert BBs BBnow BBnum. induction c.
   - simpl. lia.
   - cbn [list_cmd_BB_gen].
-    unfold list_cmd_BB_gen.
     destruct a.
-    + simpl. admit.
-Admitted. (*TODO @LYZ*)
+    + simpl. intros. specialize (IHc BBs {|
+    block_num := BBnow.(block_num);
+    commands := BBnow.(cmd) ++ {| X := x; E := e |} :: nil;
+    jump_info := BBnow.(jump_info) |} BBnum). simpl in IHc. specialize (IHc H). tauto.
+    + intros. specialize (IHc ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks)) ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)) ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num))).
+      pose proof Q_inherit_lt_num_prop_mutual_if e c1 c2.
+      pose proof inherit_lt_num_prop_mutual_list_sound c1.
+      pose proof inherit_lt_num_prop_mutual_list_sound c2.
+      specialize (H0 H1 H2). unfold Q_inherit_lt_num_prop_mutual in H0. specialize (H0 BBs BBnow BBnum H). 
+      pose proof inherit_lt_num_prop BBs BBnow BBnum (CIf e c1 c2) H.
+      specialize (IHc H3). lia.
+    + intros. specialize (IHc ((cmd_BB_gen (CWhile pre e body) BBs BBnow BBnum).(BasicBlocks)) ((cmd_BB_gen (CWhile pre e body) BBs BBnow BBnum).(BBn)) ((cmd_BB_gen (CWhile pre e body) BBs BBnow BBnum).(next_block_num))).
+      pose proof Q_inherit_lt_num_prop_mutual_while e pre body.
+      pose proof inherit_lt_num_prop_mutual_list_sound pre.
+      pose proof inherit_lt_num_prop_mutual_list_sound body.
+      specialize (H0 H1 H2). unfold Q_inherit_lt_num_prop_mutual in H0. specialize (H0 BBs BBnow BBnum H). 
+      pose proof inherit_lt_num_prop BBs BBnow BBnum (CWhile pre e body) H.
+      specialize (IHc H3). lia.
+Qed.
 
 
 (* Used In aux proof.v *)
@@ -642,33 +658,6 @@ Qed.
 
 (*END:  ====================================================================================================== *)
 
-
-(*如果生成的res.(BasicBlocks) ++ res.(BBn) :: nil中仅有一个元素，那么BBnum等于next_block_num ===================================================================================================*)
-
-Lemma bbnum_eq_next_num_single_cmd:
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
-    let res := (cmd_BB_gen c BBs BBnow BBnum) in
-    (lt BBnow.(block_num) BBnum) -> (tl (res.(BasicBlocks) ++ res.(BBn) :: nil)) = nil -> BBnum = res.(next_block_num).
-Proof.
-  intros. destruct c.
-  - simpl. lia.
-  - cbn [cmd_BB_gen]. simpl. admit.
-  - admit.
-Admitted. (*TODO yz *)
-
-Lemma bbnum_eq_next_num:
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
-    let res := (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum) in
-    (lt BBnow.(block_num) BBnum) -> (tl (res.(BasicBlocks) ++ res.(BBn) :: nil)) = nil -> BBnum = res.(next_block_num).
-Proof.
-  intros. induction c.
-  - cbn [list_cmd_BB_gen].
-    simpl. lia.
-  -
-    unfold list_cmd_BB_gen.
-    destruct a.
-    + simpl. admit.
-Admitted. (*TODO yz *)
 
 (* END ===================================================================================================*)
 
@@ -1799,7 +1788,7 @@ Qed.
 
 (* Jmp Info的继承性质  ============================================================================================================ *)
 
-(*Jmp Info是会被继承下去的！TODO Maybe EASY, 递归就好*)
+(*Jmp Info是会被继承下去的！*)
 Lemma JmpInfo_inherit:
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (c: cmd),
   ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
