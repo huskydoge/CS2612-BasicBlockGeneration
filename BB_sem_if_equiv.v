@@ -857,7 +857,7 @@ Proof.
          {
           pose proof single_step_jmp_property_for_bs2 BBnow' bs1 x H5.
           destruct H4 as [case1 | case2].
-          + rewrite <- case1. simpl. tauto.
+          + rewrite <- case1. simpl. lia.
           + subst BBnow'. simpl in case2. simpl. rewrite case2 in jmp2. 
             pose proof option_eq_some nat BBnow.(block_num) (BB_num x). tauto.
          }
