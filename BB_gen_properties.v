@@ -1470,6 +1470,13 @@ Proof.
 Qed.
 
 
+Lemma cmd_BB_delta:
+  forall (c: cmd)(BBs BBdelta: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
+to_result(cmd_BB_gen c nil BBnow BBnum) = BBdelta -> to_result(cmd_BB_gen c BBs BBnow BBnum) = BBs ++ BBdelta.
+Proof.
+(*TODO*)
+Admitted.
+
 Lemma P_BBgen_con:
     forall (c: cmd) (cmds: list cmd),
     Q_BBgen_range c ->
@@ -1478,9 +1485,18 @@ Lemma P_BBgen_con:
 Proof.
   intros.
   unfold P_BBgen_range in H0.
+  unfold Q_BBgen_range in H.
   unfold P_BBgen_range.
   intros.
-  
+  set (endnum' := (cmd_BB_gen c BBs BBnow startnum).(next_block_num)).
+  set (BBdelta' := to_result (cmd_BB_gen c nil BBnow startnum)).
+  assert(to_result (cmd_BB_gen c BBs BBnow startnum) = BBs ++ BBdelta').
+{
+  pose proof cmd_BB_delta c BBs BBdelta' BBnow startnum. destruct H4. tauto. reflexivity.
+}
+  specialize (H startnum endnum' BBs BBnow BBdelta' H1). destruct H. tauto. tauto.
+  (* The condition here is not satisfied TODO bh*)
+  admit.
 Admitted. (* yz *)
 
 Section BB_gen_range_sound.
