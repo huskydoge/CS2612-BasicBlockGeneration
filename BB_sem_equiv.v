@@ -284,14 +284,15 @@ Lemma BBs_sem_Asgn_split:
      bs1 <> bs2 ->
      ((Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2)).
 Proof.
-  intros. rename H0 into Hn1. rename H1 into Hn2. rename H2 into Hn3. split.
+  intros. rename H0 into Hn1. rename H1 into Hn2. 
+  rename H2 into Hn3. split.
   + intros. 
     assert ((exists x, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2)). {
       pose proof BB_list_sem_unfold_bs1_and_simpl BB1 BBs bs1 bs2.
       apply H1.
       - subst BB1. simpl. apply H.
       - apply Hn3.
-      - admit. (*TODO lyz easy. BB2 and BB1 should behave the same *)
+      - admit. (*TODO lyz easy. BB2 and BB1 should behave the same. Consider sets_unfold everything *)
       - admit. (*TODO lyz easy. same*)
       - apply H0.    
     }
@@ -329,7 +330,28 @@ Proof.
   + intros. my_destruct H0.
     unfold BB_list_sem in H1. cbn[Bnrm] in H1. sets_unfold in H1. destruct H1 as [? ?].
     pose proof BB_list_sem_unfold_bs1_and_simpl BB2 BBs x0 bs2.
-    assert (x0 <> bs2). admit. (*?????*)
+
+    (* 先考虑x0 = bs2的特殊情况 *)
+    pose proof classic (x0 = bs2) as Ht. destruct Ht as [Ht1 | Ht2].
+
+    (* Ht1显然是不可以的 *)
+    rewrite Ht1 in H0. rewrite Ht1 in H1. 
+    assert (bs2.(BB_num) = BBnow.(block_num)). {
+      unfold BAsgn_list_sem in H0. cbn[Bnrm] in H0. sets_unfold in H0.
+      unfold BAsgn_denote in H0. cbn[Bnrm] in H0. my_destruct H0.
+      rewrite <- H3. rewrite <- H4. apply H. 
+    }
+
+    assert (Bnrm (BB_list_sem (BB2 :: BBs)) bs2 bs2). {
+      unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists x1. apply H1.
+    }
+
+    pose proof BBs_bs2_in_BB_jmp_set (BB2 :: BBs) bs2 bs2 H4. destruct H5.
+    admit.
+
+
+    (* 接下来考虑Ht2的情况 *)
+    assert (x0 <> bs2). apply Ht2.
     assert (Bnrm (BB_list_sem (BB2 :: BBs)) x0 bs2). {
       unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists x1. apply H1.
     }
@@ -338,7 +360,8 @@ Proof.
       unfold BAsgn_denote in H0. cbn[Bnrm] in H0. my_destruct H0.
       rewrite H5 in H6. subst BB2. simpl. rewrite <- H. rewrite H6. tauto. 
     } 
-    pose proof H2 H5 H3 Hn1 Hn2 H4. my_destruct H8.
+    pose proof Hn1. pose proof Hn2.
+    pose proof H2 H5 H3 H6 H7 H4. my_destruct H8.
 
     assert (exists x : BB_state, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2). {
       exists x2. split.
