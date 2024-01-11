@@ -1630,7 +1630,12 @@ Proof.
     pose proof hd_A_and_B_is_hd_A_if_A_not_nil (e0 ++ e1) e2 as hd_position.
     assert (e0_not_nil: (e0 ++ e1) <> nil).
     {
-      (*对c1是否为空进行分类讨论, 但是可能有点麻烦*) admit. (*TODO px*)
+      (*对c1是否为空进行分类讨论, 但是可能有点麻烦*)
+      pose proof classic (e0 = nil) as He0_nil. destruct He0_nil as [He0_nil | He0_nnil].
+      - rewrite He0_nil. rewrite app_nil_l. rewrite Heqe1. unfold not. intros.
+        inversion H1.
+      - unfold not. intros.
+        
     }
     pose proof hd_position e0_not_nil as hd_position.
 Admitted.
