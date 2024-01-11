@@ -1825,4 +1825,46 @@ Lemma neq_ssnum:
      BBs ++ BBnow'_ :: BBswo_ -> 
      In BB BBswo_ -> (BB.(block_num) <> (S (S BBnum))).
 Proof.
-Admitted. (*TODO yz*)
+  intros.
+  pose proof Q_add_BBs_in_generation_reserves_BB_sound (CIf e c1 c2) BBs BBnow BBnum.
+  unfold to_result in H1.
+  pose proof cut_eq_part_list_r BasicBlock ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) (BBs ++
+  (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks)).
+  rewrite <- app_assoc in H2. pose proof H2 H1 as H2. rewrite H2 in H.
+  apply cut_eq_part_list_l in H. clear H1. clear H2.
+  cbn[cmd_BB_gen] in H. simpl in H.
+  remember ({|
+              block_num := BBnow.(block_num);
+              commands := BBnow.(cmd);
+              jump_info := {|
+                            jump_kind := CJump;
+                            jump_dest_1 := BBnum;
+                            jump_dest_2 := Some (S BBnum);
+                            jump_condition := Some e |} |}) as BBnow'.
+  remember ({|
+            block_num := BBnum;
+            commands := nil;
+            jump_info := {|
+                         jump_kind := UJump;
+                         jump_dest_1 := S (S BBnum);
+                         jump_dest_2 := None;
+                         jump_condition := None |} |}) as BBnow_then.
+  remember ({|
+            block_num := S BBnum;
+            commands := nil;
+            jump_info := {|
+                         jump_kind := UJump;
+                         jump_dest_1 := S (S BBnum);
+                         jump_dest_2 := None;
+                         jump_condition := None |} |}) as BBnow_else.
+  remember ((list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then (S (S (S BBnum))))) as BBgen_then.
+  pose proof H. apply head_eq_prop in H. rewrite H in H1.
+  assert ( BBnow'_ :: nil ++ to_result BBgen_then ++ to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num)) = BBnow'_ :: nil ++ BBswo_). {
+    simpl. apply H1.
+  }
+  clear H1.
+  pose proof cut_eq_part_list_l BasicBlock (BBnow'_:: nil) (to_result BBgen_then ++
+        to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num))) BBswo_ H2.
+  clear H2.                           
+
+Admitted.
