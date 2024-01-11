@@ -502,19 +502,19 @@ Proof.
   unfold Q_inherit_lt_num_prop_mutual. intros.
   cbn[cmd_BB_gen]. simpl.
   remember ({|
-              block_num := S BBnum;
+              block_num := S (S BBnum);
               commands := nil;
               jump_info := {|
                           jump_kind := UJump;
-                          jump_dest_1 := S (S BBnum);
+                          jump_dest_1 := BBnum;
                           jump_dest_2 := None;
                           jump_condition := None |} |}) as BBnow_else.
   remember ({|
-              block_num := BBnum;
+              block_num := S BBnum;
               commands := nil;
               jump_info := {|
                             jump_kind := UJump;
-                            jump_dest_1 := S (S BBnum);
+                            jump_dest_1 := BBnum;
                             jump_dest_2 := None;
                             jump_condition := None |} |}) as BBnow_then.
   remember ((list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then (S (S (S BBnum)))).(next_block_num)) as BBnum'.
@@ -605,15 +605,6 @@ Lemma inherit_lt_num_prop:
 Proof.
 Admitted.
 
-Lemma bbnum_le_next_num_single_cmd:
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
-    (lt BBnow.(block_num) BBnum) -> le BBnum (cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
-Proof.
-  intros. destruct c.
-  - simpl. lia.
-  - cbn [cmd_BB_gen]. simpl. admit.
-  - admit.
-Admitted.
 
 Lemma bbnum_le_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
@@ -697,23 +688,23 @@ Proof.
               commands := BBnow.(cmd);
               jump_info := {|
                 jump_kind := CJump;
-                jump_dest_1 := BBnum;
-                jump_dest_2 := Some (S BBnum);
+                jump_dest_1 := S BBnum;
+                jump_dest_2 := Some (S (S(BBnum)));
                 jump_condition := Some e |} |}) as BBnow_.
-  remember ({|
-            block_num := BBnum;
-            commands := nil;
-            jump_info := {|
-                         jump_kind := UJump;
-                         jump_dest_1 := S (S BBnum);
-                         jump_dest_2 := None;
-                         jump_condition := None |} |}) as BBnow_then.
   remember ({|
             block_num := S BBnum;
             commands := nil;
             jump_info := {|
                          jump_kind := UJump;
-                         jump_dest_1 := S (S BBnum);
+                         jump_dest_1 := BBnum;
+                         jump_dest_2 := None;
+                         jump_condition := None |} |}) as BBnow_then.
+  remember ({|
+            block_num := S(S BBnum);
+            commands := nil;
+            jump_info := {|
+                         jump_kind := UJump;
+                         jump_dest_1 := BBnum;
                          jump_dest_2 := None;
                          jump_condition := None |} |}) as BBnow_else.
   remember (list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then
@@ -894,12 +885,12 @@ Lemma CIf_next_block_num_eq_else_next_block_num:
   forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat),
     let BB_now_then := 
       {|
-      block_num := BBnum;
+      block_num := S BBnum;
       commands := nil;
       jump_info :=
         {|
           jump_kind := UJump;
-          jump_dest_1 := S (S BBnum);
+          jump_dest_1 := BBnum;
           jump_dest_2 := None;
           jump_condition := None;
         |}
@@ -907,12 +898,12 @@ Lemma CIf_next_block_num_eq_else_next_block_num:
     let else_start_num := (list_cmd_BB_gen cmd_BB_gen c1 nil BB_now_then (S(S (S BBnum)))).(next_block_num) in
     let BB_now_else := 
       {|
-      block_num := S BBnum;
+      block_num := S (S BBnum);
       commands := nil;
       jump_info :=
         {|
           jump_kind := UJump;
-          jump_dest_1 := S (S BBnum);
+          jump_dest_1 := BBnum;
           jump_dest_2 := None;
           jump_condition := None;
         |}
@@ -947,12 +938,12 @@ Proof.
   unfold to_result in BBs_eq.
   set(then_start_num := S (S (S startnum))). (* S BBnextnum *)
   set(BB_then_now := {|
-      block_num := startnum;
+      block_num := S startnum;
       commands := nil;
       jump_info := {|
         jump_kind := UJump;
         jump_condition := None; 
-        jump_dest_1 := (S (S startnum)); (* BBnextnum*)
+        jump_dest_1 := startnum; (* BBnextnum*)
         jump_dest_2 := None |} ;
       |}).
 
@@ -961,19 +952,19 @@ Proof.
   set(then_end_num := (then_res).(next_block_num)).
   
   set(BB_else_now := {|
-  block_num := (S startnum);
+  block_num := S(S startnum);
   commands := nil;
   jump_info := {|
     jump_kind := UJump;
     jump_condition := None; 
-    jump_dest_1 := (S (S startnum)); (* BBnextnum*)
+    jump_dest_1 := (startnum); (* BBnextnum*)
     jump_dest_2 := None |} ;
   |}).
   set(else_res := (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num)).
   set(else_delta := (else_res).(BasicBlocks) ++ (else_res).(BBn)::nil).
   set(else_end_num := (else_res).(next_block_num)).
   set(BB_next := {|
-    block_num := (S (S startnum));
+    block_num := (startnum);
     commands := nil;
     jump_info := BBnow.(jump_info);
     |}).
@@ -984,8 +975,8 @@ Proof.
       jump_info :=
         {|
           jump_kind := CJump;
-          jump_dest_1 := startnum;
-          jump_dest_2 := Some (S startnum);
+          jump_dest_1 := S startnum;
+          jump_dest_2 := Some (S (S startnum));
           jump_condition := Some e
         |}
       |}
@@ -1023,12 +1014,12 @@ Proof.
     assert (then_eq: to_result
     (list_cmd_BB_gen cmd_BB_gen c1 nil
        {|
-         block_num := startnum;
+         block_num := S startnum;
          commands := nil;
          jump_info :=
            {|
              jump_kind := UJump;
-             jump_dest_1 := S (S startnum);
+             jump_dest_1 := startnum;
              jump_dest_2 := None;
              jump_condition := None
            |}
@@ -1040,24 +1031,24 @@ Proof.
     assert (else_eq: to_result
     (list_cmd_BB_gen cmd_BB_gen c2 nil
        {|
-         block_num := S startnum;
+         block_num := S (S startnum);
          commands := nil;
          jump_info :=
            {|
              jump_kind := UJump;
-             jump_dest_1 := S (S startnum);
+             jump_dest_1 := startnum;
              jump_dest_2 := None;
              jump_condition := None
            |}
        |}
        (list_cmd_BB_gen cmd_BB_gen c1 nil
           {|
-            block_num := startnum;
+            block_num := S startnum;
             commands := nil;
             jump_info :=
               {|
                 jump_kind := UJump;
-                jump_dest_1 := S (S startnum);
+                jump_dest_1 := startnum;
                 jump_dest_2 := None;
                 jump_condition := None
               |}
@@ -1065,12 +1056,12 @@ Proof.
     {
       assert (then_res_p: (list_cmd_BB_gen cmd_BB_gen c1 nil
       {|
-        block_num := startnum;
+        block_num := S startnum;
         commands := nil;
         jump_info :=
           {|
             jump_kind := UJump;
-            jump_dest_1 := S (S startnum);
+            jump_dest_1 := startnum;
             jump_dest_2 := None;
             jump_condition := None
           |}
@@ -1088,12 +1079,12 @@ Proof.
   assert (then_eq: to_result
   (list_cmd_BB_gen cmd_BB_gen c1 nil
      {|
-       block_num := startnum;
+       block_num := S startnum;
        commands := nil;
        jump_info :=
          {|
            jump_kind := UJump;
-           jump_dest_1 := S (S startnum);
+           jump_dest_1 := startnum;
            jump_dest_2 := None;
            jump_condition := None
          |}
@@ -1105,24 +1096,24 @@ Proof.
   assert (else_eq: to_result
   (list_cmd_BB_gen cmd_BB_gen c2 nil
      {|
-       block_num := S startnum;
+       block_num := S (S startnum);
        commands := nil;
        jump_info :=
          {|
            jump_kind := UJump;
-           jump_dest_1 := S (S startnum);
+           jump_dest_1 := startnum;
            jump_dest_2 := None;
            jump_condition := None
          |}
      |}
      (list_cmd_BB_gen cmd_BB_gen c1 nil
         {|
-          block_num := startnum;
+          block_num := S startnum;
           commands := nil;
           jump_info :=
             {|
               jump_kind := UJump;
-              jump_dest_1 := S (S startnum);
+              jump_dest_1 := startnum;
               jump_dest_2 := None;
               jump_condition := None
             |}
@@ -1130,12 +1121,12 @@ Proof.
   {
     assert (then_res_p: (list_cmd_BB_gen cmd_BB_gen c1 nil
     {|
-      block_num := startnum;
+      block_num := S startnum;
       commands := nil;
       jump_info :=
         {|
           jump_kind := UJump;
-          jump_dest_1 := S (S startnum);
+          jump_dest_1 := startnum;
           jump_dest_2 := None;
           jump_condition := None
         |}
@@ -1147,7 +1138,7 @@ Proof.
 
   (*拆分BBdelta, 去掉头部的number后， BBdelta里有BBnow的num，还有剩下所有新增的num，其中包括BBthendelta，BBelsedelta，以及BBnext*)
   assert (separate_delta_num: 
-  BBnum_set (tl BBdelta) ==  BBnum_set then_delta ∪ BBnum_set else_delta ∪ unit_set(S (S startnum))
+  BBnum_set (tl BBdelta) ==  BBnum_set then_delta ∪ BBnum_set else_delta ∪ unit_set(startnum)
   ). {
     rewrite eq_tl_delta_prop.
     repeat split; sets_unfold; intros.
@@ -1179,7 +1170,7 @@ Proof.
 
   (*拆分BBdelta的jump dest. jumpdest里包含，一个是来自BBnow的预定跳转信息，另一个是BBthennum和BBelsenum*)
   assert (separate_delta_jump_dest:
-  BBjmp_dest_set BBdelta == unit_set(BBnow.(jump_info).(jump_dest_1)) ∪ BBjmp_dest_set then_delta ∪ BBjmp_dest_set else_delta ∪ unit_set(startnum) ∪ unit_set(S startnum)
+  BBjmp_dest_set BBdelta == unit_set(BBnow.(jump_info).(jump_dest_1)) ∪ BBjmp_dest_set then_delta ∪ BBjmp_dest_set else_delta ∪ unit_set(S startnum) ∪ unit_set(S(S startnum))
   ).
   {
     rewrite eq_delta_prop. split; intros; sets_unfold.
@@ -1188,7 +1179,7 @@ Proof.
       * destruct cond2.
         ** left. right. unfold unit_set. rewrite <- head in H. simpl in H. lia.
         ** right. unfold unit_set. rewrite <- head in H. subst BBnow'. cbn [jump_info] in H. simpl in H. 
-           pose proof option_eq_some nat ((S startnum)) (a) as key.
+           pose proof option_eq_some nat (S (S startnum)) (a) as key.
            destruct key as [_ key]. pose proof (key H) as key. lia.
       * pose proof In_a_or_b_or_c BasicBlock x_ then_delta else_delta (BB_next :: nil) tail.
         destruct H as [c1_ | [c2_ | c3_]].
@@ -1470,6 +1461,13 @@ Proof.
 Qed.
 
 
+Lemma cmd_BB_delta:
+  forall (c: cmd)(BBs BBdelta: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
+to_result(cmd_BB_gen c nil BBnow BBnum) = BBdelta -> to_result(cmd_BB_gen c BBs BBnow BBnum) = BBs ++ BBdelta.
+Proof.
+(*TODO*)
+Admitted.
+
 Lemma P_BBgen_con:
     forall (c: cmd) (cmds: list cmd),
     Q_BBgen_range c ->
@@ -1478,9 +1476,18 @@ Lemma P_BBgen_con:
 Proof.
   intros.
   unfold P_BBgen_range in H0.
+  unfold Q_BBgen_range in H.
   unfold P_BBgen_range.
   intros.
-  
+  set (endnum' := (cmd_BB_gen c BBs BBnow startnum).(next_block_num)).
+  set (BBdelta' := to_result (cmd_BB_gen c nil BBnow startnum)).
+  assert(to_result (cmd_BB_gen c BBs BBnow startnum) = BBs ++ BBdelta').
+{
+  pose proof cmd_BB_delta c BBs BBdelta' BBnow startnum. destruct H4. tauto. reflexivity.
+}
+  specialize (H startnum endnum' BBs BBnow BBdelta' H1). destruct H. tauto. tauto.
+  (* The condition here is not satisfied TODO bh*)
+  admit.
 Admitted. (* yz *)
 
 Section BB_gen_range_sound.
@@ -1535,7 +1542,7 @@ Lemma if_head_prop:
   forall (e: expr) (c1 c2: list cmd)(BBswo_ BBs: list BasicBlock)(BBnow BBnow'_: BasicBlock)(BBnum: nat),
   (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_
   ->
-  (hd empty_block (BBswo_)).(block_num) = BBnum.
+  (hd empty_block (BBswo_)).(block_num) = S BBnum.
 Proof.
   intros.
   cbn [cmd_BB_gen] in H. simpl in H.
@@ -1545,20 +1552,20 @@ Proof.
   jump_info :=
     {|
       jump_kind := CJump;
-      jump_dest_1 := BBnum;
-      jump_dest_2 := Some (S BBnum);
+      jump_dest_1 := S BBnum;
+      jump_dest_2 := Some (S(S BBnum));
       jump_condition := Some e
     |}
 |}
 :: to_result
      (list_cmd_BB_gen cmd_BB_gen c1 nil
         {|
-          block_num := BBnum;
+          block_num := S BBnum;
           commands := nil;
           jump_info :=
             {|
               jump_kind := UJump;
-              jump_dest_1 := S (S BBnum);
+              jump_dest_1 := BBnum;
               jump_dest_2 := None;
               jump_condition := None
             |}
@@ -1566,24 +1573,24 @@ Proof.
    to_result
      (list_cmd_BB_gen cmd_BB_gen c2 nil
         {|
-          block_num := S BBnum;
+          block_num := S (S BBnum);
           commands := nil;
           jump_info :=
             {|
               jump_kind := UJump;
-              jump_dest_1 := S (S BBnum);
+              jump_dest_1 := BBnum;
               jump_dest_2 := None;
               jump_condition := None
             |}
         |}
         (list_cmd_BB_gen cmd_BB_gen c1 nil
            {|
-             block_num := BBnum;
+             block_num := S BBnum;
              commands := nil;
              jump_info :=
                {|
                  jump_kind := UJump;
-                 jump_dest_1 := S (S BBnum);
+                 jump_dest_1 := BBnum;
                  jump_dest_2 := None;
                  jump_condition := None
                |}
@@ -1593,12 +1600,12 @@ Proof.
   rename H3 into key. unfold to_result in key. 
   remember (((list_cmd_BB_gen cmd_BB_gen c1 nil
   {|
-    block_num := BBnum;
+    block_num := S BBnum;
     commands := nil;
     jump_info :=
       {|
         jump_kind := UJump;
-        jump_dest_1 := S (S BBnum);
+        jump_dest_1 := BBnum;
         jump_dest_2 := None;
         jump_condition := None
       |}
@@ -1606,12 +1613,12 @@ Proof.
 
   remember ((list_cmd_BB_gen cmd_BB_gen c1 nil
   {|
-    block_num := BBnum;
+    block_num := S BBnum;
     commands := nil;
     jump_info :=
       {|
         jump_kind := UJump;
-        jump_dest_1 := S (S BBnum);
+        jump_dest_1 := BBnum;
         jump_dest_2 := None;
         jump_condition := None
       |}
@@ -1619,48 +1626,48 @@ Proof.
 
   remember ((list_cmd_BB_gen cmd_BB_gen c2 nil
   {|
-    block_num := S BBnum;
+    block_num := S(S BBnum);
     commands := nil;
     jump_info :=
       {|
         jump_kind := UJump;
-        jump_dest_1 := S (S BBnum);
+        jump_dest_1 := BBnum;
         jump_dest_2 := None;
         jump_condition := None
       |}
   |}
   (list_cmd_BB_gen cmd_BB_gen c1 nil
      {|
-       block_num := BBnum;
+       block_num := S BBnum;
        commands := nil;
        jump_info :=
          {|
            jump_kind := UJump;
-           jump_dest_1 := S (S BBnum);
+           jump_dest_1 := BBnum;
            jump_dest_2 := None;
            jump_condition := None
          |}
      |} (S (S (S BBnum)))).(next_block_num)).(BasicBlocks) ++
 (list_cmd_BB_gen cmd_BB_gen c2 nil
   {|
-    block_num := S BBnum;
+    block_num := S(S BBnum);
     commands := nil;
     jump_info :=
       {|
         jump_kind := UJump;
-        jump_dest_1 := S (S BBnum);
+        jump_dest_1 := BBnum;
         jump_dest_2 := None;
         jump_condition := None
       |}
   |}
   (list_cmd_BB_gen cmd_BB_gen c1 nil
      {|
-       block_num := BBnum;
+       block_num := S BBnum;
        commands := nil;
        jump_info :=
          {|
            jump_kind := UJump;
-           jump_dest_1 := S (S BBnum);
+           jump_dest_1 := BBnum;
            jump_dest_2 := None;
            jump_condition := None
          |}
@@ -1807,10 +1814,10 @@ Proof.
   cbn [cmd_BB_gen]. simpl. reflexivity.
 Qed.
 
-(*如果cmd是CIf，那么新生成的BBs的最后一个就是BBnext，它的num就是S S BBnum*)
+(*如果cmd是CIf，那么新生成的BBs的最后一个就是BBnext，它的num就是 BBnum*)
 Lemma if_BBn_num_prop:
   forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
-  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(block_num) = S (S BBnum).
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(block_num) = BBnum.
 Proof. 
   intros.
   cbn [cmd_BB_gen]. simpl. reflexivity.
@@ -1900,11 +1907,11 @@ Proof.
   simpl in Q_prop1. unfold all_ge in Q_prop1.
   sets_unfold in H2. unfold BBnum_set in H2. destruct H2 as [BB H2]. destruct H2 as [H2 H3].
   specialize (Q_prop1 (BB.(block_num))).
-  assert(BBnum_set (BBswo_ ++ {| block_num := S (S BBnum); commands := nil; jump_info := BBnow.(jump_info) |} :: nil)
+  assert(BBnum_set (BBswo_ ++ {| block_num := BBnum; commands := nil; jump_info := BBnow.(jump_info) |} :: nil)
   BB.(block_num)).
   {
     unfold BBnum_set. exists BB. split. 
-    pose proof In_tail_inclusive BBswo_ BB {| block_num := S (S BBnum); commands := nil; jump_info := BBnow.(jump_info) |} H2.
+    pose proof In_tail_inclusive BBswo_ BB {| block_num := BBnum; commands := nil; jump_info := BBnow.(jump_info) |} H2.
     tauto. tauto.
   }
 
@@ -1913,12 +1920,12 @@ Proof.
 Qed.
 
 
-(*对于CIf，其去掉最后一个BBn的新生成的BBs, 即BBswo_，其所有的num不等于SS BBnum*)
+(*对于CIf，其去掉最后一个BBn的新生成的BBs, 即BBswo_，其所有的num不等于BBnum*)
 Lemma neq_ssnum:
   forall (BBs BBswo_: list BasicBlock) (BB BBnow BBnow'_: BasicBlock) (BBnum: nat) (e: expr) (c1 c2: list cmd),
   (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) =
      BBs ++ BBnow'_ :: BBswo_ -> 
-     In BB BBswo_ -> (BB.(block_num) <> (S (S BBnum))).
+     In BB BBswo_ -> (BB.(block_num) <> BBnum).
 Proof.
   intros.
   pose proof Q_add_BBs_in_generation_reserves_BB_sound (CIf e c1 c2) BBs BBnow BBnum.
@@ -1933,23 +1940,23 @@ Proof.
               commands := BBnow.(cmd);
               jump_info := {|
                             jump_kind := CJump;
-                            jump_dest_1 := BBnum;
-                            jump_dest_2 := Some (S BBnum);
+                            jump_dest_1 := S BBnum;
+                            jump_dest_2 := None;
                             jump_condition := Some e |} |}) as BBnow'.
-  remember ({|
-            block_num := BBnum;
-            commands := nil;
-            jump_info := {|
-                         jump_kind := UJump;
-                         jump_dest_1 := S (S BBnum);
-                         jump_dest_2 := None;
-                         jump_condition := None |} |}) as BBnow_then.
   remember ({|
             block_num := S BBnum;
             commands := nil;
             jump_info := {|
                          jump_kind := UJump;
-                         jump_dest_1 := S (S BBnum);
+                         jump_dest_1 := BBnum;
+                         jump_dest_2 := None;
+                         jump_condition := None |} |}) as BBnow_then.
+  remember ({|
+            block_num := S (S BBnum);
+            commands := nil;
+            jump_info := {|
+                         jump_kind := UJump;
+                         jump_dest_1 := BBnum;
                          jump_dest_2 := None;
                          jump_condition := None |} |}) as BBnow_else.
   remember ((list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then (S (S (S BBnum))))) as BBgen_then.

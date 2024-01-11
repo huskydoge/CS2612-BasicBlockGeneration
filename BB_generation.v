@@ -56,7 +56,7 @@ Notation "s '.(BBn)'"  := (BBn s)(at level 1).
 
 (* 空基本块，用于寻找BB list中最后一个元素时候的默认值处理*)
 Definition EmptyBlock : BasicBlock := {|
-  block_num := 10;
+  block_num := 0;
   commands := [];
   jump_info := {|
     jump_kind := UJump;
@@ -124,10 +124,11 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
     |}
 
   | CIf e c1 c2 =>
-    let BB_then_num := BB_num in
+    let BB_next_num := BB_num in
+    let BB_then_num := S(BB_num) in
     let BB_else_num := S(BB_then_num) in
-    let BB_next_num := S(BB_else_num) in
-    let BB_num1 := S(BB_next_num) in
+    
+    let BB_num1 := S(BB_else_num) in
     let BB_now' := {|
       block_num := BB_now.(block_num);
       commands := BB_now.(commands);
@@ -181,10 +182,10 @@ Fixpoint cmd_BB_gen (c: cmd) (BBs: list BasicBlock)(BB_now: BasicBlock) (BB_num:
     
   | CWhile pre e body => 
 
-    let BB_pre_num := BB_num in 
+    let BB_next_num := BB_num in
+    let BB_pre_num := S (BB_num) in 
     let BB_body_num := S(BB_pre_num) in 
-    let BB_next_num := S (BB_body_num) in
-    let BB_num1 := S(BB_next_num) in
+    let BB_num1 := S(BB_body_num) in
 
     let BB_now' := {|
       block_num := BB_now.(block_num); 

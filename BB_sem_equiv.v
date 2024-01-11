@@ -744,12 +744,12 @@ Proof.
       remember (to_result
       (list_cmd_BB_gen cmd_BB_gen c1 nil
          {|
-           block_num := BBnum;
+           block_num := S BBnum;
            commands := nil;
            jump_info :=
              {|
                jump_kind := UJump;
-               jump_dest_1 := S (S BBnum);
+               jump_dest_1 := BBnum;
                jump_dest_2 := None;
                jump_condition := None
              |}
@@ -758,24 +758,24 @@ Proof.
         to_result
       (list_cmd_BB_gen cmd_BB_gen c2 nil
          {|
-           block_num := S BBnum;
+           block_num := S(S BBnum);
            commands := nil;
            jump_info :=
              {|
                jump_kind := UJump;
-               jump_dest_1 := S (S BBnum);
+               jump_dest_1 := BBnum;
                jump_dest_2 := None;
                jump_condition := None
              |}
          |}
          (list_cmd_BB_gen cmd_BB_gen c1 nil
             {|
-              block_num := BBnum;
+              block_num := S BBnum;
               commands := nil;
               jump_info :=
                 {|
                   jump_kind := UJump;
-                  jump_dest_1 := S (S BBnum);
+                  jump_dest_1 := BBnum;
                   jump_dest_2 := None;
                   jump_condition := None
                 |}
@@ -788,8 +788,8 @@ Proof.
         jump_info :=
           {|
             jump_kind := CJump;
-            jump_dest_1 := BBnum;
-            jump_dest_2 := Some (S BBnum);
+            jump_dest_1 := S BBnum;
+            jump_dest_2 := Some (S(S BBnum));
             jump_condition := Some e
           |}
       |}). {
@@ -800,8 +800,8 @@ Proof.
         jump_info :=
           {|
             jump_kind := CJump;
-            jump_dest_1 := BBnum;
-            jump_dest_2 := Some (S BBnum);
+            jump_dest_1 := S BBnum;
+            jump_dest_2 := Some (S(S BBnum));
             jump_condition := Some e
           |}
       |} :: then_res ++ else_res) ++ BBnow_mid :: nil) (BBnow'_ :: BBs'_) A2).
@@ -837,7 +837,7 @@ Proof.
           这个性质，其中BBnow_A为cmds为空的Block（即BBnext）
           实际上对于BBnow_A的语义处理 只需要让它的前继BB跳过来就行
         *)
-        assert (BBnow_mid_num_prop: BBnow_mid.(block_num) = S (S BBnum)). {
+        assert (BBnow_mid_num_prop: BBnow_mid.(block_num) =  BBnum). {
         rewrite HeqBBnow_mid. simpl. reflexivity.
         }
         destruct key1. clear err_cequiv inf_cequiv.
@@ -863,7 +863,7 @@ Proof.
         block_num := BBnow.(block_num);
         commands := BBnow.(cmd);
         jump_info :=
-          {| jump_kind := CJump; jump_dest_1 := BBnum; jump_dest_2 := Some (S BBnum); jump_condition := Some e |}
+          {| jump_kind := CJump; jump_dest_1 := S BBnum; jump_dest_2 := Some (S(S BBnum)); jump_condition := Some e |}
         |} :: then_res ++ else_res)). {
         rewrite Heqthen_res. rewrite Heqelse_res. 
         rewrite Heqc0.
@@ -1073,11 +1073,11 @@ Proof.
         specialize (H_step1 a bb_mid.(st)).
 
 
-        assert (now_mid_block_num: BBnow_mid.(block_num) = (S (S BBnum))). {
+        assert (now_mid_block_num: BBnow_mid.(block_num) = (BBnum)). {
         rewrite HeqBBnow_mid. simpl. reflexivity.
         }
 
-        assert(key_num_eq: BB_num bb_mid = S (S BBnum)). {
+        assert(key_num_eq: BB_num bb_mid = BBnum). {
         (*利用H_step2_main + 分离性质*)
         (* 
         1. 由H_step1_main得到BB_mid的num一定在(BBnow_start :: nil ++ BBswo_)的jmpdest之中，而我们有其范围
@@ -1272,7 +1272,7 @@ Proof.
          Bnrm (BDenote_concate (BB_jmp_sem BBnow'_) (BB_list_sem BBswo_)) bs1 bs2 /\
          st bs1 = a /\
          st bs2 = st bb_mid /\
-         BB_num bs1 = BBnow.(block_num) /\ BB_num bs2 = S (S BBnum))). {
+         BB_num bs1 = BBnow.(block_num) /\ BB_num bs2 = BBnum)). {
           exists bs1. exists bb_mid.
           repeat split; try tauto.
           rewrite C3. rewrite BBnow'_prop. simpl. reflexivity.
