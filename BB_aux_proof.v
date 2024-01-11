@@ -1195,18 +1195,6 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       /\ (BBjmp_dest_set (BB_now_else :: nil ++ BBs_else) ∩ BBnum_set (BB_now_then :: nil ++ BBs_then) == ∅). (*分离性质6*)
  
 
-(*如果在BBs里，那么一定在BBs ++ tl里*)
-Lemma In_tail_inclusive:
-  forall (BBs : list BasicBlock) (BB tl : BasicBlock),
-    In BB BBs -> In BB (BBs ++ tl::nil).
-Proof.
-  intros. induction BBs.
-  - unfold In in H. tauto.
-  - unfold In. simpl.
-    unfold In in H. destruct H as [? | ?].
-    + left. apply H.
-    + right. pose proof IHBBs H. apply H0.
-Qed. 
 
 Lemma Sx_not_equal_x:
   forall (a : nat),
@@ -1844,7 +1832,7 @@ Proof.
   intros. revert bs1 bs2 H H0.
   induction BBs1.
   - intros. simpl in *. tauto.
-  - admit.
+  - admit. (*Combined with  an_over_pass_bridge, let it go first*)
 Admitted.
 
 
@@ -1877,7 +1865,7 @@ Lemma an_over_pass_bridge:
   Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2).
 Proof.
   intros. 
-  remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs.
+  remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs. 
   pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H. rename H5 into Hn1. rename H6 into Hn2. rename H7 into H5. destruct H5.
   - my_destruct H5. subst BBs.
     assert (In x (BBnow1 :: nil ++ BBs1) \/ In x (BBnow2 :: nil ++ BBs2)). {
@@ -1901,7 +1889,7 @@ Proof.
         {
           unfold not. intros. rename H9 into focus. unfold BBnum_set in focus.
           sets_unfold in focus.
-        }
+        } (*Failure*)
         pose proof BB_list_sem_simplify_r (BBnow1::BBs1) (BBnow2::BBs2) x0 bs2 H7 notin. tauto.
     + pose proof BB_sem_start_BB_num bs1 x0 x H6.
       sets_unfold in H1. specialize (H1 x.(block_num)). destruct H1.

@@ -180,3 +180,17 @@ Proof.
     rewrite <- app_assoc in IHl1. simpl in IHl1. 
     rewrite <- app_assoc in IHl1. simpl in IHl1. tauto.
 Qed.
+
+
+(*如果在BBs里，那么一定在BBs ++ tl里*)
+Lemma In_tail_inclusive:
+  forall (BBs : list BasicBlock) (BB tl : BasicBlock),
+    In BB BBs -> In BB (BBs ++ tl::nil).
+Proof.
+  intros. induction BBs.
+  - unfold In in H. tauto.
+  - unfold In. simpl.
+    unfold In in H. destruct H as [? | ?].
+    + left. apply H.
+    + right. pose proof IHBBs H. apply H0.
+Qed. 

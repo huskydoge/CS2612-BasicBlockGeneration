@@ -374,7 +374,7 @@ Lemma Q_inherit_not_jmp_to_self_while:
   P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
   Q_inherit_not_jmp_to_self (CWhile c1 e c2).
 Proof.
-Admitted. 
+Admitted.  (*DONT CARE for while*)
 
 Lemma P_inherit_not_jmp_to_self_nil:
   P_inherit_not_jmp_to_self nil.
@@ -493,7 +493,7 @@ Lemma Q_inherit_lt_num_prop_mutual_while:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
     P_inherit_lt_num_prop_mutual c1 -> P_inherit_lt_num_prop_mutual c2 -> Q_inherit_lt_num_prop_mutual (CWhile c1 e c2).
 Proof.
-  Admitted.
+Admitted. (*DONT CARE for WHILE*)
 
 Lemma P_inherit_lt_num_prop_mutual_nil:
   P_inherit_lt_num_prop_mutual nil.
@@ -1412,22 +1412,20 @@ Qed.
 Lemma P_BBgen_nil:
     P_BBgen_range cmd_BB_gen nil.
 Proof.
-  intros. unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H0. simpl in H0. 
-  (*TODO FIX IT!*)
+  unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H1. simpl in H1. 
+  pose proof cut_eq_part_list_l BasicBlock BBs (BBnow::nil) BBdelta H1. 
+  repeat split.
+  - rewrite <- H2. simpl. unfold all_ge. intros. unfold BBnum_set in H3. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
+  - rewrite <- H2. simpl. unfold all_lt. intros. unfold BBnum_set in H3. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
+  - rewrite <- H2. simpl. unfold BBjmp_dest_set. sets_unfold. intros. destruct H3 as [BB [H3 H4]]. simpl in H3.
+    destruct H3 as [H3 | H3].
+    + right.  unfold unit_set. subst BBdelta.
+      destruct H4.
+      -- rewrite <- H2. rewrite H3 in *. reflexivity.
+      -- destruct H as [c1 c2]. rewrite <- H3 in H2. rewrite c2 in H2. discriminate H2.
+    + tauto.
+Qed.
 
-
-(* {
-  destruct BBdelta. tauto. pose proof length_eq BasicBlock (BBnow :: nil) (BBnow' :: b :: BBdelta) H1. discriminate.
-} 
-  rewrite H2. split.
-
-  - unfold BB_all_ge. intros. tauto.
-  - unfold BB_all_lt. intros. split. 
-    + intros. tauto.
-    + simpl. 
-  *)
-
-Admitted.
 
 Lemma P_BBgen_con:
     forall (c: cmd) (cmds: list cmd),
@@ -1439,6 +1437,7 @@ Proof.
   unfold P_BBgen_range in H0.
   unfold P_BBgen_range.
   intros.
+  
 Admitted.
 
 Section BB_gen_range_sound.
@@ -1726,7 +1725,42 @@ Admitted.
 (*对于CIf，其BBnow的num肯定和新生成的BBs(去掉最后BBn)的num不交*)
 Lemma disjoint_num_prop_wo_last_if:
   forall (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum: nat) (e: expr) (c1 c2: list cmd),
+  jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None ->
+  (BBnow.(block_num) < BBnum)%nat ->
   (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) =
      BBs ++ BBnow'_ :: BBswo_ -> ~ BBnow.(block_num) ∈ BBnum_set BBswo_.
 Proof.
-Admitted.
+  intros. 
+  unfold not. intros. 
+  pose proof BBgen_range_single_soundness_correct (CIf e c1 c2) as Q_prop.
+  unfold Q_BBgen_range in Q_prop.
+  specialize (Q_prop BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) BBs BBnow (BBnow'_::nil ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)::nil)).
+  specialize (Q_prop H). 
+  assert(t1: (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) =
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num)). tauto.
+  specialize (Q_prop t1).
+  assert(t2: to_result (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum) =
+  BBs ++ BBnow'_::nil ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil). {
+  unfold to_result. rewrite H1. 
+  assert((BBs ++ BBnow'_ :: BBswo_)  = BBs ++ BBnow'_ :: nil ++ BBswo_  ).
+  {
+    simpl. reflexivity.
+  }
+  rewrite H3. rewrite app_assoc. rewrite <- app_assoc. reflexivity.
+  }
+
+  specialize (Q_prop t2 H0). destruct Q_prop as [Q_prop1 [Q_prop2 Q_prop3]].
+  simpl in Q_prop1. unfold all_ge in Q_prop1.
+  sets_unfold in H2. unfold BBnum_set in H2. destruct H2 as [BB H2]. destruct H2 as [H2 H3].
+  specialize (Q_prop1 (BB.(block_num))).
+  assert(BBnum_set (BBswo_ ++ {| block_num := S (S BBnum); commands := nil; jump_info := BBnow.(jump_info) |} :: nil)
+  BB.(block_num)).
+  {
+    unfold BBnum_set. exists BB. split. 
+    pose proof In_tail_inclusive BBswo_ BB {| block_num := S (S BBnum); commands := nil; jump_info := BBnow.(jump_info) |} H2.
+    tauto. tauto.
+  }
+
+  specialize (Q_prop1 H4). lia.
+
+Qed.
