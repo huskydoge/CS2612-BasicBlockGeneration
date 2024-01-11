@@ -66,11 +66,40 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma append_nil_r : forall A (l : list A),
+  l ++ nil = l.
+Proof.
+  intros A l.
+  induction l as [| x xs IH].
+  - (* l = nil *)
+    simpl. reflexivity.
+  - (* l = x :: xs *)
+    simpl. rewrite IH. reflexivity.
+Qed.
+
+Lemma append_nil_l : forall A (l : list A),
+  nil ++ l = l.
+Proof.
+  intros A l.
+  induction l as [| x xs IH].
+  - (* l = nil *)
+    simpl. reflexivity.
+  - (* l = x :: xs *)
+    simpl. rewrite <- IH. reflexivity.
+Qed.
+
 Lemma eli_nil:
   forall(A: Type) (l1 l2: list A)(a: A),
   l1 ++ a::nil = l2 ++ a::nil -> l1 = l2.
 Proof.
-  intros.
+  intros A l1. induction l1 as [|x l1' IH].
+  - intros l2 a H. destruct l2.
+    + reflexivity. 
+    + simpl in H. inversion H. rewrite H2. admit.
+  - intros l2 a H. destruct l2.
+    + simpl in H. admit.
+    + simpl in H. injection H as H1 H2. apply IH in H2.
+      rewrite H2. rewrite H1. tauto.
 Admitted. (*px*)
 
 
@@ -737,7 +766,7 @@ Lemma if_wont_be_nil:
   ->
   BBswo_ <> nil.
 Proof.
-  (*TODO  px*)
+  intros. 
 Admitted.
 
 
@@ -815,27 +844,6 @@ Proof.
   simpl. right. apply H.
 Qed.
 
-Lemma append_nil_r : forall A (l : list A),
-  l ++ nil = l.
-Proof.
-  intros A l.
-  induction l as [| x xs IH].
-  - (* l = nil *)
-    simpl. reflexivity.
-  - (* l = x :: xs *)
-    simpl. rewrite IH. reflexivity.
-Qed.
-
-Lemma append_nil_l : forall A (l : list A),
-  nil ++ l = l.
-Proof.
-  intros A l.
-  induction l as [| x xs IH].
-  - (* l = nil *)
-    simpl. reflexivity.
-  - (* l = x :: xs *)
-    simpl. rewrite <- IH. reflexivity.
-Qed.
 
 (* 如果l1不为空，那么l1 ++ l2的第一个元素等于l1的第一个元素 *)
 Lemma hd_A_and_B_is_hd_A_if_A_not_nil:
@@ -876,9 +884,8 @@ Lemma BBgen_head_prop:
   let res := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum) in
   (hd empty_block (res.(BasicBlocks) ++ res.(BBn)::nil)).(block_num) = BBnow.(block_num).
 Proof.
-  intros.
-  unfold res. 
-  induction cmds.
+  intros. unfold res. revert BBnow BBnum res.  
+  induction cmds; intros.
   - simpl. reflexivity.
   - unfold res in IHcmds. cbn [list_cmd_BB_gen].
     pose proof BBgen_head_prop_single_cmd a BBnow BBnum as H_BBgen_cmd.
@@ -886,8 +893,25 @@ Proof.
     pose proof add_BBs_in_generation_reserves_BB cmds ((cmd_BB_gen a nil BBnow BBnum).(BasicBlocks)) (cmd_BB_gen a nil BBnow BBnum).(BBn) (cmd_BB_gen a nil BBnow BBnum).(next_block_num) as BBs_simpl.
     unfold to_result in BBs_simpl. rewrite BBs_simpl.
     clear BBs_simpl.
-   (*px*)
-Admitted.
+    remember ((cmd_BB_gen a nil BBnow BBnum)) as cmd_res.
+    remember (list_cmd_BB_gen cmd_BB_gen cmds nil cmd_res.(BBn) cmd_res.(next_block_num)) as list_cmd_res.
+    specialize (IHcmds cmd_res.(BBn) cmd_res.(next_block_num)). 
+    
+    (* 对比一下IHcmds和最终的结论，我们发现，实际上利用归纳假设只需要考虑BBnow是否在cmd_res中即可，这个是符合直觉的 *)
+    pose proof classic (cmd_res.(BasicBlocks) = nil). destruct H as [A1 | A2].
+    + rewrite A1. simpl. subst list_cmd_res. 
+      rewrite IHcmds.
+      pose proof BBgen_head_prop_single_cmd a BBnow BBnum.
+      unfold res in H.
+      subst cmd_res. rewrite A1 in H. simpl in H. apply H.
+    + rewrite hd_A_and_B_is_hd_A_if_A_not_nil.
+      pose proof BBgen_head_prop_single_cmd a BBnow BBnum.
+      unfold res in H.
+      rewrite hd_A_and_B_is_hd_A_if_A_not_nil in H.
+      * subst cmd_res. apply H.
+      * subst cmd_res. apply A2.
+      * apply A2.
+Qed.
 
 (*END: BBgen Head =========================================================================================================================================================================================*)
 
