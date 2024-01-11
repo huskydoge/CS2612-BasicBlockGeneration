@@ -1830,6 +1830,25 @@ Proof.
 Qed. 
 
 
+(*
+对于BBs1和BBs2两串BasicBlock，bs1和bs2两个BBstate，如果bs1的num不在BBs1中，
+但 (bs1, bs2) 在 (BBs1 ++ BBs2) 但语义中
+那么 (bs1, bs2)就在BBs2的语义中
+*)
+Lemma BB_list_sem_simplify_r:
+  forall (BBs1 BBs2: list BasicBlock) (bs1 bs2: BB_state),
+  Bnrm (BB_list_sem (BBs1 ++ BBs2)) bs1 bs2 -> 
+  (~ (bs1.(BB_num) ∈ BBnum_set (BBs1))) ->
+  (Bnrm (BB_list_sem (BBs2)) bs1 bs2).
+Proof.
+  intros. revert bs1 bs2 H H0.
+  induction BBs1.
+  - intros. simpl in *. tauto.
+  - admit.
+Admitted.
+
+
+
 (*对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
 1. (bs1, bs2) 在 BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) 中
 2. bs1 不等于 bs2
@@ -1861,7 +1880,10 @@ Proof.
   remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs.
   pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H. rename H5 into Hn1. rename H6 into Hn2. rename H7 into H5. destruct H5.
   - my_destruct H5. subst BBs.
-    assert (In x (BBnow1 :: nil ++ BBs1) \/ In x (BBnow2 :: nil ++ BBs2)). admit.
+    assert (In x (BBnow1 :: nil ++ BBs1) \/ In x (BBnow2 :: nil ++ BBs2)). {
+      pose proof In_l1_or_l2 BasicBlock (BBnow1 :: nil ++ BBs1) (BBnow2 :: nil ++ BBs2) x H5.
+      tauto.
+    } 
     clear H5.
     destruct H8.
     + exists x0. split. 
@@ -1874,8 +1896,13 @@ Proof.
            right. apply H5. tauto.
         -- unfold BB_sem_union. cbn[Bnrm]. sets_unfold. left. apply H6.
         -- tauto.
-      * pose proof BB_jmp_sem_num_in_BBjmp_dest_set.
-        admit.
+      * pose proof BB_jmp_sem_num_in_BBjmp_dest_set. 
+        assert (notin: ~ (x0.(BB_num)) ∈ (BBnum_set (BBnow1 :: BBs1))). 
+        {
+          unfold not. intros. rename H9 into focus. unfold BBnum_set in focus.
+          sets_unfold in focus.
+        }
+        pose proof BB_list_sem_simplify_r (BBnow1::BBs1) (BBnow2::BBs2) x0 bs2 H7 notin. tauto.
     + pose proof BB_sem_start_BB_num bs1 x0 x H6.
       sets_unfold in H1. specialize (H1 x.(block_num)). destruct H1.
       clear H9.
@@ -1885,7 +1912,6 @@ Proof.
       }
       tauto.
   - contradiction.
-  (*TODO! IMPORTANT! lyz*)
 Admitted.
  
 
