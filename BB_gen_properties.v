@@ -1866,5 +1866,5 @@ Proof.
   pose proof cut_eq_part_list_l BasicBlock (BBnow'_:: nil) (to_result BBgen_then ++
         to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num))) BBswo_ H2.
   clear H2.                           
-
+  (*TODO yz 之后需要用到range的性质 *)
 Admitted.
