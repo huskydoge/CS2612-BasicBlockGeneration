@@ -108,7 +108,7 @@ Proof.
         unfold BJump_sem. rewrite jmp_prop3. simpl. sets_unfold.
         simpl. left.
         exists {| BB_num := BBnow.(block_num); st := a0 |}.
-        split; try tauto. 
+        repeat split; try tauto. simpl. lia.
       + tauto.
 
   - admit. (* err case *)
@@ -454,7 +454,7 @@ Proof.
 
       assert ((x0.(block_num) < BBnum)%nat) as T2. rewrite <- B1. tauto.
 
-      assert (x0.(block_num) <> jump_dest_1 x0.(jump_info)) as T3. rewrite <- B1. tauto.
+      assert (gt x0.(block_num) (jump_dest_1 x0.(jump_info))) as T3. rewrite <- B1. tauto.
 
       pose proof P_prop T1 T2 T3 as P_prop.
       clear T1 T2 T3. (*x0的jmp信息不会再用到了*)
@@ -525,7 +525,7 @@ Proof.
         --- unfold section in case1. rewrite C5 in cond12_2. rewrite <- B1 in cond12_2. simpl in cond12_2.
             rewrite <- cond12_2 in case1. lia.
         --- unfold unit_set in case2. rewrite C5 in cond12_2. rewrite <- B1 in cond12_2. simpl in cond12_2.
-            rewrite <- cond12_2 in case2. rewrite <- B1 in case2. simpl in case2. tauto.
+            rewrite <- cond12_2 in case2. rewrite <- B1 in case2. simpl in case2. lia.
         --- tauto.
         * intros. tauto. 
         * unfold all_ge in P_prop1. simpl in P_prop1. sets_unfold. intros. split.
@@ -539,7 +539,7 @@ Proof.
           --- intros. tauto.
 
         (* x2 <> x3 *)
-        * intros contra. rewrite <- contra in D4. rewrite D3 in D4. rewrite C5 in D4. rewrite <- B1 in D4. simpl in D4. tauto.
+        * intros contra. rewrite <- contra in D4. rewrite D3 in D4. rewrite C5 in D4. rewrite <- B1 in D4. simpl in D4. lia.
 
         * sets_unfold. unfold not. intros. rename H into focus. 
           unfold BBnum_set in focus. destruct focus as [focus_BB focus]. 
@@ -624,7 +624,7 @@ Proof.
          --- unfold section in case1. rewrite C5 in cond12_2. rewrite <- B1 in cond12_2. simpl in cond12_2.
              rewrite <- cond12_2 in case1. lia.
          --- unfold unit_set in case2. rewrite C5 in cond12_2. rewrite <- B1 in cond12_2. simpl in cond12_2.
-             rewrite <- cond12_2 in case2. rewrite <- B1 in case2. simpl in case2. tauto.
+             rewrite <- cond12_2 in case2. rewrite <- B1 in case2. simpl in case2. lia.
          --- tauto.
          * intros. tauto. 
          * unfold all_ge in P_prop1. simpl in P_prop1. sets_unfold. intros. split.
@@ -638,7 +638,7 @@ Proof.
            --- intros. tauto.
  
          (* x2 <> x3 *)
-         * intros contra. rewrite contra in Heqbs1. rewrite Heqbs1 in Heqbs2. inversion Heqbs2. rewrite C5 in H2. rewrite <- B1 in H2. simpl in H2. tauto.
+         * intros contra. rewrite contra in Heqbs1. rewrite Heqbs1 in Heqbs2. inversion Heqbs2. rewrite C5 in H2. rewrite <- B1 in H2. simpl in H2. lia.
          * sets_unfold. unfold not. intros. rename H into focus. 
            unfold BBnum_set in focus. destruct focus as [focus_BB focus]. 
            destruct focus as [focus_1 focus_2]. simpl in focus_1. destruct focus_1 as [focus_1 | focus_1].
@@ -728,8 +728,8 @@ Proof.
         rewrite <- HeqBBnow_mid in tran. rewrite A4 in tran. tauto. 
       }
 
-      assert (BBnow_mid.(block_num) <>
-      jump_dest_1 BBnow_mid.(jump_info)) as T3. {
+      assert (gt BBnow_mid.(block_num) 
+      (jump_dest_1 BBnow_mid.(jump_info))) as T3. {
         pose proof inherit_not_jmp_to_self BBs BBnow BBnum (CIf e c1 c2) H1 as tran.
         rewrite <- HeqBBnow_mid in tran.  tauto.
       }
@@ -911,7 +911,7 @@ Proof.
 
         assert (neq_1_2: bs1 <> bs2). {
           destruct bs1. destruct bs2. simpl. unfold not. intros. inversion H2.
-          simpl in C4.  simpl in C3. rewrite BBnow'_prop in C3. simpl in C3. rewrite C3 in H4. rewrite C4 in H4. tauto.
+          simpl in C4.  simpl in C3. rewrite BBnow'_prop in C3. simpl in C3. rewrite C3 in H4. rewrite C4 in H4. lia.
         }
 
         assert (disjoint_num_set: BBnum_set (BBnow_start :: nil ++ BBswo_) ∩ BBnum_set (BBnow'_p :: nil ++ BBs'_p) == ∅). {
@@ -1151,7 +1151,7 @@ Proof.
               rewrite BBnow'_prop in P_prop. simpl in P_prop. lia.
           * rewrite case_b' in case_b. 
             destruct bs1. destruct bs2. simpl in *. rewrite C3 in case_b. rewrite C4 in case_b. 
-            inversion case_b. rename H3 into tmp. rewrite BBnow'_prop in tmp. simpl in tmp. tauto.
+            inversion case_b. rename H3 into tmp. rewrite BBnow'_prop in tmp. simpl in tmp. lia.
         }
 
         assert (wo_disjoint_prop: ~ BBnow_start.(block_num) ∈ BBnum_set (BBswo_)). {

@@ -734,7 +734,7 @@ Lemma BDenote_concat_equiv_BB_list_sem:
   forall (BBnow : BasicBlock) (BBs : list BasicBlock)(bs1 bs2: BB_state),
     separate_property BBnow BBs -> 
     BB_restrict BBnow BBs bs1.(BB_num) bs2.(BB_num)-> (* BBnow的num是bs1.(BB_num), BBs的跳转目标中有bs2.(BBnum)*)
-    BBnow.(block_num) <> BBnow.(jump_info).(jump_dest_1) /\ Some BBnow.(block_num) <> BBnow.(jump_info).(jump_dest_2) ->
+    gt BBnow.(block_num) (BBnow.(jump_info).(jump_dest_1)) /\ Some BBnow.(block_num) <> BBnow.(jump_info).(jump_dest_2) ->
     let BBnow' := {|
       block_num := BBnow.(block_num);
       commands := nil;
@@ -857,7 +857,7 @@ Proof.
          {
           pose proof single_step_jmp_property_for_bs2 BBnow' bs1 x H5.
           destruct H4 as [case1 | case2].
-          + rewrite <- case1. simpl. tauto.
+          + rewrite <- case1. simpl. lia.
           + subst BBnow'. simpl in case2. simpl. rewrite case2 in jmp2. 
             pose proof option_eq_some nat BBnow.(block_num) (BB_num x). tauto.
          }
@@ -1083,7 +1083,7 @@ Proof.
     unfold BB_then. simpl. lia. 
   }
 
-  assert (then_pre3: BB_then.(block_num) <> jump_dest_1 BB_then.(jump_info)).
+  assert (then_pre3: gt BB_then.(block_num) (jump_dest_1 BB_then.(jump_info))).
   {
     unfold BB_then. simpl. lia.
   }
@@ -1120,7 +1120,7 @@ Proof.
     unfold BB_else. simpl. admit. (*TODO BBgen的性质*) 
   }
 
-  assert (else_pre3: BB_else.(block_num) <> jump_dest_1 BB_else.(jump_info)).
+  assert (else_pre3: gt BB_else.(block_num) (jump_dest_1 BB_else.(jump_info))).
   {
     unfold BB_else. simpl. lia.
   }

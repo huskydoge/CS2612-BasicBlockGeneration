@@ -1091,7 +1091,7 @@ Definition P(cmds: list cmd)(cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
 
     jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None /\ jump_condition BBnow.(jump_info) = None ->
     lt BBnow.(block_num) BBnum -> 
-    BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) -> (*不会跳转到自己*)
+    gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info)) -> (*不会跳转到自己*)
 
     (exists BBs' BBnow' (BBcmds: list BB_cmd) BBnum' BBendnum,
     let res := list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum in
@@ -1187,7 +1187,7 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       -> BB_now_then.(block_num) = BB_then_num
       -> BB_now_else.(block_num) = BB_else_num
       -> lt BBnow.(block_num) BBnum  (*BBnow的num小于下一个分配的num*)
-      -> BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) (*BBnow不会无条件跳转到自身*)
+      -> gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info)) (*BBnow不会无条件跳转到自身*)
       ->
       (separate_property BBnow' BBs_wo_last) (*分离性质1*)
       /\ (BBnum_set (BB_now_then :: nil ++ BBs_then) ∩ BBnum_set (BB_now_else :: nil ++ BBs_else) == ∅ ) (*分离性质3*)
@@ -1668,7 +1668,7 @@ Definition Qb(c: cmd): Prop :=
     let res := cmd_BB_gen c BBs BBnow BBnum in
     jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None -> 
     lt BBnow.(block_num) BBnum -> 
-    BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info) -> (*不会跳转到自己*)
+    gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info)) -> (*不会跳转到自己*)
     jump_condition BBnow.(jump_info) = None ->
     (*CAsgn*)
     (is_asgn(c) /\ (exists BBnow' BBcmd,
