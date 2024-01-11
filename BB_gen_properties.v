@@ -346,12 +346,12 @@ Qed.
 
 
 Definition Q_inherit_not_jmp_to_self (c: cmd): Prop :=
-  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
     (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
     (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info).
 
 Definition P_inherit_not_jmp_to_self(cmds: list cmd): Prop :=
-  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (cmds: list cmd),
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
   (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
   (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(jump_info).
 
@@ -374,12 +374,13 @@ Lemma Q_inherit_not_jmp_to_self_while:
   P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
   Q_inherit_not_jmp_to_self (CWhile c1 e c2).
 Proof.
-Admitted.  (*DONT CARE for while*)
+Admitted.  (*we DONT CARE while*)
 
 Lemma P_inherit_not_jmp_to_self_nil:
   P_inherit_not_jmp_to_self nil.
 Proof.
-Admitted.  (*px*)
+  unfold P_inherit_not_jmp_to_self. intros. cbn[list_cmd_BB_gen]. simpl. apply H.
+Qed.
 
 
 Lemma P_inherit_not_jmp_to_self_cons:
@@ -442,7 +443,7 @@ Proof.
   pose proof inherit_not_jmp_to_self_soundness_correct.
   intros.
   unfold Q_inherit_not_jmp_to_self in H.
-  specialize (H c BBs BBnow BBnum c H0). tauto.
+  specialize (H c BBs BBnow BBnum H0). tauto.
 Qed.
 
 
@@ -470,18 +471,20 @@ Qed.
 (*如果BBnow的num小于分配的num，那么总有最后所在的BB的num小于下一个分配的num*)
 
 Definition Q_inherit_lt_num_prop_mutual (c: cmd): Prop :=
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
     (lt BBnow.(block_num) BBnum) -> le BBnum (cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
 
 Definition P_inherit_lt_num_prop_mutual (cmds: list cmd): Prop := 
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
-    (lt BBnow.(block_num) BBnum) -> le BBnum (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+    (lt BBnow.(block_num) BBnum) -> le BBnum (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(next_block_num).
 
 Lemma Q_inherit_lt_num_prop_mutual_asgn: 
   forall (x: var_name) (e: expr),
     Q_inherit_lt_num_prop_mutual (CAsgn x e).
 Proof.
-  Admitted. (*px*)
+  intros. unfold Q_inherit_lt_num_prop_mutual. intros.
+  cbn[cmd_BB_gen]. simpl. lia.
+Qed.
 
 Lemma Q_inherit_lt_num_prop_mutual_if:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
