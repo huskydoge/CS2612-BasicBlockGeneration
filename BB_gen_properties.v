@@ -1734,14 +1734,6 @@ Qed.
 (* Jmp Info的继承性质  ============================================================================================================ *)
 
 (*Jmp Info是会被继承下去的！TODO Maybe EASY, 递归就好*)
-Lemma JmpInfo_inherit_for_list:
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
-  ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
-Proof.
-  (*bh*)
-Admitted.
-
-
 Lemma JmpInfo_inherit:
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (c: cmd),
   ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
@@ -1750,6 +1742,19 @@ Proof.
   + reflexivity.
   + cbn [cmd_BB_gen]. simpl. reflexivity.
   + cbn [cmd_BB_gen]. simpl. reflexivity.
+Qed.
+
+Lemma JmpInfo_inherit_for_list:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
+  ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
+Proof.
+  intros. revert BBs BBnow BBnum.
+  induction cmds; intros.
+  + cbn[list_cmd_BB_gen]. simpl. tauto.
+  + cbn[list_cmd_BB_gen].
+    pose proof JmpInfo_inherit BBs BBnow BBnum a. 
+    specialize (IHcmds (cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks) (cmd_BB_gen a BBs BBnow BBnum).(BBn)  (cmd_BB_gen a BBs BBnow BBnum).(next_block_num)).
+    rewrite IHcmds. apply H.
 Qed.
 
 (* ============================================================================================================ *)
