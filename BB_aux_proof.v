@@ -1726,6 +1726,16 @@ Qed.
 
 
 
+
+
+Lemma tail_eq_prop:
+  forall (A: Type) (l1 l2: list A) (a b: A),
+  l1 ++ a::nil = l2 ++ b::nil -> a = b.
+Proof.
+  apply app_inj_tail_iff.
+Qed.
+
+
 (*如果l1 ++ l2 = a :: l3，那么a肯定是l1的头*)
 Lemma extract_head_from_list:
   forall (A: Type) (l1 l2 l3: list A) (a: A)(d: A),
@@ -1757,13 +1767,63 @@ Proof.
     rewrite H4. rewrite IHl2. reflexivity.
 Qed.
 
+Lemma in_or_app : forall (A:Type) (l m:list A) (a:A), 
+  In a (l ++ m) <-> In a l \/ In a m.
+Proof.
+  intros. split.
+  - intros. induction l.
+    + simpl in H. right. apply H.
+    + simpl in H. destruct H.
+      * left. simpl. left. apply H.
+      * apply IHl in H. destruct H.
+        left. simpl. right. apply H.
+        right. apply H.
+  - intros. induction l.
+    + simpl. destruct H. tauto. apply H.
+    + simpl. destruct H.
+      * simpl in H. destruct H. left. apply H. right. apply IHl. left. apply H.
+      * right. apply IHl. right. apply H.
+Qed.
+
+(*一个不空的列表可以拆成l = l_ ++ a::nil*)
+Lemma sep_list:
+  forall (A: Type) (l: list A),
+  l <> nil -> exists l_ a, l = l_ ++ a :: nil.
+Proof.
+  intros A l H.
+  induction l as [| x l' IH].
+  - contradiction H. reflexivity.
+  - destruct l' as [| y l''].
+    + exists nil, x. reflexivity.
+    + destruct IH as [l_ [a Hl]].
+      * intro Hnil. apply H. rewrite Hnil. 
+        pose proof nil_cons.
+        specialize (H0 A y l''). rewrite Hnil in H0. tauto.
+      * exists (x :: l_), a. simpl. rewrite Hl. reflexivity.
+Qed.
+
+
 Lemma exact_tail_from_list:
   forall (A: Type) (l1 l2 l3: list A) (a b: A),
   l1 ++ a::nil = l2 ++ b::l3 -> l3 <> nil -> In a l3.
 Proof.
-  intros. revert l1 l2 H.
-  (*TODO bh*)
-Admitted.
+  intros. 
+  pose proof sep_list A l3 H0 as H1.
+  destruct H1 as [l3_ [a_ H1]].
+  rewrite H1. 
+  assert (a = a_). {
+    rewrite H1 in H.
+    pose proof tail_eq_prop A l1.
+    specialize (H2 (l2 ++ b :: l3_) a a_).
+    assert ((l2 ++ b :: l3_) ++ a_ :: nil = l2 ++ b :: l3_ ++ a_ :: nil). {
+      rewrite <- app_assoc. simpl. reflexivity.
+    }
+    rewrite <- H3 in H. specialize (H2 H). tauto.
+  }
+  rewrite H2. apply in_app_iff.
+  right. simpl. left. reflexivity.
+Qed.
+
 
 
 (*如果num在BBnum_set(BBnow::BBs)中，那么为在BBnow的num，要么在BBs的num中*)
