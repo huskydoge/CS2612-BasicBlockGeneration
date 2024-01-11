@@ -359,14 +359,17 @@ Lemma Q_inherit_not_jmp_to_self_asgn:
   forall  (x: var_name) (e: expr),
   Q_inherit_not_jmp_to_self (CAsgn x e).
 Proof. 
-
-Admitted. (*yz*)
+  unfold Q_inherit_not_jmp_to_self. intros.
+  simpl.
+  tauto.
+Qed.
 
 Lemma Q_inherit_not_jmp_to_self_if:
   forall  (e: expr) (c1: list cmd) (c2: list cmd),
   P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
   Q_inherit_not_jmp_to_self (CIf e c1 c2).
 Proof.
+  intros. unfold Q_inherit_not_jmp_to_self. intros.
 Admitted. (*bh*)
 
 Lemma Q_inherit_not_jmp_to_self_while:
@@ -389,7 +392,11 @@ forall (c: cmd) (cmds: list cmd),
   P_inherit_not_jmp_to_self cmds ->
   P_inherit_not_jmp_to_self (c :: cmds).
 Proof.
-Admitted.  (*yz*)
+  unfold P_inherit_not_jmp_to_self. unfold Q_inherit_not_jmp_to_self. intros.
+  cbn[list_cmd_BB_gen]. specialize (H BBs BBnow BBnum H1). 
+  specialize (H0  ((cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks))  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)) ((cmd_BB_gen c BBs BBnow BBnum).(next_block_num)) H).
+  tauto.
+Qed. 
 
 Section inherit_not_jmp_to_self_sound.
 
@@ -537,7 +544,8 @@ Admitted. (*DONT CARE for WHILE*)
 Lemma P_inherit_lt_num_prop_mutual_nil:
   P_inherit_lt_num_prop_mutual nil.
 Proof.
-  Admitted. (*yz*)
+  unfold P_inherit_lt_num_prop_mutual. intros. simpl. lia.
+Qed. 
 
 Lemma P_inherit_lt_num_prop_mutual_cons:
   forall (c: cmd) (cmds: list cmd),
@@ -1669,8 +1677,7 @@ Proof.
       pose proof classic (e0 = nil) as He0_nil. destruct He0_nil as [He0_nil | He0_nnil].
       - rewrite He0_nil. rewrite app_nil_l. rewrite Heqe1. unfold not. intros.
         inversion H1.
-      - unfold not. intros.
-        
+      - unfold not. intros. destruct e0. tauto. discriminate H1.   
     }
     pose proof hd_position e0_not_nil as hd_position.
 Admitted.
