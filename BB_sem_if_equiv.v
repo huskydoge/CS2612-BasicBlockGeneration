@@ -1144,14 +1144,14 @@ Proof.
   split. unfold is_asgn. simpl. tauto. 
   (* Get correct BBs' for Q *)
   (* Get correct BBs' for Q *)
-  exists BBnow'. exists BBs'_. exists (cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(next_block_num). exists (BBs_wo_last_).
+  exists BBnow'. exists BBs'_. exists (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num). exists (BBs_wo_last_).
 
   (* MAIN ========================================== *)
 
 
   (*assert 1*)
-  assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BasicBlocks) ++
-  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BBn) :: nil =
+  assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) ++
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil =
   BBs ++ (BBnow' :: nil) ++ BBs'_). 
   {
   cbn [cmd_BB_gen]. simpl. 
@@ -1196,8 +1196,7 @@ Proof.
                 jump_condition := None
               |}
           |} with BB_else.
-    + subst BBs'_ . simpl. unfold to_result. simpl. 
-      (* rewrite <- H1.  *)
+    + subst BBs'_ . simpl. unfold to_result. simpl.  rewrite <- H1. 
       simpl in H10. 
       assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
       {
@@ -1212,7 +1211,7 @@ Proof.
   } 
 
   (*assert 2*)
-  assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BB_then_num).(BasicBlocks) =
+  assert ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) =
   BBs ++ (BBnow' :: nil) ++ BBs_wo_last_).
   {  (*模仿上面的即可*)
   cbn [cmd_BB_gen]. simpl. 
@@ -1279,12 +1278,11 @@ Proof.
       assert (BB_then_num = S BBnum). {
         reflexivity.
       }
-      rewrite H13 in *. 
       specialize (Qdif BBs BBnow BBnum jmp_prop BBnow' BBs'_ BBs_wo_last_ 
       BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
-      (S BB_next_num) BB_num2 add_prop1 add_prop2 H13).
-      assert (S BB_next_num = S BB_next_num). reflexivity.
-      assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = S BB_else_num). reflexivity.
+      (S BB_else_num) BB_num2 add_prop1 add_prop2 H13).
+      assert (S BB_else_num = S BB_else_num). reflexivity.
+      assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = BBnum). reflexivity.
 
       assert (BB_then =
       {|
@@ -1322,7 +1320,7 @@ Proof.
             jump_condition := Some e
           |}
       |}). reflexivity.
-      assert (lst_prop1: to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then (S BB_next_num)) =
+      assert (lst_prop1: to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then (S BB_else_num)) =
       BB_now_then :: nil ++ BBs_then). {
         unfold to_result. subst BB_num1. pose proof H10. rewrite H10. simpl. reflexivity.
       }
@@ -1333,7 +1331,7 @@ Proof.
       
       }
 
-      assert (BB_num2_prop: BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then (S BB_next_num)).(next_block_num)).
+      assert (BB_num2_prop: BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then (S BB_else_num)).(next_block_num)).
       {
         subst BB_num1.  rewrite H7. simpl. reflexivity.
       }
@@ -1746,15 +1744,14 @@ Proof.
 
     pose proof H0 as backup1. pose proof H as backup2.
     my_destruct H0. my_destruct H.
-    assert (BB_then_num = BBnum). {
+    assert (BB_then_num = S BBnum). {
       reflexivity.
     }
-    rewrite H13 in *. 
     specialize (Qdif BBs BBnow BBnum jmp_prop BBnow' BBs'_ BBs_wo_last_ 
     BB_then_num BB_else_num BB_next_num BB_then BB_else BBs_then BBs_else BB_now_then BB_now_else
-    (S BB_next_num) BB_num2 add_prop1 add_prop2 H13).
-    assert (S BB_next_num = S BB_next_num). reflexivity.
-    assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = S BB_else_num). reflexivity.
+    (S BB_else_num) BB_num2 add_prop1 add_prop2 H13).
+    assert (S BB_else_num = S BB_else_num). reflexivity.
+    assert (BB_else_num = S BB_then_num). reflexivity. assert (BB_next_num = BBnum). reflexivity.
 
     assert (BB_then =
     {|
@@ -1792,7 +1789,7 @@ Proof.
           jump_condition := Some e
         |}
     |}). reflexivity.
-    assert (lst_prop1: to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then (S BB_next_num)) =
+    assert (lst_prop1: to_result (list_cmd_BB_gen cmd_BB_gen c1 (nil) BB_then (S BB_else_num)) =
     BB_now_then :: nil ++ BBs_then). {
       unfold to_result. subst BB_num1. pose proof H10. rewrite H10. simpl. reflexivity.
     }
@@ -1803,7 +1800,7 @@ Proof.
     
     }
 
-    assert (BB_num2_prop: BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then (S BB_next_num)).(next_block_num)).
+    assert (BB_num2_prop: BB_num2 = (list_cmd_BB_gen cmd_BB_gen c1 nil BB_then (S BB_else_num)).(next_block_num)).
     {
       subst BB_num1.  rewrite H7. simpl. reflexivity.
     }

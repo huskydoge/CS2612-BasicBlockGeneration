@@ -1152,7 +1152,7 @@ Definition Qd_if (e: expr) (c1 c2: list cmd): Prop :=
       , 
 
       res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' -> res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last ->
-      BB_then_num = BBnum -> BB_else_num = S(BB_then_num) -> BB_next_num = S(BB_else_num) -> BB_num1 = S(BB_next_num)
+      BB_then_num = S BBnum -> BB_else_num = S(BB_then_num) -> BB_next_num = BBnum -> BB_num1 = S(BB_else_num)
       -> BB_then = {|block_num := BB_then_num;
         commands := nil;
         jump_info := {|
@@ -1541,8 +1541,8 @@ Proof.
           {| jump_kind := UJump; jump_dest_1 := BB_next_num; jump_dest_2 := None; jump_condition := None |}
         |}).
         
-        pose proof (bbnum_le_next_num nil temp_block (S BB_next_num) c1).
-        assert (pre_: lt temp_block.(block_num) (S BB_next_num)). {
+        pose proof (bbnum_le_next_num nil temp_block (S BB_else_num) c1).
+        assert (pre_: lt temp_block.(block_num) (S BB_else_num)). {
           subst temp_block. simpl. lia.
         }
         specialize (H pre_). subst temp_block. simpl in H. lia.
@@ -1643,8 +1643,8 @@ Proof.
         {| jump_kind := UJump; jump_dest_1 := BB_next_num; jump_dest_2 := None; jump_condition := None |}
       |}).
       
-      pose proof (bbnum_le_next_num nil temp_block (S BB_next_num) c1).
-      assert (pre_: lt temp_block.(block_num) (S BB_next_num)). {
+      pose proof (bbnum_le_next_num nil temp_block (S BB_else_num) c1).
+      assert (pre_: lt temp_block.(block_num) (S BB_else_num)). {
         subst temp_block. simpl. lia.
       }
       specialize (H pre_). subst temp_block. simpl in H. lia.
@@ -1681,7 +1681,7 @@ Definition Qb(c: cmd): Prop :=
     (exists BBnow' BBs' BBnum' BBs_wo_last, 
       res.(BasicBlocks) ++ (res.(BBn) :: nil) =  BBs ++ (BBnow' :: nil) ++ BBs' /\ res.(BasicBlocks) =  BBs ++ (BBnow' :: nil) ++ BBs_wo_last /\
       res.(next_block_num) = BBnum' /\
-      BCequiv (BDenote_concate (BB_jmp_sem BBnow')(BB_list_sem BBs_wo_last)) (cmd_sem c) BBnow.(block_num) (S (S BBnum)))). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
+      BCequiv (BDenote_concate (BB_jmp_sem BBnow')(BB_list_sem BBs_wo_last)) (cmd_sem c) BBnow.(block_num) BBnum)). (* 这里的BBnum'是生成的BBlist的最后一个BB的编号，对于If和while，语义上都应该停留在next里！要和cmd_BB_gen中的BBnum做区分！ *)
 (* # BUG BCequiv里不应该有最后的BBnext！*)
 
 (* c: the cmd we are currently facing

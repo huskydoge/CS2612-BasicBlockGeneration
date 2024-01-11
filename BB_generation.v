@@ -56,7 +56,7 @@ Notation "s '.(BBn)'"  := (BBn s)(at level 1).
 
 (* 空基本块，用于寻找BB list中最后一个元素时候的默认值处理*)
 Definition EmptyBlock : BasicBlock := {|
-  block_num := 10;
+  block_num := 0;
   commands := [];
   jump_info := {|
     jump_kind := UJump;
