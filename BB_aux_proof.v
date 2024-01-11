@@ -1900,14 +1900,12 @@ Proof.
      split.
     + tauto.
     + tauto.
-  - intros. my_destruct H. my_destruct H. simpl in H0. sets_unfold in H0. destruct H0 as [mid cond].
-    exists mid. destruct cond as [cond1 cond2]. 
-    assert (Iter_nrm_BBs_n (BB_sem_union BBs) (S b) mid bs2). {
-      simpl. apply S_pos_move1. sets_unfold. exists x. split; try tauto.
-    }
-     split.
-    + tauto.
-    + tauto.
+  - intros. my_destruct H. simpl in H. pose proof S_pos_move1 a bs1 x BBs H. sets_unfold in H1.
+    destruct H1 as [bb cond]. destruct cond as [cond1 cond2].
+    exists bb. split.
+    * tauto.
+    * simpl. sets_unfold. exists x. split; try tauto.
+Qed.
 
 Lemma Iter_nrm_BBs_n_add_expansion:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a b: nat),
@@ -1920,9 +1918,30 @@ Proof.
     revert a b H. 
     induction a. 
     + intros. simpl in H. exists bs1. split. simpl. sets_unfold. tauto. apply H.
-    + intros. simpl in H. sets_unfold in H. specialize (IHa (S b)). destruct H as [? [? ?]]. exists x.
-      exists x0. split. apply H. apply IHa.
-  Admitted.
+    + intros. simpl in H. sets_unfold in H. specialize (IHa (S b)). destruct H as [? [? ?]]. 
+      assert (Iter_nrm_BBs_n (BB_sem_union BBs) (S (a + b)) bs1 bs2).
+      {
+        simpl. sets_unfold. exists x. split; tauto.
+      }
+      assert (S (a+b) = (a + (S b))%nat). {
+        lia.
+      }
+      rewrite H2 in H1. pose proof (IHa H1).
+      pose proof Iter_nrm_BBs_n_add_expansion_tran BBs bs1 bs2 a b.
+      destruct H4 as [focus _]. specialize (focus H3). 
+      destruct focus as [? ?]. exists x0. tauto.
+  - intros.
+    revert a b H. 
+    induction a.
+    + intros. simpl. my_destruct H. simpl in H. sets_unfold in H. rewrite <- H in H0. tauto.
+    + intros. pose proof Iter_nrm_BBs_n_add_expansion_tran BBs bs1 bs2 a b. 
+      destruct H0 as [_ focus]. specialize (focus H). clear H. specialize (IHa (S b) focus).
+      assert((a + S b)%nat = (S a + b)%nat). {
+        lia.
+      }
+      rewrite H in *.
+      tauto.
+Qed.
 
 Lemma an_over_pass_bridge_reverse:
   forall (BBs1 BBs2: list BasicBlock)(bs1 bs2: BB_state),
