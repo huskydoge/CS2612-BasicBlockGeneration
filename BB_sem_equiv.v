@@ -282,10 +282,11 @@ Lemma BBs_sem_Asgn_split:
      BBnum_set (BB2 :: nil) ∩ BBjmp_dest_set (BB2 :: BBs) == ∅ ->
      (BBnum_set (BB2 :: nil) ∩ BBnum_set BBs == ∅) ->
      bs1 <> bs2 ->
+     ~ bs2.(BB_num) ∈ BBnum_set (BB2 :: nil) ->
      ((Bnrm (BB_list_sem (BB1 :: BBs)) bs1 bs2) <-> (exists (x: BB_state), Bnrm (BAsgn_list_sem (BBcmd :: nil)) bs1 x /\ Bnrm (BB_list_sem (BB2 :: BBs)) x bs2)).
 Proof.
   intros. rename H0 into Hn1. rename H1 into Hn2. 
-  rename H2 into Hn3. split.
+  rename H2 into Hn3. rename H3 into Hn4. split.
   + intros. 
     assert ((exists x, Bnrm (BB_sem BB1) bs1 x /\ Bnrm (BB_list_sem BBs) x bs2)). {
       pose proof BB_list_sem_unfold_bs1_and_simpl BB1 BBs bs1 bs2.
@@ -342,13 +343,12 @@ Proof.
       rewrite <- H3. rewrite <- H4. apply H. 
     }
 
-    assert (Bnrm (BB_list_sem (BB2 :: BBs)) bs2 bs2). {
-      unfold BB_list_sem. cbn[Bnrm]. sets_unfold. exists x1. apply H1.
+    unfold not in Hn4. sets_unfold in Hn4.
+    assert (False). {
+      apply Hn4. unfold BBnum_set. exists BB2. split.
+      unfold In. left. tauto. rewrite H3. tauto.
     }
-
-    pose proof BBs_bs2_in_BB_jmp_set (BB2 :: BBs) bs2 bs2 H4. destruct H5.
-    admit.
-
+    tauto.
 
     (* 接下来考虑Ht2的情况 *)
     assert (x0 <> bs2). apply Ht2.
@@ -472,6 +472,11 @@ Proof.
          (* 这个时候，就需要H_sem_full来拆出来这两步，用一个中间的state作为过渡 *)
          pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e x2 x3 as T1.
          destruct T1 as [H T2]. apply D3.
+         (* 使用这个定理的四个条件 *)
+         admit.
+         admit.
+         admit.
+         unfold not. intros. admit.
          destruct H as [? [H_step1 H_step2]]. apply H_sem_full. 
          exists x4.(st). split. 
          ++ unfold BAsgn_list_sem in H_step1. cbn[Bnrm] in H_step1.
@@ -511,7 +516,13 @@ Proof.
          repeat split; try tauto. cbn[Bnrm].
          remember ({| BB_num := BBnow'_.(block_num); st := a |}) as bs1.
          remember ({| BB_num := jump_dest_1 BBnow.(jump_info); st := a0 |}) as bs2.
-         pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e bs1 bs2 as T1. destruct T1 as [T2 H_cmds_equiv_inv]. subst bs1. simpl. tauto. clear T2.
+         pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e bs1 bs2 as T1. destruct T1 as [T2 H_cmds_equiv_inv]. subst bs1. simpl. tauto. 
+         (* 使用这个定理的四个条件 *)
+         admit.
+         admit.
+         admit.
+         unfold not. intros. admit.       
+         clear T2.
          apply H_cmds_equiv_inv. 
 
          destruct H_asgn_equiv. clear err_cequiv inf_cequiv.
