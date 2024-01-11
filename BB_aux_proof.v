@@ -1359,7 +1359,9 @@ Proof.
       rewrite BBlist_then_prop. simpl. reflexivity.
     }
 
-    pose proof c1_range c1_jmp_prop HeqBB_then_end_num c1_list_prop as if_range.
+    assert (lt_prop_then: (BB_then.(block_num) < BB_num1)%nat). rewrite BB_then_prop. simpl. lia.
+
+    pose proof c1_range c1_jmp_prop HeqBB_then_end_num c1_list_prop lt_prop_then as if_range.
 
     (* Then the second part *)
     remember ((list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_then_end_num).(next_block_num)) as BB_else_end_num.
@@ -1375,8 +1377,10 @@ Proof.
       rewrite BBlist_else_prop. simpl. reflexivity.
     }
 
+    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). rewrite BB_else_prop. simpl. admit. (*bh*)
 
-    pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop as else_range.
+
+    pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop lt_prop_else as else_range.
     clear c1_jmp_prop c2_jmp_prop.
 
     
@@ -1469,7 +1473,9 @@ Proof.
       rewrite BBlist_then_prop. simpl. reflexivity.
     }
 
-    pose proof c1_range c1_jmp_prop HeqBB_then_end_num c1_list_prop as if_range.
+    assert (lt_prop_then: (BB_then.(block_num) < BB_num1)%nat). rewrite BB_then_prop. simpl. lia.
+
+    pose proof c1_range c1_jmp_prop HeqBB_then_end_num c1_list_prop lt_prop_then as if_range.
 
     (* Then the second part *)
     remember ((list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_then_end_num).(next_block_num)) as BB_else_end_num.
@@ -1486,8 +1492,9 @@ Proof.
       rewrite BBlist_else_prop. simpl. reflexivity.
     }
 
+    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). rewrite BB_else_prop. simpl. admit. (*bh*)
 
-    pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop as else_range.
+    pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop lt_prop_else as else_range.
     clear c1_jmp_prop c2_jmp_prop.
 
     rename H into GOAL.
@@ -1565,7 +1572,9 @@ Proof.
       rewrite BBlist_then_prop. simpl. reflexivity.
     }
 
-    pose proof c1_range c1_jmp_prop HeqBB_then_end_num c1_list_prop as if_range.
+    assert (lt_prop_then: (BB_then.(block_num) < BB_num1)%nat). rewrite BB_then_prop. simpl. lia.
+
+    pose proof c1_range c1_jmp_prop HeqBB_then_end_num c1_list_prop lt_prop_then as if_range. 
 
     (* Then the second part *)
     remember ((list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_then_end_num).(next_block_num)) as BB_else_end_num.
@@ -1575,6 +1584,7 @@ Proof.
     assert (c2_jmp_prop: jump_kind BB_else.(jump_info) = UJump /\ jump_dest_2 BB_else.(jump_info) = None). {
       rewrite BB_else_prop. cbn [jump_info]. cbn [jump_kind]. cbn [jump_dest_2]. tauto.
     }
+    
 
     assert (c2_list_prop: to_result (list_cmd_BB_gen cmd_BB_gen c2 (nil) BB_else BB_then_end_num) =
     BB_now_else :: nil ++ BBs_else). {
@@ -1582,8 +1592,10 @@ Proof.
       rewrite BBlist_else_prop. simpl. reflexivity.
     }
 
+    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). rewrite BB_else_prop. simpl. admit. (*bh*)
 
-    pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop as else_range.
+
+    pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop lt_prop_else as else_range.
     clear c1_jmp_prop c2_jmp_prop.
 
     rename H into GOAL.
@@ -1651,7 +1663,7 @@ Proof.
     
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
-Qed.
+Admitted.
 
 
 Definition is_asgn (c: cmd): Prop :=

@@ -64,6 +64,7 @@ Definition P_BBgen_range (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock -> na
     endnum = res.(next_block_num)
     -> 
       basicblocks = BBs ++ BBdelta ->
+    (BBnow.(block_num) < startnum)%nat ->
     (
       all_ge (BBnum_set(tl BBdelta)) startnum /\
       all_lt (BBnum_set(tl BBdelta)) endnum /\ 
@@ -990,8 +991,12 @@ Proof.
 
   assert (c1_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c1 BBs BB_then_now then_start_num) = BBs ++ then_delta)). pose proof add_BBs_in_generation_reserves_BB c1 BBs BB_then_now then_start_num. unfold to_result in H. unfold to_result. subst then_delta. subst then_res. apply H. 
 
-  specialize (c1_prop c1_aux1 c1_aux2 c1_aux3).
-  clear c1_aux1 c1_aux2 c1_aux3.
+  assert (c1_aux4: (BB_then_now.(block_num) < then_start_num)%nat). {
+    subst BB_then_now. simpl. lia.
+  }
+
+  specialize (c1_prop c1_aux1 c1_aux2 c1_aux3 c1_aux4).
+  clear c1_aux1 c1_aux2 c1_aux3 c1_aux4.
   
   specialize (c2_prop then_end_num endnum nil BB_else_now else_delta).
   assert (c2_aux1 : (BB_else_now.(jump_info).(jump_kind) = UJump /\ BB_else_now.(jump_info).(jump_dest_2) = None)). tauto.
@@ -1001,8 +1006,12 @@ Proof.
   }
 
   assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num) = else_delta)). subst else_delta. subst else_res. unfold to_result. pose proof add_BBs_in_generation_reserves_BB c2 nil BB_else_now then_end_num. unfold to_result in H. apply H.
-  specialize (c2_prop c2_aux1 c2_aux2 c2_aux3).
-  clear c2_aux1 c2_aux3.
+
+  assert (c2_aux4: (BB_else_now.(block_num) < then_end_num)%nat). {
+    subst BB_else_now. simpl. admit. (*bh*)
+  } 
+  specialize (c2_prop c2_aux1 c2_aux2 c2_aux3 c2_aux4).
+  clear c2_aux1 c2_aux3 c2_aux4.
 
   destruct c1_prop as [c1_prop1 [c1_prop2 c1_prop3]].
   destruct c2_prop as [c2_prop1 [c2_prop2 c2_prop3]].
@@ -1401,7 +1410,7 @@ Proof.
         ** lia.
     + left. unfold section. lia.
     + left. unfold section. lia.
-Qed.
+Admitted.
 
 Lemma Q_while_BBgen_range:
 forall (e: expr) (c1 c2: list cmd),
@@ -1447,7 +1456,7 @@ Qed.
 Lemma P_BBgen_nil:
     P_BBgen_range cmd_BB_gen nil.
 Proof.
-  unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H1. simpl in H1. 
+  unfold P_BBgen_range. intros. simpl in H0. unfold to_result in H1. simpl in H1. rename H2 into new. 
   pose proof cut_eq_part_list_l BasicBlock BBs (BBnow::nil) BBdelta H1. 
   repeat split.
   - rewrite <- H2. simpl. unfold all_ge. intros. unfold BBnum_set in H3. destruct H3 as [BB [H3 H4]]. simpl in H3. tauto.
@@ -1480,14 +1489,14 @@ Proof.
   unfold Q_BBgen_range in H.
   unfold P_BBgen_range.
   intros.
+  rename H4 into lt_prop.
   set (endnum' := (cmd_BB_gen c BBs BBnow startnum).(next_block_num)).
   set (BBdelta' := to_result (cmd_BB_gen c nil BBnow startnum)).
   assert(to_result (cmd_BB_gen c BBs BBnow startnum) = BBs ++ BBdelta').
 {
   pose proof cmd_BB_delta c BBs BBdelta' BBnow startnum. destruct H4. tauto. reflexivity.
 }
-  specialize (H startnum endnum' BBs BBnow BBdelta' H1). destruct H. tauto. tauto.
-  (* The condition here is not satisfied TODO bh*)
+  specialize (H startnum endnum' BBs BBnow BBdelta' H1). destruct H. tauto. tauto. tauto.
   admit.
 Admitted. (* yz *)
 

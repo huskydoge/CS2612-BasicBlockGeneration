@@ -498,7 +498,11 @@ Proof.
           unfold to_result. rewrite C6. simpl. reflexivity. 
         }
 
-        specialize (P_prop m1 C2 m2). clear m1 m2. destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
+        assert (m3: (x0.(block_num) < BBnum)%nat). {
+          rewrite <- B1. tauto.
+        } 
+
+        specialize (P_prop m1 C2 m2 m3). clear m1 m2 m3. destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
 
         cbn[cmd_list_sem]. simpl. sets_unfold.
         (* asgn的语义是不涉及Jump的，所以我们希望先走一步CAsgn，再用cmds_nrm_equiv的结论来进行证明 *)
@@ -602,7 +606,11 @@ Proof.
           unfold to_result. rewrite C6. simpl. reflexivity. 
         }
 
-        specialize (P_prop m1 C2 m2). clear m1 m2. destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
+        assert (m3: (x0.(block_num) < BBnum)%nat). {
+          rewrite <- B1. tauto.
+        }
+
+        specialize (P_prop m1 C2 m2 m3). clear m1 m2. destruct P_prop as [P_prop1 [P_prop2 P_prop3]].
 
 
          pose proof BBs_sem_Asgn_split BBnow'_ BBs_ BBcmds_ x e bs1 bs2 as T1. destruct T1 as [T2 H_cmds_equiv_inv]. subst bs1. simpl. tauto. 
@@ -903,7 +911,12 @@ Proof.
         rewrite key in B5. 
         unfold to_result. rewrite <- B5. rewrite key. reflexivity.
       }
-      specialize (P_prop n1 B2 n2).
+
+      assert (n3: (BBnow_mid.(block_num) < BBnum'_)%nat). {
+        rewrite HeqBBnow_mid. simpl. rewrite A4. admit. (*bh*)
+      }
+
+      specialize (P_prop n1 B2 n2 n3).
 
 
 (* !Range的性质引入结束  ==========================================================================================  *)
