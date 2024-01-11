@@ -570,7 +570,6 @@ Proof.
             }
            rewrite H. apply H_step2.
            assert (x2.(BB_num) = x4.(BB_num)) as T1. {
-            (* Use H_step1 easy lyz *)
             simpl in H_step1. sets_unfold in H_step1. destruct H_step1 as [BBstate_ cond].
             destruct cond as [[cond1 cond2] cond3]. rewrite cond2. rewrite cond3. tauto.
            }
@@ -1030,8 +1029,8 @@ Proof.
 
         assert (in_prop1: BB_num bs1 ∈ BBnum_set (BBnow_start :: nil ++ BBswo_)).
         {
-          admit.
-          (*TODO easy lyz*)
+          sets_unfold. unfold BBnum_set. exists BBnow_start. split. unfold In. left. tauto.
+          rewrite HeqBBnow_start. simpl. rewrite C3. reflexivity.
         }
 
         assert (in_prop2: BB_num bs2 ∈ BBjmp_dest_set (BBnow'_p :: nil ++ BBs'_p)).
@@ -1192,7 +1191,12 @@ Proof.
         specialize (sep_prop a1).
         destruct sep_prop as [sep_prop1 sep_prop2].
         split. 
-        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1).  admit. (*TODO, easy lyz use wo_sep*)
+        - intros. rename H2 into wo_sep. assert (tmp: BBnum_set (BBnow'_ :: nil) a1 /\ BBjmp_dest_set (BBnow'_ :: BBs'_) a1). 
+          split. tauto. destruct wo_sep  as  [wo_sep1 wo_sep2]. rewrite <- wo_tran. unfold BBjmp_dest_set.
+          unfold BBjmp_dest_set in wo_sep2. destruct wo_sep2 as [wo_sepBB wo_sep2]. exists wo_sepBB. split.
+          cbn[In]. destruct wo_sep2 as [wo_sep2 wo_sep3]. cbn[In] in wo_sep2. destruct wo_sep2. left. tauto.
+          right. pose proof In_sublist_then_in_list_head BasicBlock wo_sepBB BBswo_ ((cmd_BB_gen c BBs BBnow BBnum).(BBn) :: nil) H2.
+          tauto. tauto.
           tauto.
         - intros. tauto. 
         }
@@ -1229,13 +1233,29 @@ Proof.
               simpl in case1_cond2. sets_unfold in case1_cond2. destruct case1_cond2 as [mid_x conds].
               destruct conds as [c1_ c2_]. rewrite HeqBBnow_start in c1_. simpl in c1_. sets_unfold in c1_.
               rewrite <- c1_ in c2_. rewrite HeqBBnow_start in c2_. simpl in c2_. unfold BJump_sem in c2_.
-              admit. (*TODO easy lyz*)
+              destruct (eval_cond_expr (jump_condition BBnow'_.(jump_info))). 
+              destruct ( jump_dest_2 BBnow'_.(jump_info)).
+              unfold cjmp_sem in c2_. simpl in c2_. my_destruct c2_. rewrite H3 in H2. tauto.
+              unfold ujmp_sem in c2_. simpl in c2_. my_destruct c2_. rewrite H2 in H4. tauto.
+              unfold ujmp_sem in c2_. simpl in c2_. my_destruct c2_. rewrite H2 in H4. tauto.
             }
 
             assert (pre2: BBnum_set (BBnow_start :: nil) ∩ BBjmp_dest_set (BBnow_start :: BBswo_) == ∅). {
 
             unfold separate_property in sep_prop_wo. 
-            admit. (*TODO, easy lyz*)
+            rewrite HeqBBnow_start. sets_unfold. intros. split. intros. sets_unfold in sep_prop_wo.
+            specialize (sep_prop_wo a1). apply sep_prop_wo. split.
+            unfold BBnum_set. 
+            destruct H2. unfold BBnum_set in H2. my_destruct H2. unfold In in H2. destruct H2.
+            exists BBnow'_. unfold In. split. left. tauto.
+            rewrite <- H2 in H4. simpl in H4. tauto.
+            tauto.
+            destruct H2. unfold BBjmp_dest_set. unfold BBjmp_dest_set in H3.
+            my_destruct H3. cbn[In] in H3. destruct H3.
+            exists BBnow'_. unfold In. split. left. tauto.
+            rewrite <- H3 in H4. simpl in H4. tauto.
+            exists x. unfold In. split. right. tauto. tauto.
+            tauto.
             }
             specialize (step3 pre1 pre2 case1_cond3). tauto.
         
