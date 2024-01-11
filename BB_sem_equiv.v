@@ -816,7 +816,6 @@ Proof.
             (*引理1: 从Heql中得到b就是head BBswo_*)
             assert(tmp: BBswo_ <> nil). pose proof if_wont_be_nil e c1 c2 BBs BBswo_ BBnow BBnow'_ BBnum A3. tauto. 
             pose proof extract_head_from_list BasicBlock BBswo_ (BBnow'_p :: BBs'_p) l b empty_block tmp Heql as head_wo.
-            clear.
             (*引理2: 用A3得到BBswo_的头就是BBthen*)
             pose proof if_head_prop e c1 c2 BBswo_ BBs BBnow BBnow'_ BBnum A3 as num_prop.
             rewrite <- head_wo in num_prop. rewrite num_prop. rewrite BBnow'_prop. simpl. reflexivity. 
@@ -1156,7 +1155,10 @@ Proof.
         }
 
         assert (wo_disjoint_prop: ~ BBnow_start.(block_num) ∈ BBnum_set (BBswo_)). {
-          pose proof disjoint_num_prop_wo_last_if BBs BBswo_ BBnow BBnow'_ BBnum e c1 c2 A3 as key. rewrite HeqBBnow_start. simpl. simpl in key. rewrite BBnow'_prop.
+          assert (t: jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None). {
+            tauto.
+          }
+          pose proof disjoint_num_prop_wo_last_if BBs BBswo_ BBnow BBnow'_ BBnum e c1 c2 t H0 A3 as key. rewrite HeqBBnow_start. simpl. simpl in key. rewrite BBnow'_prop.
           simpl. tauto.
         }
 
@@ -1300,7 +1302,7 @@ Proof.
           rewrite <- HeqBBnow_mid in t. rewrite t. reflexivity.
         * rewrite C4. pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2) as t. 
           rewrite <- HeqBBnow_mid in t. rewrite <- t. reflexivity.
-      -- intros. (* 这半边应该是完全类似的 *)
+      -- intros. (* 这半边是类似的 *)
          cbn[cmd_list_sem] in H2. cbn[nrm] in H2.
          sets_unfold in H2. destruct H2 as [? [H_step1_main H_step2_main]].
          exists {| st := a; BB_num := BBnow'_.(block_num) |}.

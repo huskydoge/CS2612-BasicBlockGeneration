@@ -1757,6 +1757,14 @@ Proof.
     rewrite H4. rewrite IHl2. reflexivity.
 Qed.
 
+Lemma exact_tail_from_list:
+  forall (A: Type) (l1 l2 l3: list A) (a b: A),
+  l1 ++ a::nil = l2 ++ b::l3 -> l3 <> nil -> In a l3.
+Proof.
+  intros. revert l1 l2 H.
+  (*TODO*)
+Admitted.
+
 
 (*如果num在BBnum_set(BBnow::BBs)中，那么为在BBnow的num，要么在BBs的num中*)
 Lemma destruct_in_BBnum_set:

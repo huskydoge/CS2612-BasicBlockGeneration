@@ -1764,3 +1764,13 @@ Proof.
   specialize (Q_prop1 H4). lia.
 
 Qed.
+
+
+(*对于CIf，其去掉最后一个BBn的新生成的BBs, 即BBswo_，其所有的num不等于SS BBnum*)
+Lemma neq_ssnum:
+  forall (BBs BBswo_: list BasicBlock) (BB BBnow BBnow'_: BasicBlock) (BBnum: nat) (e: expr) (c1 c2: list cmd),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) =
+     BBs ++ BBnow'_ :: BBswo_ -> 
+     In BB BBswo_ -> (BB.(block_num) <> (S (S BBnum))).
+Proof.
+Admitted. (*TODO IMPORTANT*)
