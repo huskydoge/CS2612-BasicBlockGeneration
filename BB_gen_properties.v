@@ -659,33 +659,6 @@ Qed.
 (*END:  ====================================================================================================== *)
 
 
-(*如果生成的res.(BasicBlocks) ++ res.(BBn) :: nil中仅有一个元素，那么BBnum等于next_block_num ===================================================================================================*)
-
-Lemma bbnum_eq_next_num_single_cmd:
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
-    let res := (cmd_BB_gen c BBs BBnow BBnum) in
-    (lt BBnow.(block_num) BBnum) -> (tl (res.(BasicBlocks) ++ res.(BBn) :: nil)) = nil -> BBnum = res.(next_block_num).
-Proof.
-  intros. destruct c.
-  - simpl. lia.
-  - cbn [cmd_BB_gen]. simpl. admit.
-  - admit.
-Admitted. (*TODO yz *)
-
-Lemma bbnum_eq_next_num:
-  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
-    let res := (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum) in
-    (lt BBnow.(block_num) BBnum) -> (tl (res.(BasicBlocks) ++ res.(BBn) :: nil)) = nil -> BBnum = res.(next_block_num).
-Proof.
-  intros. induction c.
-  - cbn [list_cmd_BB_gen].
-    simpl. lia.
-  -
-    unfold list_cmd_BB_gen.
-    destruct a.
-    + simpl. admit.
-Admitted. (*TODO yz *)
-
 (* END ===================================================================================================*)
 
 
