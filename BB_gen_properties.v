@@ -1749,7 +1749,7 @@ Qed.
 
 (* Jmp Info的继承性质  ============================================================================================================ *)
 
-(*Jmp Info是会被继承下去的！TODO Maybe EASY, 递归就好*)
+(*Jmp Info是会被继承下去的！*)
 Lemma JmpInfo_inherit:
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (c: cmd),
   ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
