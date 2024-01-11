@@ -1312,7 +1312,7 @@ Proof.
         + rewrite <- key_prop1. simpl. destruct H. 
           left. tauto. 
           right. pose proof In_tail_inclusive BBs_wo_last x {|
-              block_num := S (S BBnum);
+              block_num := BBnum;
               commands := nil;
               jump_info := BBnow.(jump_info)
             |}.

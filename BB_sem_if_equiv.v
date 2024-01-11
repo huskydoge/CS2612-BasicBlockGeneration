@@ -1041,7 +1041,7 @@ Proof.
   # BBs并不是Q中的BBs ++ [BBnow]！BBnow要加上跳转信息！！！！ 
   #: Check!!!!!! *)
   (* Get correct num *)
-  set(BB_then_num := BBnum). set(BB_else_num := S(BB_then_num)). set(BB_next_num := S(BB_else_num)). set(BB_num1 := S(BB_next_num)).
+  set(BB_then_num := S BBnum). set(BB_else_num := S(BB_then_num)). set(BB_next_num := BBnum). set(BB_num1 := S(BB_else_num)).
   (* Get correct BBnow for P c1 *)
   set(BB_then := {|block_num := BB_then_num;
                    commands := nil;
@@ -1159,18 +1159,18 @@ Proof.
   my_destruct H. my_destruct H0.
   replace (S (S (S BBnum))) with (BB_num1).
   replace ({|
-  block_num := BBnum;
+  block_num := S BBnum;
   commands := nil;
   jump_info :=
     {|
       jump_kind := UJump;
-      jump_dest_1 := S (S BBnum);
+      jump_dest_1 := BBnum;
       jump_dest_2 := None;
       jump_condition := None
     |}
     |}) with (BB_then).
     replace {|
-    block_num := S (S BBnum);
+    block_num := BBnum;
     commands := nil;
     jump_info := BBnow.(jump_info)
   |} with (BB_next).
@@ -1180,23 +1180,25 @@ Proof.
             jump_info :=
               {|
                jump_kind := CJump;
-               jump_dest_1 := BBnum;
-               jump_dest_2 := Some (S BBnum);
+               jump_dest_1 := S BBnum;
+               jump_dest_2 := Some (S(S BBnum));
                jump_condition := Some e
               |}
             |} with BBnow'.
   replace {|
-            block_num := S BBnum;
+            block_num := S(S BBnum);
             commands := nil;
             jump_info :=
               {|
                 jump_kind := UJump;
-                jump_dest_1 := S (S BBnum);
+                jump_dest_1 := BBnum;
                 jump_dest_2 := None;
                 jump_condition := None
               |}
           |} with BB_else.
-    + subst BBs'_ . simpl. unfold to_result. simpl. rewrite <- H1. simpl in H10. 
+    + subst BBs'_ . simpl. unfold to_result. simpl. 
+      (* rewrite <- H1.  *)
+      simpl in H10. 
       assert (BBs ++ BBnow' :: BB_now_then :: BBs_then = (BBs ++ BBnow' :: nil) ++ BB_now_then :: BBs_then).
       {
         rewrite <- app_assoc. simpl. reflexivity.
@@ -1218,18 +1220,18 @@ Proof.
   my_destruct H. my_destruct H0.
   replace (S (S (S BBnum))) with (BB_num1).
   replace ({|
-  block_num := BBnum;
+  block_num := S BBnum;
   commands := nil;
   jump_info :=
     {|
       jump_kind := UJump;
-      jump_dest_1 := S (S BBnum);
+      jump_dest_1 := BBnum;
       jump_dest_2 := None;
       jump_condition := None
     |}
     |}) with (BB_then).
     replace {|
-    block_num := S (S BBnum);
+    block_num :=  BBnum;
     commands := nil;
     jump_info := BBnow.(jump_info)
   |} with (BB_next).
@@ -1239,18 +1241,18 @@ Proof.
             jump_info :=
               {|
               jump_kind := CJump;
-              jump_dest_1 := BBnum;
-              jump_dest_2 := Some (S BBnum);
+              jump_dest_1 := S BBnum;
+              jump_dest_2 := Some (S(S BBnum));
               jump_condition := Some e
               |}
             |} with BBnow'.
   replace {|
-            block_num := S BBnum;
+            block_num := S (S BBnum);
             commands := nil;
             jump_info :=
               {|
                 jump_kind := UJump;
-                jump_dest_1 := S (S BBnum);
+                jump_dest_1 := BBnum;
                 jump_dest_2 := None;
                 jump_condition := None
               |}
@@ -1274,7 +1276,7 @@ Proof.
   - apply add_prop2.
   -
       my_destruct H0. my_destruct H.
-      assert (BB_then_num = BBnum). {
+      assert (BB_then_num = S BBnum). {
         reflexivity.
       }
       rewrite H13 in *. 
