@@ -360,14 +360,14 @@ Lemma Q_inherit_not_jmp_to_self_asgn:
   Q_inherit_not_jmp_to_self (CAsgn x e).
 Proof. 
 
-Admitted.
+Admitted. (*yz*)
 
 Lemma Q_inherit_not_jmp_to_self_if:
   forall  (e: expr) (c1: list cmd) (c2: list cmd),
   P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
   Q_inherit_not_jmp_to_self (CIf e c1 c2).
 Proof.
-Admitted.
+Admitted. (*bh*)
 
 Lemma Q_inherit_not_jmp_to_self_while:
   forall  (e: expr) (c1: list cmd) (c2: list cmd),
@@ -379,7 +379,7 @@ Admitted.  (*DONT CARE for while*)
 Lemma P_inherit_not_jmp_to_self_nil:
   P_inherit_not_jmp_to_self nil.
 Proof.
-Admitted.
+Admitted.  (*px*)
 
 
 Lemma P_inherit_not_jmp_to_self_cons:
@@ -388,7 +388,7 @@ forall (c: cmd) (cmds: list cmd),
   P_inherit_not_jmp_to_self cmds ->
   P_inherit_not_jmp_to_self (c :: cmds).
 Proof.
-Admitted.
+Admitted.  (*yz*)
 
 Section inherit_not_jmp_to_self_sound.
 
@@ -481,7 +481,7 @@ Lemma Q_inherit_lt_num_prop_mutual_asgn:
   forall (x: var_name) (e: expr),
     Q_inherit_lt_num_prop_mutual (CAsgn x e).
 Proof.
-  Admitted.
+  Admitted. (*px*)
 
 Lemma Q_inherit_lt_num_prop_mutual_if:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
@@ -498,7 +498,7 @@ Admitted. (*DONT CARE for WHILE*)
 Lemma P_inherit_lt_num_prop_mutual_nil:
   P_inherit_lt_num_prop_mutual nil.
 Proof.
-  Admitted.
+  Admitted. (*yz*)
 
 Lemma P_inherit_lt_num_prop_mutual_cons:
   forall (c: cmd) (cmds: list cmd),
@@ -506,7 +506,7 @@ Lemma P_inherit_lt_num_prop_mutual_cons:
     P_inherit_lt_num_prop_mutual cmds ->
     P_inherit_lt_num_prop_mutual (c :: cmds).
 Proof.
-  Admitted.
+  Admitted. (*bh*)
 
 Section inherit_lt_num_prop_mutual.
 
@@ -607,7 +607,7 @@ Proof.
   - simpl. lia.
   - cbn [cmd_BB_gen]. simpl. admit.
   - admit.
-Admitted.
+Admitted. (*TODO yz *)
 
 Lemma bbnum_eq_next_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
@@ -621,7 +621,7 @@ Proof.
     unfold list_cmd_BB_gen.
     destruct a.
     + simpl. admit.
-Admitted. (*TODO @LYZ *)
+Admitted. (*TODO yz *)
 
 (* END ===================================================================================================*)
 
@@ -1438,7 +1438,7 @@ Proof.
   unfold P_BBgen_range.
   intros.
   
-Admitted.
+Admitted. (* yz *)
 
 Section BB_gen_range_sound.
 
@@ -1626,7 +1626,7 @@ Proof.
     pose proof hd_A_and_B_is_hd_A_if_A_not_nil (e0 ++ e1) e2 as hd_position.
     assert (e0_not_nil: (e0 ++ e1) <> nil).
     {
-      (*对c1是否为空进行分类讨论, 但是可能有点麻烦*) admit. (*TODO*)
+      (*对c1是否为空进行分类讨论, 但是可能有点麻烦*) admit. (*TODO px*)
     }
     pose proof hd_position e0_not_nil as hd_position.
 Admitted.
@@ -1642,7 +1642,7 @@ Lemma if_separate_for_pcons1:
   (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BasicBlocks).
 Proof.
   intros.
-Admitted. (*TODO*)
+Admitted. (*TODO bh*)
 
 Lemma if_separate_for_pcons2:
   forall (e: expr) (c1 c2 cmds: list cmd) (BBs BBswo_ : list BasicBlock)(BBnow BBnow'_ BBnow_mid : BasicBlock)(BBnum BBnum'_: nat),
@@ -1654,7 +1654,7 @@ Lemma if_separate_for_pcons2:
   (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBnow'_ :: BBswo_) BBnow_mid BBnum'_).(BBn) :: nil.
 Proof.
   intros.
-Admitted. (*TODO*)
+Admitted. (*TODO bh*)
 
 
 (*如果cmd是CIf，那么新生成的BBs的最后一个Block，也就是BBnext，它的cmd为空*)
@@ -1687,6 +1687,7 @@ Lemma JmpInfo_inherit_for_list:
   forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
   ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
 Proof.
+  (*bh*)
 Admitted.
 
 
@@ -1718,7 +1719,7 @@ Lemma unique_endinfo_if:
 Proof.
   intros.
   unfold not_eq_to_any_BBnum in H1.
-(*TODO*)
+(*TODO bh*)
 Admitted.
 
 
@@ -1773,4 +1774,4 @@ Lemma neq_ssnum:
      BBs ++ BBnow'_ :: BBswo_ -> 
      In BB BBswo_ -> (BB.(block_num) <> (S (S BBnum))).
 Proof.
-Admitted. (*TODO IMPORTANT*)
+Admitted. (*TODO yz*)

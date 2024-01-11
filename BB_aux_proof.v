@@ -1762,7 +1762,7 @@ Lemma exact_tail_from_list:
   l1 ++ a::nil = l2 ++ b::l3 -> l3 <> nil -> In a l3.
 Proof.
   intros. revert l1 l2 H.
-  (*TODO*)
+  (*TODO bh*)
 Admitted.
 
 
@@ -1884,7 +1884,7 @@ Proof.
       }
       tauto.
   - contradiction.
-  (*TODO! IMPORTANT! lyz*)
+  (*TODO *)
 Admitted.
 
 
