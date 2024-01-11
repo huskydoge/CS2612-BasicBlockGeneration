@@ -1634,8 +1634,7 @@ Proof.
       pose proof classic (e0 = nil) as He0_nil. destruct He0_nil as [He0_nil | He0_nnil].
       - rewrite He0_nil. rewrite app_nil_l. rewrite Heqe1. unfold not. intros.
         inversion H1.
-      - unfold not. intros.
-        
+      - unfold not. intros. destruct e0. tauto. discriminate H1.   
     }
     pose proof hd_position e0_not_nil as hd_position.
 Admitted.
