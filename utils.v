@@ -123,6 +123,13 @@ Proof.
     simpl. rewrite <- IH. reflexivity.
 Qed.
 
+Lemma eli_nil:
+  forall(A: Type) (l1 l2: list A)(a: A),
+  l1 ++ a::nil = l2 ++ a::nil -> l1 = l2.
+Proof.
+  intros.
+Admitted. 
+
 
 Lemma cut_eq_part_list_r:
   forall (A: Type) (l1 l2 l3: list A),
@@ -181,12 +188,3 @@ Proof.
     + right. pose proof IHBBs H. apply H0.
 Qed. 
 
-
-Lemma eli_nil:
-  forall(A: Type) (l1 l2: list A)(a: A),
-  l1 ++ a::nil = l2 ++ a::nil -> l1 = l2.
-Proof.
-  intros.
-  pose proof cut_eq_part_list_r A (a::nil) l1 l2 H.
-  tauto. 
-Qed. 
