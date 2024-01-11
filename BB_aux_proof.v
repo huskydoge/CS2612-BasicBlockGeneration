@@ -1757,13 +1757,33 @@ Qed.
 (*如果l1 ++ l2 = a :: l3，那么a肯定是l1的头*)
 Lemma extract_head_from_list:
   forall (A: Type) (l1 l2 l3: list A) (a: A)(d: A),
-  l1 ++ l2 = a :: l3 -> a = hd d l1.
+  l1 <> nil -> l1 ++ l2 = a :: l3 -> a = hd d l1.
 Proof.
-  intros. revert l1 l2 H.
-  induction l3. 
+  intros. revert l1 l3 H H0.
+  induction l2.
+  - intros. rewrite app_nil_r in H0. rewrite H0. simpl. reflexivity.
   - intros. 
-  (*TODO BUG*)
-Admitted.
+    assert (l1 ++ a0 :: l2 = l1 ++ a0::nil ++ l2).
+    {
+      simpl. reflexivity.
+    }
+    rewrite H1 in H0. specialize (IHl2 (l1 ++ a0 :: nil) l3).
+    assert (l1 ++ a0 :: nil <> nil). {
+      apply not_nil_l. apply H.
+    }
+    specialize (IHl2 H2). 
+    assert ((l1 ++ a0 :: nil) ++ l2 = a :: l3).
+    {
+      rewrite <- H0. rewrite <- app_assoc. simpl. reflexivity.
+    }
+    specialize (IHl2 H3). rewrite IHl2. simpl. unfold hd. 
+    destruct (l1 ++ a0 :: nil). tauto. 
+    destruct l1. tauto. simpl in IHl2.
+    assert (a2 = a). {
+      inversion H0. reflexivity.
+    }
+    rewrite H4. rewrite IHl2. reflexivity.
+Qed.
 
 
 (*如果num在BBnum_set(BBnow::BBs)中，那么为在BBnow的num，要么在BBs的num中*)
