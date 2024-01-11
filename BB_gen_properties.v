@@ -14,6 +14,7 @@ Require Import Main.cmd_denotations.
 Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
+Require Import Main.utils.
 
 
 Lemma cut_nil_r:
@@ -811,10 +812,24 @@ Proof.
   assert (to_result BBgen_then_result ++
           to_result
           (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else
-            BBgen_then_result.(next_block_num)) = BBswo_). admit. (*TODO trivial *)
-  intros contra. rewrite contra in H2.
-  (*TODO appearant but cannot prove for now*)
-Admitted.
+            BBgen_then_result.(next_block_num)) = BBswo_). {
+  inversion H0. tauto.
+            
+  }
+  unfold to_result.
+  pose proof not_nil_l BasicBlock ((BBgen_then_result.(BasicBlocks) ++ BBgen_then_result.(BBn) :: nil)) ((list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then_result.(next_block_num)).(BasicBlocks) ++
+  (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then_result.(next_block_num)).(BBn) :: nil).
+  assert(tmp:  BBgen_then_result.(BasicBlocks) ++ BBgen_then_result.(BBn) :: nil <> nil).
+  {
+    pose proof not_nil_r BasicBlock BBgen_then_result.(BasicBlocks) (BBgen_then_result.(BBn) :: nil).
+    assert (BBgen_then_result.(BBn) :: nil <> nil).
+    {
+      intros contra. inversion contra.
+    }
+    specialize (H4 H5). tauto.
+  }
+  specialize (H3 tmp). clear tmp. unfold to_result in H2. rewrite H2 in H3. tauto.
+Qed.
 
 
 (*x在 l1 ++ l2中，那么必然在至少其中之一*)
