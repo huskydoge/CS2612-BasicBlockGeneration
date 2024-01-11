@@ -393,8 +393,10 @@ forall (c: cmd) (cmds: list cmd),
   P_inherit_not_jmp_to_self (c :: cmds).
 Proof.
   unfold P_inherit_not_jmp_to_self. unfold Q_inherit_not_jmp_to_self. intros.
-  
-Admitted.  (*yz*)
+  cbn[list_cmd_BB_gen]. specialize (H BBs BBnow BBnum H1). 
+  specialize (H0  ((cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks))  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)) ((cmd_BB_gen c BBs BBnow BBnum).(next_block_num)) H).
+  tauto.
+Qed. (*yz*)
 
 Section inherit_not_jmp_to_self_sound.
 
