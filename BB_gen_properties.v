@@ -759,6 +759,12 @@ Admitted. (*TODO @LYZ *)
 
 (*START：列表集合的一些性质 ==================================================================================================================================================================================================================== *)
 
+Lemma head_eq_prop:
+  forall (A: Type) (l1 l2: list A) (a b: A),
+  a::l1 = b::l2 -> a = b.
+Proof.
+  intros. inversion H. reflexivity.
+Qed.
 
 Lemma if_wont_be_nil:
   forall (e: expr) (c1 c2: list cmd) (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum : nat),
@@ -767,6 +773,47 @@ Lemma if_wont_be_nil:
   BBswo_ <> nil.
 Proof.
   intros. 
+  pose proof Q_add_BBs_in_generation_reserves_BB_sound (CIf e c1 c2) BBs BBnow BBnum.
+  unfold to_result in H0.
+  pose proof cut_eq_part_list_r BasicBlock ((cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BBn) :: nil) (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) (BBs ++
+  (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks)).
+  rewrite <- app_assoc in H1. pose proof H1 H0 as H1. clear H0.
+  rewrite H1 in H. apply cut_eq_part_list_l in H.
+  cbn[cmd_BB_gen] in H. simpl in H.
+  remember ({|
+              block_num := BBnow.(block_num);
+              commands := BBnow.(cmd);
+              jump_info := {|
+                jump_kind := CJump;
+                jump_dest_1 := BBnum;
+                jump_dest_2 := Some (S BBnum);
+                jump_condition := Some e |} |}) as BBnow_.
+  remember ({|
+            block_num := BBnum;
+            commands := nil;
+            jump_info := {|
+                         jump_kind := UJump;
+                         jump_dest_1 := S (S BBnum);
+                         jump_dest_2 := None;
+                         jump_condition := None |} |}) as BBnow_then.
+  remember ({|
+            block_num := S BBnum;
+            commands := nil;
+            jump_info := {|
+                         jump_kind := UJump;
+                         jump_dest_1 := S (S BBnum);
+                         jump_dest_2 := None;
+                         jump_condition := None |} |}) as BBnow_else.
+  remember (list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then
+  (S (S (S BBnum)))) as BBgen_then_result.
+  pose proof H.
+  apply head_eq_prop in H. rewrite <- H in H0.
+  assert (to_result BBgen_then_result ++
+          to_result
+          (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else
+            BBgen_then_result.(next_block_num)) = BBswo_). admit. (*TODO trivial *)
+  intros contra. rewrite contra in H2.
+  (*TODO appearant but cannot prove for now*)
 Admitted.
 
 
