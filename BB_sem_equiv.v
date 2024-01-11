@@ -641,7 +641,7 @@ Proof.
             pose proof not_nil_l BasicBlock BBswo_ (BBnow'_p :: BBs'_p) H2. tauto.
          ++ (*BBswo_的头就是BBthen！成立的！*)
             (*引理1: 从Heql中得到b就是head BBswo_*)
-            assert(tmp: BBswo_ <> nil). admit. (*TODO*)
+            assert(tmp: BBswo_ <> nil). pose proof if_wont_be_nil e c1 c2 BBs BBswo_ BBnow BBnow'_ BBnum A3. tauto. 
             pose proof extract_head_from_list BasicBlock BBswo_ (BBnow'_p :: BBs'_p) l b empty_block tmp Heql as head_wo.
             clear.
             (*引理2: 用A3得到BBswo_的头就是BBthen*)
