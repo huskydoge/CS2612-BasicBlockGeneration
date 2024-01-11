@@ -71,7 +71,7 @@ Lemma eli_nil:
   l1 ++ a::nil = l2 ++ a::nil -> l1 = l2.
 Proof.
   intros.
-Admitted.
+Admitted. (*px*)
 
 
 Lemma cut_eq_part_list_r:
@@ -737,16 +737,7 @@ Lemma if_wont_be_nil:
   ->
   BBswo_ <> nil.
 Proof.
-  (*TODO*)
-Admitted.
-
-Lemma while_wont_be_nil:
-  forall (e: expr) (c1 c2: list cmd) (BBs BBswo_: list BasicBlock) (BBnow BBnow'_: BasicBlock) (BBnum : nat),
-  (cmd_BB_gen (CWhile c1 e c2) BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBnow'_ :: BBswo_
-  ->
-  BBswo_ <> nil.
-Proof.
-  (*TODO*)
+  (*TODO  px*)
 Admitted.
 
 
@@ -895,7 +886,7 @@ Proof.
     pose proof add_BBs_in_generation_reserves_BB cmds ((cmd_BB_gen a nil BBnow BBnum).(BasicBlocks)) (cmd_BB_gen a nil BBnow BBnum).(BBn) (cmd_BB_gen a nil BBnow BBnum).(next_block_num) as BBs_simpl.
     unfold to_result in BBs_simpl. rewrite BBs_simpl.
     clear BBs_simpl.
-   
+   (*px*)
 Admitted.
 
 (*END: BBgen Head =========================================================================================================================================================================================*)
@@ -1431,7 +1422,7 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CWhile c1 e c2).
 Proof.
-Admitted.
+Admitted. (*DONT CARE, 老师说while分支都不管*)
 
 Lemma length_eq : forall (A : Type) (xs ys : list A),
   xs = ys -> length xs = length ys.

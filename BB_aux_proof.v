@@ -28,7 +28,7 @@ Lemma never_go_wrong:
    forall (e: EDenote) (s: state),
   (exists (i : int64), (e).(nrm) s i).
 Proof.
-Admitted.
+Admitted. (*DONT CARE*)
 
 Lemma true_or_false:
   forall (e: EDenote) (s: state),
@@ -323,14 +323,54 @@ Proof.
 Qed.
 
 
+(*先走一步，再走n步和先走n步，再走1步是一样的！*)
+Lemma S_pos_move1:
+  forall (a: nat) (bs1 bs2: BB_state) (BBs: list BasicBlock),
+  ((Bnrm (BB_sem_union BBs) ∘ Iter_nrm_BBs_n (BB_sem_union BBs) a) bs1 bs2 :Prop) 
+  -> 
+  ((Iter_nrm_BBs_n (BB_sem_union BBs) (a) ∘ Bnrm (BB_sem_union BBs) ) bs1 bs2 :Prop).
+Proof.
+  intros. 
+  revert bs1 bs2 H. induction a.
+  - intros. simpl. sets_unfold. sets_unfold in H. simpl in H. exists bs1. split. tauto. 
+    destruct H. destruct H. sets_unfold in H0. rewrite H0 in H. tauto.
+  - intros. sets_unfold in H. my_destruct H. simpl in H0. specialize IHa with x bs2. specialize (IHa H0). clear H0.
+    sets_unfold. sets_unfold in IHa. my_destruct IHa. exists x0. split.
+    + simpl. sets_unfold. exists x. split. apply H. tauto.
+    + tauto.
+Qed.
+
+
+(*先走一步，再走n步和先走n步，再走1步是一样的！*)
+Lemma S_pos_move2:
+  forall (a: nat) (bs1 bs2: BB_state) (BBs: list BasicBlock),
+  ((Iter_nrm_BBs_n (BB_sem_union BBs) (a) ∘ Bnrm (BB_sem_union BBs) ) bs1 bs2 :Prop) 
+  -> 
+  ((Bnrm (BB_sem_union BBs) ∘ Iter_nrm_BBs_n (BB_sem_union BBs) a) bs1 bs2 :Prop).
+Proof.
+  intros. 
+  revert bs1 bs2 H. induction a.
+  - intros. simpl. sets_unfold. sets_unfold in H. simpl in H. my_destruct H. rewrite <- H in H0. exists bs2. split. tauto. tauto. 
+  - intros. sets_unfold in H. my_destruct H. 
+    simpl in H. sets_unfold in H. my_destruct H. 
+    specialize (IHa x0 bs2).
+    assert (t: (Iter_nrm_BBs_n (BB_sem_union BBs) a ∘ Bnrm (BB_sem_union BBs)) x0 bs2: Prop). {
+      sets_unfold. exists x. split. tauto. tauto.
+    } 
+    specialize (IHa t). sets_unfold. exists x0. split.
+    -- tauto.
+    -- simpl. tauto.
+Qed.
+
+
 Lemma Iter_nrm_BBs_n_inv_expansion:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a: nat),
     Iter_nrm_BBs_n (BB_sem_union BBs) (S a) bs1 bs2 ->
     exists i, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 i /\ Bnrm (BB_sem_union BBs) i bs2.
 Proof.
-  intros. simpl in H. sets_unfold in H.
-  (*TODO*)
-Admitted.
+  intros. simpl in H. 
+  apply S_pos_move1. tauto.
+Qed.
 
 
 Lemma BBs_list_sem_exists_BB_bs1_x_tl:
@@ -738,7 +778,7 @@ Qed.
 Lemma No_err_and_inf_for_expr:
   forall (e: expr) (bs: BB_state),
   (exists i : int64, EDenote.nrm (eval_expr e) (st bs) i).
-Admitted.
+Admitted. (*DONTCARE*)
 
 (*如果bs1的num不在BBs的num中，那bs1不能作为BBs单步语义的起点！*)
 Lemma cannot_start_with:
@@ -1842,14 +1882,46 @@ Proof.
   - contradiction.
   (*TODO! IMPORTANT! lyz*)
 Admitted.
+ 
 
+
+Lemma Iter_nrm_BBs_n_add_expansion_tran:
+  forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a b: nat),
+  (exists x, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 x /\ Iter_nrm_BBs_n (BB_sem_union BBs) (S b) x bs2)
+    <-> (exists x, Iter_nrm_BBs_n (BB_sem_union BBs) (S a) bs1 x /\ Iter_nrm_BBs_n (BB_sem_union BBs) b x bs2).
+Proof.
+  intros.
+  split.
+  - intros. my_destruct H. my_destruct H. simpl in H0. sets_unfold in H0. destruct H0 as [mid cond].
+    exists mid. destruct cond as [cond1 cond2]. 
+    assert (Iter_nrm_BBs_n (BB_sem_union BBs) (S a) bs1 mid). {
+      simpl. apply S_pos_move2. sets_unfold. exists x. split; try tauto.
+    }
+     split.
+    + tauto.
+    + tauto.
+  - intros. my_destruct H. my_destruct H. simpl in H0. sets_unfold in H0. destruct H0 as [mid cond].
+    exists mid. destruct cond as [cond1 cond2]. 
+    assert (Iter_nrm_BBs_n (BB_sem_union BBs) (S b) mid bs2). {
+      simpl. apply S_pos_move1. sets_unfold. exists x. split; try tauto.
+    }
+     split.
+    + tauto.
+    + tauto.
 
 Lemma Iter_nrm_BBs_n_add_expansion:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a b: nat),
-    Iter_nrm_BBs_n (BB_sem_union BBs) (add a b) bs1 bs2
+    Iter_nrm_BBs_n (BB_sem_union BBs) (a + b) bs1 bs2
     <-> (exists x, Iter_nrm_BBs_n (BB_sem_union BBs) a bs1 x /\ Iter_nrm_BBs_n (BB_sem_union BBs) b x bs2).
 Proof.
-  intros.
+  intros. 
+  split.
+  - intros.
+    revert a b H. 
+    induction a. 
+    + intros. simpl in H. exists bs1. split. simpl. sets_unfold. tauto. apply H.
+    + intros. simpl in H. sets_unfold in H. specialize (IHa (S b)). destruct H as [? [? ?]]. exists x.
+      exists x0. split. apply H. apply IHa.
   Admitted.
 
 Lemma an_over_pass_bridge_reverse:
