@@ -490,7 +490,43 @@ Lemma Q_inherit_lt_num_prop_mutual_if:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
     P_inherit_lt_num_prop_mutual c1 -> P_inherit_lt_num_prop_mutual c2 -> Q_inherit_lt_num_prop_mutual (CIf e c1 c2).
 Proof.
-  Admitted.
+  intros. unfold P_inherit_lt_num_prop_mutual in H. 
+  unfold P_inherit_lt_num_prop_mutual in H0.
+  unfold Q_inherit_lt_num_prop_mutual. intros.
+  cbn[cmd_BB_gen]. simpl.
+  remember ({|
+              block_num := S BBnum;
+              commands := nil;
+              jump_info := {|
+                          jump_kind := UJump;
+                          jump_dest_1 := S (S BBnum);
+                          jump_dest_2 := None;
+                          jump_condition := None |} |}) as BBnow_else.
+  remember ({|
+              block_num := BBnum;
+              commands := nil;
+              jump_info := {|
+                            jump_kind := UJump;
+                            jump_dest_1 := S (S BBnum);
+                            jump_dest_2 := None;
+                            jump_condition := None |} |}) as BBnow_then.
+  remember ((list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then (S (S (S BBnum)))).(next_block_num)) as BBnum'.
+  specialize (H0 nil BBnow_else BBnum'). 
+  specialize (H nil BBnow_then (S (S (S BBnum)))).
+
+  assert ((BBnum < BBnum')%nat). {
+    assert ((BBnow_then.(block_num) < S (S (S BBnum)))%nat). {
+      subst BBnow_then. simpl. lia.
+    }
+    pose proof H H2 as H. lia.
+  }
+
+  assert ((BBnum' <= (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBnum').(next_block_num))%nat). {
+    apply H0. subst BBnow_else. simpl. clear H0. admit.
+  }
+  lia.
+Admitted.
+
 
 Lemma Q_inherit_lt_num_prop_mutual_while:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
