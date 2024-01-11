@@ -396,7 +396,7 @@ Proof.
   cbn[list_cmd_BB_gen]. specialize (H BBs BBnow BBnum H1). 
   specialize (H0  ((cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks))  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)) ((cmd_BB_gen c BBs BBnow BBnum).(next_block_num)) H).
   tauto.
-Qed. (*yz*)
+Qed. 
 
 Section inherit_not_jmp_to_self_sound.
 
@@ -508,7 +508,8 @@ Admitted. (*DONT CARE for WHILE*)
 Lemma P_inherit_lt_num_prop_mutual_nil:
   P_inherit_lt_num_prop_mutual nil.
 Proof.
-  Admitted. (*yz*)
+  unfold P_inherit_lt_num_prop_mutual. intros. simpl. lia.
+Qed. 
 
 Lemma P_inherit_lt_num_prop_mutual_cons:
   forall (c: cmd) (cmds: list cmd),
