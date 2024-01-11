@@ -728,8 +728,8 @@ Proof.
         rewrite <- HeqBBnow_mid in tran. rewrite A4 in tran. tauto. 
       }
 
-      assert (BBnow_mid.(block_num) <>
-      jump_dest_1 BBnow_mid.(jump_info)) as T3. {
+      assert (gt BBnow_mid.(block_num) 
+      (jump_dest_1 BBnow_mid.(jump_info))) as T3. {
         pose proof inherit_not_jmp_to_self BBs BBnow BBnum (CIf e c1 c2) H1 as tran.
         rewrite <- HeqBBnow_mid in tran.  tauto.
       }

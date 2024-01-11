@@ -347,13 +347,13 @@ Qed.
 
 Definition Q_inherit_not_jmp_to_self (c: cmd): Prop :=
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
-    (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
-    (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info).
+    (gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))) ->
+    gt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info)).
 
 Definition P_inherit_not_jmp_to_self(cmds: list cmd): Prop :=
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
-  (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
-  (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(jump_info).
+  (gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))) ->
+  gt (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(jump_info)).
 
 Lemma Q_inherit_not_jmp_to_self_asgn: 
   forall  (x: var_name) (e: expr),
@@ -444,8 +444,8 @@ Qed.
 (*如果BBnow不会jmp到他自己，那么其继承者也不会*)
 Lemma inherit_not_jmp_to_self:
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
-    (BBnow.(block_num) <> jump_dest_1 BBnow.(jump_info)) ->
-    (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) <> jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info).
+    gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info)) ->
+    gt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info)).
 Proof.
   pose proof inherit_not_jmp_to_self_soundness_correct.
   intros.
