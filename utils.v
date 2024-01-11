@@ -127,9 +127,10 @@ Lemma eli_nil:
   forall(A: Type) (l1 l2: list A)(a: A),
   l1 ++ a::nil = l2 ++ a::nil -> l1 = l2.
 Proof.
-  intros.
-Admitted. 
-
+    intros A l1 l2 a H.
+    apply app_inv_tail in H.
+    assumption.
+Qed.
 
 Lemma cut_eq_part_list_r:
   forall (A: Type) (l1 l2 l3: list A),
