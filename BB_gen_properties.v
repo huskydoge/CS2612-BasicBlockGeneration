@@ -1836,7 +1836,6 @@ Proof.
     apply H.
 Qed.
 
-
 (* Main range without last ==================== *)
 
 Lemma Q_if_BBgen_range_wo:
@@ -2133,18 +2132,19 @@ Proof.
         ** unfold unit_set in case5. subst BBnow'. cbn [jump_info]. right. cbn [jump_dest_2]. rewrite case5. reflexivity. 
   }
 
-  assert (head_then: (hd empty_block (then_delta)).(block_num) = BB_then_now.(block_num)).
-  {  
-    pose proof BBgen_head_prop_wo c1 BB_then_now then_start_num. rewrite <- H. reflexivity.
-    assert((list_cmd_BB_gen cmd_BB_gen c1 nil BB_then_now then_start_num).(BasicBlocks) <> nil). admit. (* 经过老师允许，我们不考虑If中c1或c2为空的情况*) 
-    tauto.
+  assert (head_then: ((then_delta <> nil -> (hd empty_block (then_delta)).(block_num) = BB_then_now.(block_num)))).
+  { 
+    intros. 
+    pose proof BBgen_head_prop_wo c1 BB_then_now then_start_num. rewrite <- H0. reflexivity.
+    subst then_delta. subst then_res. simpl. tauto.
   }
 
-  assert (head_else: (hd empty_block (else_delta)).(block_num) = BB_else_now.(block_num)).
-  {  
-    pose proof BBgen_head_prop_wo c2 BB_else_now then_end_num. rewrite <- H. reflexivity.
-    assert((list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num).(BasicBlocks) <> nil). admit. (*经过老师允许，我们不考虑If中c1或c2为空的情况*) 
-    tauto.
+
+  assert (head_else: ((else_delta <> nil -> (hd empty_block (else_delta)).(block_num) = BB_else_now.(block_num)))).
+  { 
+    intros. 
+    pose proof BBgen_head_prop_wo c2 BB_else_now then_end_num. rewrite <- H0. reflexivity.
+    subst else_delta. subst else_res. simpl. tauto.
   }
 
   assert (else_prop: (exists n, BBnum_set (tl else_delta) n) -> lt then_end_num endnum).
@@ -2228,7 +2228,18 @@ Proof.
         specialize (H H0). subst then_res. simpl in H. lia.
       ** pose proof In_head_or_body BasicBlock x empty_block then_delta tail.
         destruct H as [head | body].
-        rewrite <- head in head_then. rewrite head_then in cond2.  subst BB_then_now. simpl in cond2. lia.
+        rewrite <- head in head_then.
+        destruct then_delta.
+        --- simpl in tail. tauto.
+        ---
+        assert(t: b :: then_delta <> nil). {
+          pose proof (nil_cons).
+          specialize (H BasicBlock b BBdelta). intros contra.
+          rewrite contra in tail. tauto.  
+        }
+        specialize (head_then t). 
+        rewrite head_then in cond2.  subst BB_then_now. simpl in cond2. lia.
+        ---
           assert(temp: BBnum_set (tl then_delta) n).
           {
             unfold BBnum_set. exists x. split. tauto. tauto.
@@ -2255,12 +2266,23 @@ Proof.
       specialize (H H1). subst else_res. simpl in H. lia.
       **  pose proof In_head_or_body BasicBlock x empty_block else_delta tail.
           destruct H as [head | body].
-          rewrite <- head in head_else. rewrite head_else in cond2.  subst BB_else_now. simpl in cond2. lia.
-         assert(temp: BBnum_set (tl else_delta) n).
-          {
-            unfold BBnum_set. exists x. split. tauto. tauto.
+          rewrite <- head in head_else.
+          destruct else_delta.
+          --- simpl in tail. tauto.
+          ---
+          assert(t: b :: else_delta <> nil). {
+            pose proof (nil_cons).
+            specialize (H BasicBlock b BBdelta). intros contra.
+            rewrite contra in tail. tauto.  
           }
-          specialize (c2_prop1 temp).  lia.
+          specialize (head_else t). 
+          rewrite head_else in cond2.  subst BB_then_now. simpl in cond2. lia.
+          ---
+            assert(temp: BBnum_set (tl else_delta) n).
+            {
+              unfold BBnum_set. exists x. split. tauto. tauto.
+            }
+            specialize (c2_prop1 temp). lia.
 
   (*branch 2: 证明去掉头部的number后， BBdelta的所有num都小于endnum*) 
   - unfold all_lt. intros. sets_unfold in separate_delta_num.
@@ -2298,12 +2320,23 @@ Proof.
 
       ** pose proof In_head_or_body BasicBlock x empty_block then_delta tail.
       destruct H as [head | body].
-      rewrite <- head in head_then. rewrite head_then in cond2.  subst BB_then_now. simpl in cond2. lia.
-          assert(temp: BBnum_set (tl then_delta) n).
-          {
-            unfold BBnum_set. exists x. split. tauto. tauto.
-          }
-          specialize (c1_prop2 temp). lia.
+      rewrite <- head in head_then.
+      destruct then_delta.
+      --- simpl in tail. tauto.
+      ---
+      assert(t: b :: then_delta <> nil). {
+        pose proof (nil_cons).
+        specialize (H BasicBlock b BBdelta). intros contra.
+        rewrite contra in tail. tauto.  
+      }
+      specialize (head_then t). 
+      rewrite head_then in cond2.  subst BB_then_now. simpl in cond2. lia.
+      ---
+        assert(temp: BBnum_set (tl then_delta) n).
+        {
+          unfold BBnum_set. exists x. split. tauto. tauto.
+        }
+        specialize (c1_prop2 temp). lia.
     + destruct case2 as [x [cond1 cond2]].
       unfold all_lt in c2_prop2. specialize (c2_prop2 n).
       pose proof In_pre_or_tail BasicBlock x else_res.(BBn) else_delta cond1.
@@ -2325,13 +2358,24 @@ Proof.
 
         specialize (H H0). subst else_res. simpl in H. lia.
       ** pose proof In_head_or_body BasicBlock x empty_block else_delta tail.
-          destruct H as [head | body].
-          rewrite <- head in head_else. rewrite head_else in cond2.  subst BB_else_now. simpl in cond2. lia.
-        assert(temp: BBnum_set (tl else_delta) n).
+        destruct H as [head | body].
+        rewrite <- head in head_else.
+        destruct else_delta.
+        --- simpl in tail. tauto.
+        ---
+        assert(t: b :: else_delta <> nil). {
+          pose proof (nil_cons).
+          specialize (H BasicBlock b BBdelta). intros contra.
+          rewrite contra in tail. tauto.  
+        }
+        specialize (head_else t). 
+        rewrite head_else in cond2.  subst BB_else_now. simpl in cond2. lia.
+        ---
+          assert(temp: BBnum_set (tl else_delta) n).
           {
             unfold BBnum_set. exists x. split. tauto. tauto.
           }
-          specialize (c2_prop2 temp).  lia.
+          specialize (c2_prop2 temp). lia.
 
   (*branch 3: 证明BBdelta的所有jump dest都在[startnum, endnum]*)
   - clear c1_prop1 c1_prop2 c2_prop1 c2_prop2.
@@ -2352,31 +2396,31 @@ Proof.
     +   (*用c1_prop3*)
       destruct case2 as [x [cond1 cond2]]. 
       unfold BBjmp_dest_set in c1_prop3. specialize (c1_prop3 a). sets_unfold in c1_prop3.
+      pose proof In_pre_or_tail BasicBlock x then_res.(BBn) then_delta cond1.
+      destruct H as [head | tail].
+      * rewrite head in cond2. pose proof JmpInfo_inherit_for_list nil BB_then_now then_start_num c1. 
+        subst then_res. rewrite H in cond2. subst BB_then_now. simpl in cond2.
+        destruct cond2. lia. discriminate H0.
+      * 
       assert (temp: (exists BB : BasicBlock, In BB then_delta /\ (jump_dest_1 BB.(jump_info) = a \/ jump_dest_2 BB.(jump_info) = Some a))).
       {
         exists x. split. 
-        - pose proof In_pre_or_tail BasicBlock x then_res.(BBn) then_delta cond1.
-          destruct H as [head | tail].
-          ** admit. (*矛盾*)
-          ** tauto. 
-        - tauto.
+        tauto. tauto. 
       }
       specialize (c1_prop3 temp).  unfold section in c1_prop3.  lia.
     + (*用c2_prop3*)
       destruct case3 as [x [cond1 cond2]].
       unfold BBjmp_dest_set in c2_prop3. specialize (c2_prop3 a). sets_unfold in c2_prop3.
+      pose proof In_pre_or_tail BasicBlock x else_res.(BBn) else_delta cond1. destruct H as [head | tail].
+      * rewrite head in cond2. pose proof JmpInfo_inherit_for_list nil BB_else_now then_end_num c2. 
+      subst else_res. rewrite H in cond2. subst BB_else_now. simpl in cond2.
+      destruct cond2. lia. discriminate H0.
+      *
       assert (temp: (exists BB : BasicBlock, In BB else_delta /\ (jump_dest_1 BB.(jump_info) = a \/ jump_dest_2 BB.(jump_info) = Some a))).
       {
-        exists x. split.
-        - pose proof In_pre_or_tail BasicBlock x else_res.(BBn) else_delta cond1.
-          destruct H as [head | tail].
-          ** admit. (*矛盾*)
-          ** tauto.
-        - tauto.
+        exists x. split. tauto. tauto.
       }
-      specialize (c2_prop3 temp).
-      *  
-        unfold section in c2_prop3.  lia.
+      specialize (c2_prop3 temp).  unfold section in c2_prop3.  lia.
     + lia.
     + lia.
   - clear c1_prop1 c1_prop2 c2_prop1 c2_prop2.
@@ -2397,34 +2441,33 @@ Proof.
   +   (*用c1_prop3*)
     destruct case2 as [x [cond1 cond2]]. 
     unfold BBjmp_dest_set in c1_prop3. specialize (c1_prop3 a). sets_unfold in c1_prop3.
+    pose proof In_pre_or_tail BasicBlock x then_res.(BBn) then_delta cond1. destruct H as [head | tail].
+    * rewrite head in cond2. pose proof JmpInfo_inherit_for_list nil BB_then_now then_start_num c1. 
+      subst then_res. rewrite H in cond2. subst BB_then_now. simpl in cond2.
+      destruct cond2. lia. discriminate H0.
+    *
     assert (temp: (exists BB : BasicBlock, In BB then_delta /\ (jump_dest_1 BB.(jump_info) = a \/ jump_dest_2 BB.(jump_info) = Some a))).
     {
-      exists x. split. 
-      - pose proof In_pre_or_tail BasicBlock x then_res.(BBn) then_delta cond1.
-        destruct H as [head | tail].
-        ** admit. (*矛盾*)
-        ** tauto. 
-      - tauto.
+      exists x. split. tauto. tauto. 
     }
     specialize (c1_prop3 temp).  unfold section in c1_prop3.  lia.
   + (*用c2_prop3*)
     destruct case3 as [x [cond1 cond2]].
     unfold BBjmp_dest_set in c2_prop3. specialize (c2_prop3 a). sets_unfold in c2_prop3.
+    pose proof In_pre_or_tail BasicBlock x else_res.(BBn) else_delta cond1. destruct H as [head | tail].
+
+    * rewrite head in cond2. pose proof JmpInfo_inherit_for_list nil BB_else_now then_end_num c2. 
+      subst else_res. rewrite H in cond2. subst BB_else_now. simpl in cond2.
+      destruct cond2. lia. discriminate H0.
+    *
     assert (temp: (exists BB : BasicBlock, In BB else_delta /\ (jump_dest_1 BB.(jump_info) = a \/ jump_dest_2 BB.(jump_info) = Some a))).
     {
-      exists x. split.
-      - pose proof In_pre_or_tail BasicBlock x else_res.(BBn) else_delta cond1.
-        destruct H as [head | tail].
-        ** admit. (*矛盾*)
-        ** tauto.
-      - tauto.
+      exists x. split. tauto. tauto. 
     }
-    specialize (c2_prop3 temp).
-    *  
-      unfold section in c2_prop3.  lia.
+    specialize (c2_prop3 temp). unfold section in c2_prop3.  lia.
   + lia.
   + lia.
-Admitted.
+Qed.
 
 Lemma Q_while_BBgen_range_wo:
 forall (e: expr) (c1 c2: list cmd),
