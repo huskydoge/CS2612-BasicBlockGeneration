@@ -1916,9 +1916,18 @@ Proof.
           assert(b0.(block_num) = BBnow'.(block_num)). 
           {
              pose proof BBgen_head_prop_wo cmds BBnow' endnum'.
-             destruct H21. rewrite H9. admit.
-            
+             admit.   
           }
+          simpl in H0. destruct H20.
+          rewrite <- H20 in k2.
+          rewrite H21 in k2.
+          admit. (* prove num: BBnow' >= startnum by if *)
+          unfold all_ge in H0. specialize (H0 n). unfold BBnum_set in H0.
+          assert((exists BB : BasicBlock, In BB (BBwo_last'' ++ BBnow'' :: nil) /\ BB.(block_num) = n)).
+          {
+          exists x. tauto.
+          }
+          specialize (H0 H22). lia.
 
   * admit. (* DONT CARE ABOUT WHILE *)
   + split. 
