@@ -566,10 +566,26 @@ Proof.
   simpl. 
   unfold Q_inherit_lt_num_prop_mutual in H.
   specialize (H BBs BBnow BBnum H1).
-  remember (cmd_BB_gen c BBs BBnow BBnum).(next_block_num) as midnum.
   unfold P_inherit_lt_num_prop_mutual in H0.
+  remember (cmd_BB_gen c BBs BBnow BBnum).(next_block_num) as midnum.
+
   specialize (H0 ((cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks)) ((cmd_BB_gen c BBs BBnow BBnum).(BBn)) midnum).
-  assert(((cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) < midnum)%nat).
+
+  assert(((cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) < midnum)%nat). {
+    simpl.
+    destruct c.
+    - simpl. simpl in Heqmidnum. lia.
+    - transitivity (S (S BBnum)).
+      assert(((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)).(block_num) = BBnum). {
+        cbn [cmd_BB_gen]. simpl. reflexivity. 
+      }
+      rewrite H2. lia.
+      simpl in Heqmidnum.  admit.
+      }
+      specialize (H0 H2).
+      lia.
+Admitted.
+
 
 
 
@@ -622,6 +638,8 @@ Lemma inherit_lt_num_prop:
     (lt BBnow.(block_num) BBnum) -> (lt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (cmd_BB_gen c BBs BBnow BBnum).(next_block_num)).
 Proof.
 Admitted.
+
+
 
 
 Lemma bbnum_le_next_num:
