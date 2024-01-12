@@ -97,7 +97,7 @@ Definition P_BBgen_range_wo (cmd_BB_gen: cmd -> list BasicBlock -> BasicBlock ->
     basicblocks = BBs ++ BBdelta ->
   (BBnow.(block_num) < startnum)%nat ->
   (
-    all_gt (BBnum_set(tl BBdelta)) startnum /\
+    all_ge (BBnum_set(tl BBdelta)) startnum /\
     all_lt (BBnum_set(tl BBdelta)) endnum /\ 
     BBjmp_dest_set BBdelta ⊆  (section startnum endnum)
   ).
@@ -384,6 +384,25 @@ Proof.
 Qed.
 
 
+(*如果cmd是CIf，那么新生成的BBs的最后一个Block，也就是BBnext，它的cmd为空*)
+Lemma if_cmdgen_prop1:
+  forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum : nat),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(cmd) = nil.
+Proof.
+  intros.
+  cbn [cmd_BB_gen]. simpl. reflexivity.
+Qed.
+
+(*如果cmd是CIf，那么新生成的BBs的最后一个就是BBnext，它的num就是 BBnum*)
+Lemma if_BBn_num_prop:
+  forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
+  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(block_num) = BBnum.
+Proof. 
+  intros.
+  cbn [cmd_BB_gen]. simpl. reflexivity.
+Qed.
+
+
 (* 对于一串cmds，在生成基本块的时候，BBs ++ 不传BBs得到的结果 = 传BBs的结果；BBs是已经产生的基本块列表, 排除BBn的版本*)
 Lemma add_BBs_in_generation_reserves_BB_wo:
 forall (cmds: list cmd)(BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
@@ -651,6 +670,16 @@ Proof.
       pose proof inherit_lt_num_prop BBs BBnow BBnum (CWhile pre e body) H.
       specialize (IHc H3). lia.
 Qed.
+
+Lemma bbnum_le_next_num_single_cmd:
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    (lt BBnow.(block_num) BBnum) -> (le BBnum (cmd_BB_gen c BBs BBnow BBnum).(next_block_num) ).
+Proof.
+  intros. destruct c. 
+  - simpl. lia.
+  - admit. (*TODO*)
+  - admit. (*DONT CARE ABOUT WHILE*)
+Admitted.
 
 
 
@@ -2576,9 +2605,167 @@ Lemma P_BBgen_con_wo:
     P_BBgen_range_wo cmd_BB_gen cmds ->
     P_BBgen_range_wo cmd_BB_gen (c::cmds).
 Proof.
-  intros. unfold Q_BBgen_range_wo in H. unfold P_BBgen_range_wo. intros.
-  remember ((cmd_BB_gen c BBs BBnow startnum).(next_block_num)) as midnum.
-  admit.
+  intros.
+  unfold P_BBgen_range_wo in H0.
+  unfold Q_BBgen_range_wo in H.
+  unfold P_BBgen_range_wo.
+  intros.
+  rename H4 into lt_prop.
+  set (endnum' := (cmd_BB_gen c BBs BBnow startnum).(next_block_num)).
+  set (BBwo_last' := (cmd_BB_gen c nil BBnow startnum).(BasicBlocks)).
+  set (BBnow' := (cmd_BB_gen c BBs BBnow startnum).(BBn)).
+  set (BBdelta' := BBwo_last' ++ BBnow'::nil).
+  assert((cmd_BB_gen c BBs BBnow startnum).(BasicBlocks) = BBs ++ BBwo_last').
+  {
+    pose proof cmd_BB_delta c BBs BBwo_last' BBnow startnum. apply H4. tauto.
+  }
+    assert(to_result(cmd_BB_gen c BBs BBnow startnum) = BBs ++ BBdelta').
+  {
+    subst BBdelta'.
+    pose proof cmd_BB_delta c BBs BBwo_last' BBnow startnum. 
+    unfold to_result. rewrite H5. subst BBnow'. rewrite <- app_assoc. reflexivity. tauto.
+  }
+  specialize (H startnum endnum' BBs BBnow BBwo_last' H1). destruct H. tauto. tauto. tauto.
+  set (BBwo_last'' := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow' endnum').(BasicBlocks)).
+  set (BBnow'' := (list_cmd_BB_gen cmd_BB_gen cmds (BBs++BBwo_last') BBnow' endnum').(BBn)).
+  set (BBdelta'' := BBwo_last'' ++ BBnow''::nil).
+  specialize (H0 endnum' endnum (BBs++BBwo_last') BBnow' BBwo_last'').
+  assert(jump_kind BBnow'.(jump_info) = UJump /\ jump_dest_2 BBnow'.(jump_info) = None).
+  {
+    pose proof JmpInfo_inherit BBs BBnow startnum c. subst BBnow'. rewrite H7. tauto.
+  }
+  assert(endnum = (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBwo_last') BBnow' endnum').(next_block_num)).
+  {
+    cbn[list_cmd_BB_gen] in H2. subst endnum' BBnow'. rewrite H2. 
+    rewrite <- H4. reflexivity.
+  }
+  assert((list_cmd_BB_gen cmd_BB_gen cmds nil BBnow' endnum').(BasicBlocks) = BBwo_last'').
+  {
+    tauto.
+  }
+  assert(to_result (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBwo_last') BBnow' endnum') = (BBs ++ BBwo_last') ++ BBdelta'').
+  {
+    subst BBdelta''.
+    pose proof list_cmd_BB_delta cmds (BBs++BBwo_last') BBwo_last'' BBnow' endnum'.
+    unfold to_result.
+    specialize (H10 H9).
+    rewrite H10.
+    subst BBnow''.
+    rewrite app_assoc.
+    reflexivity.
+  }
+
+  assert((list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBwo_last') BBnow' endnum').(BasicBlocks) = (BBs ++ BBwo_last') ++ BBwo_last'').
+  {
+    unfold to_result in H10. subst BBdelta''. subst BBnow''. 
+    pose proof cut_eq_part_list_r BasicBlock as key.
+    specialize (key ((list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBwo_last') BBnow' endnum').(BBn) :: nil)).
+    specialize (key (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBwo_last') BBnow' endnum').(BasicBlocks)).
+    specialize (key ((BBs ++ BBwo_last') ++ BBwo_last'')).
+    rewrite app_assoc_reverse in key. specialize (key H10).
+    tauto.
+  }
+  clear H10. rename H11 into H10.
+
+  assert((BBnow'.(block_num) < endnum')%nat).
+  {
+    pose proof inherit_lt_num_prop BBs BBnow startnum c lt_prop. 
+    subst BBnow'.
+    subst endnum'. tauto.
+  }
+  specialize (H0 H7 H8 H10 H11). split.
+  assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BasicBlocks) = BBs ++ BBwo_last' ++ BBwo_last'').
+{
+   cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+   pose proof list_cmd_BB_delta cmds (BBs++BBwo_last') BBwo_last'' ((cmd_BB_gen c BBs BBnow startnum).(BBn)) ((cmd_BB_gen c BBs BBnow startnum).(next_block_num)) H9.
+   rewrite app_assoc. tauto.
+}
+  assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BBn) = BBnow'').
+{
+  cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+  tauto.
+}
+  assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(next_block_num) = endnum).
+{
+  cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+  rewrite H8. tauto.
+}
+(* properties on delta, wo_last and now*)
+  assert(BBdelta = BBwo_last' ++ BBwo_last'').
+{
+  assert(BBs ++ BBwo_last' ++ BBwo_last'' = BBs ++ BBdelta).
+  rewrite <- H3. rewrite app_assoc.  rewrite app_assoc in H12.
+  rewrite <- H12. reflexivity.
+  apply app_inv_head in H15.
+  subst BBdelta''. rewrite H15. tauto.
+}
+  + rewrite H15.
+    destruct H0.
+     assert((endnum' >= startnum)%nat).
+  {
+    pose proof bbnum_le_next_num_single_cmd BBs BBnow startnum c lt_prop. lia.
+  }
+
+  assert(all_gt (BBnum_set (tl(BBwo_last'))) startnum).
+  {
+    clear H17 H15 H14 H13 H12 H11 H10 H9 H8 H7 H6 H5 H4 H3 H2 H1 H16 H0 BBdelta'' BBnow'' BBwo_last'' endnum.
+    tauto.
+  }
+    assert(all_ge (BBnum_set (tl(BBwo_last''))) startnum).
+  {
+    destruct BBwo_last''.
+    - simpl. unfold all_ge. intros. unfold BBnum_set in H19. destruct H19 as [bb [cond1 cond2]].
+      simpl in cond1. tauto.
+    - simpl. simpl in H0. unfold all_ge in H0. 
+      unfold all_ge. intros. specialize (H0 n H19). lia.
+  }
+  destruct BBwo_last'.
+  - simpl. destruct BBwo_last''. 
+    * simpl. tauto.
+    * simpl. subst BBdelta''. unfold all_gt in H19. unfold all_ge. intros. specialize (H19 n).
+      simpl in H19.
+      specialize (H19 H20). tauto.
+  - simpl. simpl in H18. subst BBdelta''.
+    unfold all_ge in H19. unfold all_ge. intros. unfold BBnum_set in H20. destruct H20 as [bb [cond1 cond2]].
+    pose proof in_app_iff as key. specialize (key BasicBlock BBwo_last' BBwo_last'' bb).
+    assert( In bb BBwo_last' \/ In bb BBwo_last''). apply key. tauto.
+    destruct H20.
+    * unfold all_gt in H18. specialize (H18 n). 
+      assert(BBnum_set BBwo_last' n ).
+      {
+        unfold BBnum_set. exists bb. split. tauto. tauto.
+      }
+      specialize (H18 H21). lia.
+    * unfold all_gt in H19. specialize (H19 n).
+      assert(BBnum_set (BBwo_last'') n ).
+      {
+        unfold BBnum_set. exists bb. split. tauto.
+        tauto.
+      }
+      destruct BBwo_last''.
+      -- unfold BBnum_set in H21. destruct H21 as [bb' [cond1' cond2']]. simpl in cond1'. tauto.
+      -- simpl in H19. 
+         unfold BBnum_set in H21. destruct H21 as [bb' [cond1' cond2']]. simpl in cond1'. destruct cond1' as [case1 | case2].
+         ** pose proof BBgen_head_prop_wo cmds BBnow' endnum' as k. simpl in k. 
+            assert(tmp: (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow' endnum').(BasicBlocks) <> nil).
+            {
+              rewrite H9. pose proof nil_cons as k1.
+              specialize (k1 BasicBlock b0 BBwo_last''). intros contra. rewrite contra in k1. tauto. 
+            }
+            specialize (k tmp). rewrite H9 in k. simpl in k. rewrite case1 in k. rewrite cond2' in k. rewrite k.
+            destruct c.  
+            --- simpl in H4. (*H4矛盾 px*) admit.
+            --- pose proof if_BBn_num_prop e c1 c2 BBs BBnow startnum. subst BBnow'. simpl. lia. 
+            --- admit. (*DONT CARE ABOUT WHILE*)
+
+
+         ** assert (tmp: BBnum_set BBwo_last'' n ). {
+            unfold BBnum_set. exists bb'. split. tauto. tauto.
+          }
+          specialize (H19 tmp). tauto.
+  + split. 
+     - admit.
+     - admit.
 Admitted. 
 
 Section BB_gen_range_wo_sound.
@@ -2909,25 +3096,6 @@ Proof.
   rewrite <- H1.
   pose proof BBnum_determined_by_cmds_single_cmd BBnow (CIf e c1 c2) BBs BBnum nil. rewrite H6.
   tauto.
-Qed.
-
-
-(*如果cmd是CIf，那么新生成的BBs的最后一个Block，也就是BBnext，它的cmd为空*)
-Lemma if_cmdgen_prop1:
-  forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum : nat),
-  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(cmd) = nil.
-Proof.
-  intros.
-  cbn [cmd_BB_gen]. simpl. reflexivity.
-Qed.
-
-(*如果cmd是CIf，那么新生成的BBs的最后一个就是BBnext，它的num就是 BBnum*)
-Lemma if_BBn_num_prop:
-  forall (e: expr) (c1 c2: list cmd) (BBs: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
-  (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn).(block_num) = BBnum.
-Proof. 
-  intros.
-  cbn [cmd_BB_gen]. simpl. reflexivity.
 Qed.
 
 
