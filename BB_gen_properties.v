@@ -1912,7 +1912,14 @@ Proof.
           rewrite <- k2.
           admit. (*TODO find a lemma to prove number: BBnow'' >= BBnow', BBnow' >= start_num(by property of if) *)
           tauto.
-          ++ admit.
+          ++ 
+          assert(b0.(block_num) = BBnow'.(block_num)). 
+          {
+             pose proof BBgen_head_prop_wo cmds BBnow' endnum'.
+             destruct H21. rewrite H9. admit.
+            
+          }
+
   * admit. (* DONT CARE ABOUT WHILE *)
   + split. 
   - rewrite H15. destruct H0. destruct H16.
