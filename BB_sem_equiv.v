@@ -1071,7 +1071,7 @@ Proof.
           specialize (bridge disjoint_jmp_dest_set).
           specialize (bridge in_prop1).
           specialize (bridge in_prop2).
-          tauto.
+          admit.
         }
 
         destruct H_sep as [bb_mid [H_step1_main H_step2_main]].

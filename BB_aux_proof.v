@@ -1919,7 +1919,7 @@ Proof.
 Admitted.
 
 
-Lemma an_over_pass_bridge: 
+(* Lemma an_over_pass_bridge: 
   forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
   bs1 <> bs2 ->
@@ -1960,7 +1960,7 @@ Proof.
       tauto.
   - contradiction.
   (*TODO *)
-Admitted.
+Admitted. *)
 
 
 (*对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
