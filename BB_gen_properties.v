@@ -604,6 +604,14 @@ Proof.
 Admitted.
 
 
+Lemma inherit_lt_num_prop_list:
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
+    (lt BBnow.(block_num) BBnum) -> (lt (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num)).
+Proof.
+  intros. (*TODO*)
+Admitted.
+
+
 
 
 Lemma bbnum_le_next_num:
@@ -2255,7 +2263,29 @@ Proof.
       (*如果一个元素在一个列表里，它要么是这个列表的第一个，要么就在后续部分里*)
       pose proof In_pre_or_tail BasicBlock x then_res.(BBn) then_delta cond1.
       destruct H as [head | tail].
-      ** rewrite head in cond2. admit.
+      ** rewrite head in cond2. rewrite <- cond2.
+          assert((BB_then_now.(block_num) < then_start_num)%nat). {
+          subst then_start_num. 
+          subst BB_then_now. cbn [block_num]. lia.
+          }
+          
+         assert(lt (then_res.(BBn)).(block_num) then_end_num). 
+         {
+            pose proof inherit_lt_num_prop_list nil BB_then_now then_start_num c1.
+
+            specialize (H0 H). subst then_res. subst then_end_num. simpl in H. lia.
+         }
+
+         pose proof bbnum_le_next_num nil BB_else_now then_end_num c2.
+          assert((BB_else_now.(block_num) < then_end_num)%nat). {
+          subst then_end_num. 
+          subst BB_else_now. cbn [block_num]. 
+          pose proof bbnum_le_next_num nil BB_then_now then_start_num c1 H.
+          subst then_res. lia.
+        }
+
+        specialize (H1 H2). subst else_res. simpl in H. lia.
+
       ** pose proof In_head_or_body BasicBlock x empty_block then_delta tail.
       destruct H as [head | body].
       rewrite <- head in head_then. rewrite head_then in cond2.  subst BB_then_now. simpl in cond2. lia.
@@ -2268,7 +2298,22 @@ Proof.
       unfold all_lt in c2_prop2. specialize (c2_prop2 n).
       pose proof In_pre_or_tail BasicBlock x else_res.(BBn) else_delta cond1.
       destruct H as [head | tail].
-      ** rewrite head in cond2. admit.
+      ** rewrite head in cond2. rewrite <- cond2.
+         pose proof inherit_lt_num_prop_list nil BB_else_now then_end_num c2.
+         
+         assert((BB_else_now.(block_num) < then_end_num)%nat). {
+          assert(lt BB_else_now.(block_num) then_start_num).
+          subst BB_else_now. simpl. lia.
+          assert(le then_start_num then_end_num).
+          pose proof bbnum_le_next_num nil BB_then_now then_start_num c1.
+          assert((BB_then_now.(block_num) < then_start_num)%nat). {
+            subst BB_then_now. cbn [block_num]. lia.
+          }
+          specialize (H1 H2). subst then_end_num. subst then_res. simpl in H0. lia.
+          lia.
+        }
+
+        specialize (H H0). subst else_res. simpl in H. lia.
       ** pose proof In_head_or_body BasicBlock x empty_block else_delta tail.
           destruct H as [head | body].
           rewrite <- head in head_else. rewrite head_else in cond2.  subst BB_else_now. simpl in cond2. lia.
@@ -2278,7 +2323,7 @@ Proof.
           }
           specialize (c2_prop2 temp).  lia.
 
-  (*branch 3: 证明BBdelta的所有jump dest都在[startnum, endnum] ∪ 预定跳转信息里*)
+  (*branch 3: 证明BBdelta的所有jump dest都在[startnum, endnum]*)
   - clear c1_prop1 c1_prop2 c2_prop1 c2_prop2.
     sets_unfold. intros. rename H into A. unfold BBjmp_dest_set in A. destruct A as [BB A]. destruct A as [A1 A2]. 
     unfold unit_set in separate_delta_jump_dest.
