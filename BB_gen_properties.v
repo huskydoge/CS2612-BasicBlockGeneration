@@ -2131,9 +2131,14 @@ Lemma neq_ssnum:
   forall (BBs BBswo_: list BasicBlock) (BB BBnow BBnow'_: BasicBlock) (BBnum: nat) (e: expr) (c1 c2: list cmd),
   (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) =
      BBs ++ BBnow'_ :: BBswo_ -> 
-     In BB BBswo_ -> (BB.(block_num) <> BBnum).
+     In BB BBswo_ -> 
+     jump_kind BBnow.(jump_info) = UJump /\ jump_dest_2 BBnow.(jump_info) = None ->
+     (BBnow.(block_num) < BBnum)%nat ->
+     (BB.(block_num) <> BBnum).
 Proof.
   intros.
+  rename H1 into jmp_prop. rename H2 into num_prop.
+
   pose proof Q_add_BBs_in_generation_reserves_BB_sound (CIf e c1 c2) BBs BBnow BBnum.
   unfold to_result in H1.
   pose proof cut_eq_part_list_r BasicBlock ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) (BBs ++
@@ -2147,7 +2152,7 @@ Proof.
               jump_info := {|
                             jump_kind := CJump;
                             jump_dest_1 := S BBnum;
-                            jump_dest_2 := None;
+                            jump_dest_2 := Some (S (S BBnum));
                             jump_condition := Some e |} |}) as BBnow'.
   remember ({|
             block_num := S BBnum;
