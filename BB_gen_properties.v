@@ -650,7 +650,7 @@ Lemma bbnow_num_le_bbn_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     (lt BBnow.(block_num) BBnum) -> le BBnow.(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num).
 Proof.
-Admitted. (*TODO*)
+Admitted. (* px *)
 
 
 (*END:  ====================================================================================================== *)
@@ -2411,7 +2411,7 @@ Lemma P_BBgen_con_wo:
     P_BBgen_range_wo cmd_BB_gen (c::cmds).
 Proof.
   (*TODO*)
-Admitted. (* yz *)
+Admitted. (* px *)
 
 Section BB_gen_range_wo_sound.
 
