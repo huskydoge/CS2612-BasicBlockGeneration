@@ -1927,7 +1927,7 @@ Proof.
           unfold all_ge in H0. specialize (H0 n). unfold BBnum_set in H0.
           assert((exists BB : BasicBlock, In BB (BBwo_last'' ++ BBnow'' :: nil) /\ BB.(block_num) = n)).
           {
-          exists x. tauto.
+          exists x. tauto. 
           }
           specialize (H0 H22). lia.
 
