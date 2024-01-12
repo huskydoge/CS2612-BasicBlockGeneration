@@ -1035,7 +1035,12 @@ Proof.
   assert (c2_aux3 : (to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num) = else_delta)). subst else_delta. subst else_res. unfold to_result. pose proof add_BBs_in_generation_reserves_BB c2 nil BB_else_now then_end_num. unfold to_result in H. apply H.
 
   assert (c2_aux4: (BB_else_now.(block_num) < then_end_num)%nat). {
-    subst BB_else_now. simpl. admit. (*bh*)
+    subst BB_else_now. simpl.
+    pose proof bbnum_le_next_num nil BB_then_now then_start_num c1.
+    assert((BB_then_now.(block_num) < then_start_num)%nat). {
+      subst BB_then_now. simpl. lia.
+    }
+    specialize (H H0). subst then_res. lia.
   } 
   specialize (c2_prop c2_aux1 c2_aux2 c2_aux3 c2_aux4).
   clear c2_aux1 c2_aux3 c2_aux4.
