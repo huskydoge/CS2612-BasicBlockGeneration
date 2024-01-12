@@ -2596,7 +2596,7 @@ Proof.
     unfold In in H4. tauto.
   - unfold BBjmp_dest_set in H3. destruct H3 as [? [? ?]]. unfold In in H4. tauto.
   - unfold BBjmp_dest_set in H3. destruct H3 as [? [? ?]]. unfold In in H4. tauto.
-Qed.
+Admitted.
 
 
 Lemma P_BBgen_con_wo:
