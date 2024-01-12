@@ -2162,6 +2162,52 @@ Proof.
   clear H1.
   pose proof cut_eq_part_list_l BasicBlock (BBnow'_:: nil) (to_result BBgen_then ++
         to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num))) BBswo_ H2.
-  clear H2.                           
-  (*TODO yz 之后需要用到range的性质 *)
+  clear H2.                         
+  pose proof BBgen_range_list_soundness_correct c1.
+  pose proof BBgen_range_list_soundness_correct c2.
+  unfold P_BBgen_range in H2. 
+  specialize (H2 (S(S(S BBnum))) BBgen_then.(next_block_num) nil BBnow_then (to_result BBgen_then)).
+  assert (all_ge (BBnum_set (tl (to_result BBgen_then))) (S (S (S BBnum))) /\
+     all_lt (BBnum_set (tl (to_result BBgen_then))) BBgen_then.(next_block_num) /\
+     BBjmp_dest_set (to_result BBgen_then)
+     ⊆ section (S (S (S BBnum))) BBgen_then.(next_block_num) ∪ unit_set (jump_dest_1 BBnow_then.(jump_info))). {
+    apply H2.
+    + subst BBnow_then. simpl. tauto.
+    + subst BBgen_then. tauto.
+    + rewrite app_nil_l. subst BBgen_then. tauto.
+    + subst BBnow_then. simpl. lia.
+  }
+
+  clear H2. destruct H4 as [A1 [A2 A3]].
+
+  assert ((S (S BBnum) < BBgen_then.(next_block_num))%nat) as key1. {
+    unfold all_ge in A1. unfold Nat.le in A1.
+    unfold all_lt in A2. unfold Nat.lt in A2.
+    admit. (*TODO yz apparent *)
+  }
+  
+  unfold P_BBgen_range in H3. specialize (H3 BBgen_then.(next_block_num) (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num)).(next_block_num) nil BBnow_else (to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num)))).
+
+  remember ((list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num))) as BBgen_else.
+  assert (all_ge (BBnum_set (tl (to_result BBgen_else))) BBgen_then.(next_block_num) /\
+     all_lt (BBnum_set (tl (to_result BBgen_else))) BBgen_else.(next_block_num) /\
+     BBjmp_dest_set (to_result BBgen_else)
+     ⊆ section BBgen_then.(next_block_num) BBgen_else.(next_block_num)
+       ∪ unit_set (jump_dest_1 BBnow_else.(jump_info))). {
+    apply H3.
+    + subst BBnow_else. simpl. tauto.
+    + tauto.
+    + rewrite app_nil_l. tauto.
+    + subst BBnow_else. simpl. apply key1.
+  }
+
+  clear H3. destruct H2 as [B1 [B2 B3]].
+  assert (BB.(block_num) ∈ BBnum_set BBswo_).  {
+    sets_unfold. unfold BBnum_set. exists BB. split. apply H0. tauto.
+  }
+
+  intros contra. rewrite contra in H2. subst BBswo_. sets_unfold in H2.
+  clear A3 B3.
+  (*TODO yz key1, B1 B2 H2 contradiction *)
+
 Admitted.
