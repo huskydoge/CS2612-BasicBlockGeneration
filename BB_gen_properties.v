@@ -2306,7 +2306,7 @@ Proof.
 
   (*branch 3: 证明BBdelta的所有jump dest都在[startnum, endnum]*)
   - clear c1_prop1 c1_prop2 c2_prop1 c2_prop2.
-    sets_unfold. intros. rename H into A. unfold BBjmp_dest_set in A. destruct A as [BB A]. destruct A as [A1 A2]. 
+    rename H into A. unfold BBjmp_dest_set in A. destruct A as [BB A]. destruct A as [A1 A2]. 
     unfold unit_set in separate_delta_jump_dest.
     sets_unfold in separate_delta_jump_dest.
     unfold BBjmp_dest_set in separate_delta_jump_dest.
