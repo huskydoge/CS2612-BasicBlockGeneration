@@ -2138,26 +2138,6 @@ Lemma neq_ssnum:
 Proof.
   intros.
   rename H1 into jmp_prop. rename H2 into num_prop.
-  pose proof BBgen_range_single_soundness_correct (CIf e c1 c2).
-  unfold Q_BBgen_range in H1.
-  specialize (H1 BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) BBs BBnow (BBnow'_::nil ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)::nil)).
-
-  assert(     all_ge (BBnum_set (tl (BBnow'_ :: nil ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil))) BBnum /\
-  all_lt (BBnum_set (tl (BBnow'_ :: nil ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil)))
-    (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) /\
-  BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_ ++ (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil)
-  ⊆ section BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
-  {
-    apply H1.
-    - tauto.
-    - tauto.
-    - unfold to_result. rewrite H. simpl. admit.
-    - tauto.
-  }
-  clear H1.
-
-  destruct H2 as [A1 [A2 A3]]. simpl in A1. 
-  unfold all
 
   pose proof Q_add_BBs_in_generation_reserves_BB_sound (CIf e c1 c2) BBs BBnow BBnum.
   unfold to_result in H1.
