@@ -1850,8 +1850,7 @@ Proof.
      assert((endnum' >= startnum)%nat).
   {
     subst endnum'.
-    admit.
-    (* TODO pose proof bbnum_le_next_num BBs BBnow startnum c, but use the version of c as single cmd, I dont know*)
+    pose proof bbnum_le_next_num_single_cmd BBs BBnow startnum c lt_prop. lia.
   }
     assert(all_ge (BBnum_set (tl(BBwo_last'))) startnum).
   {
@@ -1865,7 +1864,7 @@ Proof.
    clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
     admit.
   }
-  admit. (* TODO, use H18 and H19 to get the final theorem *)
+    
   + split. 
      - rewrite H15. destruct H0. destruct H16.
        assert((endnum' <= endnum)%nat).
