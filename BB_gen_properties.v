@@ -2304,7 +2304,7 @@ Proof.
           }
           specialize (c2_prop2 temp).  lia.
 
-  (*branch 3: 证明BBdelta的所有jump dest都在[startnum, endnum] ∪ 预定跳转信息里*)
+  (*branch 3: 证明BBdelta的所有jump dest都在[startnum, endnum]*)
   - clear c1_prop1 c1_prop2 c2_prop1 c2_prop2.
     sets_unfold. intros. rename H into A. unfold BBjmp_dest_set in A. destruct A as [BB A]. destruct A as [A1 A2]. 
     unfold unit_set in separate_delta_jump_dest.
