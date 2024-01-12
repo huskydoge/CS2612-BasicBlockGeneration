@@ -2827,7 +2827,7 @@ Proof.
     subst BBnow'.
     subst endnum'. tauto.
   }
-  specialize (H0 H7 H8 H10 H11). 
+  specialize (H0 H7 H8 H10 H11). split.
   assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BasicBlocks) = BBs ++ BBwo_last' ++ BBwo_last'').
 {
    cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
@@ -2853,7 +2853,6 @@ Proof.
   apply app_inv_head in H15.
   subst BBdelta''. rewrite H15. tauto.
 }
-split.
   + rewrite H15.
     destruct H0.
      assert((endnum' >= startnum)%nat).
@@ -2924,86 +2923,9 @@ split.
           }
           specialize (H19 tmp). tauto.
   + split. 
-     - rewrite H15.
-     destruct H0.
-     assert((endnum' <= endnum)%nat).
-      {
-        pose proof bbnum_le_next_num as key.
-        specialize (key (BBs ++ BBwo_last') BBnow' endnum' cmds H11). 
-        subst endnum. lia.
-      }
-
-      assert(all_lt (BBnum_set (tl(BBwo_last'))) endnum').
-      {
-        destruct H6. tauto.
-      }
-        assert(all_lt (BBnum_set (tl(BBwo_last''))) endnum).
-      {
-        destruct H16. tauto.
-      }
-      destruct BBwo_last'.
-      -- simpl. tauto.
-      -- simpl. simpl in H18. unfold all_lt. intros. rename H20 into key. unfold BBnum_set in key. destruct key as [key_bb [cond1 cond2]].
-         apply in_app_iff in cond1. destruct cond1.
-         ** unfold all_lt in H18. specialize (H18 n). 
-            assert(BBnum_set BBwo_last' n ).
-            {
-              unfold BBnum_set. exists key_bb. split. tauto. tauto.
-            }
-            specialize (H18 H21). lia.
-          ** unfold all_lt in H19. specialize (H19 n).
-            destruct BBwo_last''.
-            --- simpl in H20. tauto.
-            --- simpl in H19. simpl in H20. 
-                destruct H20 as [case1 | case2].
-                *** pose proof BBgen_head_prop_wo cmds BBnow' endnum' as key. simpl in key.
-                    assert(tmp: (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow' endnum').(BasicBlocks) <> nil).
-                    {
-                      rewrite H9. pose proof nil_cons as k1.
-                      specialize (k1 BasicBlock b0 BBwo_last''). intros contra. rewrite contra in k1. tauto. 
-                    }
-                    specialize (key tmp). rewrite H9 in key. simpl in key. rewrite case1 in key. rewrite cond2 in key. rewrite key. lia.
-
-                *** unfold all_lt in H18. specialize (H18 n).
-                    assert(BBnum_set (BBwo_last'') n ).
-                    {
-                      unfold BBnum_set. exists key_bb. split. tauto.
-                      tauto.
-                    }
-                    specialize (H19 H20). lia.
-      - rewrite H15. 
-        assert(lt_num: (endnum' <= endnum)%nat).
-        {
-          pose proof bbnum_le_next_num as key.
-          specialize (key (BBs ++ BBwo_last') BBnow' endnum' cmds H11). 
-          subst endnum. lia.
-        }
-
-        assert (lt_num1: (startnum <= endnum')%nat). 
-        {
-          pose proof bbnum_le_next_num_single_cmd BBs BBnow startnum c lt_prop. lia.
-        }
-  
-
-        sets_unfold. intros. 
-        destruct H0 as [p1 [p2 p3]].
-        destruct H6 as [q1 q2].
-        sets_unfold in q2. 
-        sets_unfold in p3.
-        unfold BBjmp_dest_set in H16. 
-        destruct H16 as [BB [cond1 cond2]].
-        -- apply in_app_iff in cond1. destruct cond1 as [cond1 | cond1].
-           ** specialize (q2 a). assert (BBjmp_dest_set BBwo_last' a). {
-              unfold BBjmp_dest_set. exists BB. split. tauto. tauto.
-            }
-
-            specialize (q2 H0). unfold section in q2. unfold section. destruct q2. split. lia. lia. 
-           ** specialize (p3 a). assert (BBjmp_dest_set BBwo_last'' a). {
-              unfold BBjmp_dest_set. exists BB. split. tauto. tauto.
-            }
-
-            specialize (p3 H0). unfold section in p3. unfold section. destruct p3. split. lia. lia. 
-Admitted. (* QED *)
+     - admit.
+     - admit.
+Admitted. 
 
 Section BB_gen_range_wo_sound.
 
