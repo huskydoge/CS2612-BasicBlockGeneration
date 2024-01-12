@@ -643,6 +643,7 @@ Proof.
 Qed.
 
 
+
 (* Used In aux proof.v *)
 (*如果传入的BBnow的num小于BBnum，那么BBnow的num小于next_block_num*)
 Lemma bbnow_num_lt_next_num:
@@ -654,13 +655,31 @@ Proof.
   lia.
 Qed. 
 
+
+Lemma bbnow_num_le_BBn_num_single_cmd:
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    (lt BBnow.(block_num) BBnum) -> (le BBnow.(block_num)  (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) ).
+Proof.
+  intros. destruct c. 
+  - simpl. lia.
+  - assert (((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)).(block_num) = BBnum). simpl. lia. 
+    rewrite H0. lia.
+  - admit. (*DONT CARE ABOUT WHILE*)
+Admitted.
+
+
 Lemma bbnow_num_le_bbn_num:
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     (lt BBnow.(block_num) BBnum) -> le BBnow.(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num).
 Proof.
-Admitted. (* px *)
-
-
+  intros. revert BBs BBnow BBnum H. induction c; intros.
+  - simpl. lia.  
+  - cbn[list_cmd_BB_gen].
+    pose proof bbnow_num_le_BBn_num_single_cmd BBs BBnow BBnum a H.
+    specialize (IHc (cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks) (cmd_BB_gen a BBs BBnow BBnum).(BBn) (cmd_BB_gen a BBs BBnow BBnum).(next_block_num)).
+    pose proof inherit_lt_num_prop BBs BBnow BBnum a H.
+    pose proof IHc H1. lia.
+Qed.
 (*END:  ====================================================================================================== *)
 
 
