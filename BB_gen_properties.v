@@ -2467,7 +2467,7 @@ Proof.
     specialize (c2_prop3 temp). unfold section in c2_prop3.  lia.
   + lia.
   + lia.
-Admitted.
+Qed.
 
 Lemma Q_while_BBgen_range_wo:
 forall (e: expr) (c1 c2: list cmd),
