@@ -1377,7 +1377,16 @@ Proof.
       rewrite BBlist_else_prop. simpl. reflexivity.
     }
 
-    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). rewrite BB_else_prop. simpl. admit. (*bh*)
+    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). {
+      rewrite BB_else_prop. simpl.
+      pose proof bbnum_le_next_num nil BB_then BB_num1 c1. 
+      assert((BB_then.(block_num) < BB_num1)%nat).
+      subst BB_then. simpl. lia.
+      pose proof (H H0) as key.
+      rewrite <- HeqBB_then_end_num in key.
+      lia.
+    }
+      
 
 
     pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop lt_prop_else as else_range.
@@ -1492,7 +1501,15 @@ Proof.
       rewrite BBlist_else_prop. simpl. reflexivity.
     }
 
-    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). rewrite BB_else_prop. simpl. admit. (*bh*)
+    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). {
+    rewrite BB_else_prop. simpl. 
+    pose proof bbnum_le_next_num nil BB_then BB_num1 c1. 
+    assert((BB_then.(block_num) < BB_num1)%nat).
+    subst BB_then. simpl. lia.
+    pose proof (H0 H1) as key.
+    rewrite <- HeqBB_then_end_num in key.
+    lia.
+    }
 
     pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop lt_prop_else as else_range.
     clear c1_jmp_prop c2_jmp_prop.
@@ -1592,7 +1609,15 @@ Proof.
       rewrite BBlist_else_prop. simpl. reflexivity.
     }
 
-    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). rewrite BB_else_prop. simpl. admit. (*bh*)
+    assert (lt_prop_else: (BB_else.(block_num) < BB_then_end_num)%nat). {
+    rewrite BB_else_prop. simpl.
+    pose proof bbnum_le_next_num nil BB_then BB_num1 c1. 
+    assert((BB_then.(block_num) < BB_num1)%nat).
+    subst BB_then. simpl. lia.
+    pose proof (H0 H1) as key.
+    rewrite <- HeqBB_then_end_num in key.
+    lia.
+    }
 
 
     pose proof c2_range c2_jmp_prop HeqBB_else_end_num c2_list_prop lt_prop_else as else_range.
