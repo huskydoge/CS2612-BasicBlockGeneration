@@ -1117,7 +1117,13 @@ Proof.
   }
 
   assert (else_pre2: (BB_else.(block_num) < BB_num2)%nat). {
-    unfold BB_else. simpl. admit. (*TODO BBgen的性质*) 
+    unfold BB_else. simpl. 
+    destruct H as [T1 [T2 H]].
+    pose proof bbnum_le_next_num nil BB_then BB_num1 c1 as T3.
+    assert ((BB_then.(block_num) < BB_num1)%nat) as T4. {
+      subst BB_then. simpl. subst BB_num1. lia.
+    }
+    pose proof T3 T4. subst BB_num1. subst BB_num2. lia. 
   }
 
   assert (else_pre3: gt BB_else.(block_num) (jump_dest_1 BB_else.(jump_info))).
