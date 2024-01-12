@@ -371,6 +371,12 @@ Lemma Q_inherit_not_jmp_to_self_if:
   Q_inherit_not_jmp_to_self (CIf e c1 c2).
 Proof.
   intros. unfold Q_inherit_not_jmp_to_self. intros.
+  unfold P_inherit_not_jmp_to_self in H.
+  unfold P_inherit_not_jmp_to_self in H0.
+  cbn[cmd_BB_gen]. simpl.
+  (* 先使用else的分支说明BBnum > BBthen_num *)
+  specialize (H BBs BBnow BBnum). pose proof H H1 as H.
+
 Admitted. (*px*)
 
 Lemma Q_inherit_not_jmp_to_self_while:
@@ -1885,7 +1891,10 @@ Lemma unique_endinfo_if:
   ~ (BBnow.(jump_info).(jump_dest_1) ∈ BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_)).
 Proof.
   intros.
-  unfold endinfo_property in H1.
+  unfold endinfo_property in H1. unfold not. sets_unfold. intros.
+  pose proof inherit_not_jmp_to_self_soundness_correct (CIf e c1 c2).
+  unfold Q_inherit_not_jmp_to_self in H3.
+  specialize (H3 nil BBnow BBnum). pose proof H3 H1 as H3.
 (*TODO px*)
 Admitted.
 
