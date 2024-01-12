@@ -1888,62 +1888,84 @@ Proof.
     }
     apply H. apply H1.
   }
-    assert(all_ge (BBnum_set BBdelta'') startnum).
+    assert(all_ge (BBnum_set (tl BBdelta'')) startnum).
     {
-      (* TODO cannot handle the first block *)
-      clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
-      destruct BBdelta'' eqn:?.
-      - unfold all_ge. intros. unfold all_ge in H0. specialize (H0 n). unfold tl in H0.
-        pose proof H0 H. lia.
-      - unfold tl in H0. unfold all_ge. intros. unfold all_ge in H0. specialize (H0 n).
-        unfold BBnum_set in H. destruct H as [? [? ?]]. unfold In in H. destruct H as [? | ?].
-        + pose proof BBgen_head_prop cmds BBnow' endnum'. simpl in H2.
-          assert (b = hd empty_block BBdelta''). {
-            pose proof hd_equality b l BBdelta'' Heql. apply H3.
-          }
-          subst BBdelta''. subst BBwo_last''. subst BBnow''.
-          pose proof eq_BBn_list (BBs ++ BBwo_last') nil BBnow' endnum' cmds.
-          rewrite H4 in H3. rewrite <- H3 in H2.
-          rewrite <- H1. rewrite <- H. rewrite H2.
-          admit.
-        + unfold BBnum_set in H0. assert (Nat.le endnum' n). {
-            apply H0. exists x. split. apply H. apply H1.
-          }
-          lia.
+      admit.
     }
-    admit. (*TODO combine H18 H19 *)
+    destruct BBwo_last' eqn:?.
+    - simpl. unfold all_ge. unfold all_ge in H19. intros. rename H20 into a1. specialize (H19 n).
+
+      specialize (H19 a1). lia. 
+    - simpl. simpl in H18.
+      unfold all_ge. intros. rename H20 into key. unfold BBnum_set in key. destruct key as [? [k1 k2]].
+      apply in_app_iff in k1. destruct k1.
+      -- unfold all_ge in H18. specialize (H18 n). assert( pre: BBnum_set l n ). {
+        unfold BBnum_set. exists x. split. tauto. tauto.
+        }
+        specialize (H18 pre). lia.
+      -- subst BBdelta''. admit.
+
   + split. 
-     - rewrite H15. destruct H0. destruct H16.
-       assert((endnum' <= endnum)%nat).
-     {
-        admit. (*TODO*)
+  - rewrite H15. destruct H0. destruct H16.
+  assert((endnum' <= endnum)%nat).
+  {
+    admit. (*TODO*)
+  }
+    assert(all_lt (BBnum_set (tl BBwo_last')) endnum).
+  {
+    clear H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H17 H16 H0.
+    destruct H6. subst BBdelta'. destruct BBwo_last'.
+    simpl. unfold BBnum_set. simpl. unfold all_lt. intros. destruct H2. tauto. 
+    simpl. simpl in H0. unfold all_lt in H0.
+    unfold all_lt. intros. specialize (H0 n). 
+    assert(BBnum_set (BBwo_last' ++ BBnow' :: nil) n). unfold BBnum_set.
+    unfold BBnum_set in H2. destruct H2. destruct H2. exists x.
+    split. apply in_app_iff. left. tauto. tauto. specialize(H0 H3). lia.
+  }
+  assert(all_lt (BBnum_set (BBdelta'')) endnum).
+  {
+    clear H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H0.
+  destruct BBdelta'' eqn:?.
+ - unfold all_lt. intros. unfold BBnum_set in H. destruct H. simpl in H. tauto. 
+ - unfold tl in H16. unfold all_lt. intros. unfold all_lt in H16. specialize (H16 n).
+   unfold BBnum_set in H. destruct H as [? [? ?]]. unfold In in H. destruct H as [? | ?].
+   + pose proof BBgen_head_prop cmds BBnow' endnum'. simpl in H1.
+     assert (b = hd empty_block BBdelta''). {
+       pose proof hd_equality b l BBdelta'' Heql. apply H2.
      }
-       assert(all_lt (BBnum_set (tl BBwo_last')) endnum).
-     {
-        clear H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H17 H16 H0.
-        admit. (* TODO, use H18 and H6 and BBdelta' *)
+     subst BBdelta''. subst BBwo_last''. subst BBnow''.
+     pose proof eq_BBn_list (BBs ++ BBwo_last') nil BBnow' endnum' cmds.
+     rewrite H3 in H2. rewrite <- H2 in H1.
+     rewrite <- H0. rewrite <- H. rewrite H1.
+     lia.
+   + unfold BBnum_set in H16. assert (Nat.lt n endnum). {
+       apply H16. exists x. split. apply H. apply H0.
      }
-      assert(all_lt (BBnum_set (BBdelta'')) endnum).
-     {
-        clear H19 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H17 H0.
-        admit. (* TODO similar, handle the first block *)
-     }
-      clear H18 H17 H16 H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H0.
-      unfold all_lt. intros. unfold BBnum_set in H0. destruct H0. destruct H0.
-      destruct BBwo_last'. 
-      --
-      simpl in H0.
-      assert(In x BBdelta''). 
-      {
-      destruct BBdelta''. simpl in H0. tauto. simpl in H0.
-      apply in_cons. tauto.
-      }
-      unfold all_lt in H20. specialize (H20 n).
-      assert(BBnum_set BBdelta'' n).
-      {
-       unfold BBnum_set. exists x. tauto.
-      }
-      specialize (H20 H3). tauto.
+     lia.
+}
+ clear H18 H17 H16 H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H0.
+ unfold all_lt. intros. unfold BBnum_set in H0. destruct H0. destruct H0.
+ destruct BBwo_last'.
+ -- 
+ simpl in H0.
+ assert(In x BBdelta''). 
+ {
+ destruct BBdelta''. simpl in H0. tauto. simpl in H0.
+ apply in_cons. tauto.
+ }
+ unfold all_lt in H20. specialize (H20 n).
+ assert(BBnum_set BBdelta'' n).
+ {
+  unfold BBnum_set. exists x. tauto.
+ }
+ specialize (H20 H3). tauto.
+-- simpl in H0. apply in_app_iff in H0. destruct H0.
+ simpl in H19. unfold all_lt in H19. specialize (H19 n). unfold BBnum_set in H19.
+ assert (exists BB : BasicBlock, In BB BBwo_last' /\ BB.(block_num) = n).
+ exists x. tauto. specialize (H19 H2). tauto.
+ simpl in H20. unfold all_lt in H20. specialize (H20 n). unfold BBnum_set in H20.
+ assert (exists BB : BasicBlock, In BB BBdelta'' /\ BB.(block_num) = n).
+ exists x. tauto. specialize (H20 H2). tauto.
      - rewrite H15. 
       assert(BBjmp_dest_set BBwo_last' ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
      {
