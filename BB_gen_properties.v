@@ -1055,8 +1055,10 @@ Lemma BBgen_head_prop_wo:
   res.(BasicBlocks) <> nil ->
   (hd empty_block (res.(BasicBlocks))).(block_num) = BBnow.(block_num).
 Proof.
-  (*TODO px*)
-Admitted.
+  intros.
+  pose proof BBgen_head_prop cmds BBnow BBnum. simpl in H0.
+  rewrite hd_A_and_B_is_hd_A_if_A_not_nil in H0. apply H0. apply H.
+Qed.
 
 
 
