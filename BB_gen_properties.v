@@ -371,7 +371,7 @@ Lemma Q_inherit_not_jmp_to_self_if:
   Q_inherit_not_jmp_to_self (CIf e c1 c2).
 Proof.
   intros. unfold Q_inherit_not_jmp_to_self. intros.
-Admitted. (*bh*)
+Admitted. (*px*)
 
 Lemma Q_inherit_not_jmp_to_self_while:
   forall  (e: expr) (c1: list cmd) (c2: list cmd),
@@ -1881,7 +1881,7 @@ Lemma unique_endinfo_if:
 Proof.
   intros.
   unfold endinfo_property in H1.
-(*TODO bh*)
+(*TODO px*)
 Admitted.
 
 
