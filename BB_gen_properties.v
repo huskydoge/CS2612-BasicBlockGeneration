@@ -1524,15 +1524,23 @@ Lemma cmd_BB_delta:
   forall (c: cmd)(BBs BBwo_last: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
 (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks) = BBwo_last -> (cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBwo_last.
 Proof.
-(*TODO bh*)
-Admitted.
+  intros. pose proof Q_add_BBs_in_generation_reserves_BB_sound c BBs BBnow BBnum.
+  unfold to_result in H0.
+  pose proof eq_BBn BBs BBnow BBnum c. rewrite H1 in H0.
+  pose proof cut_eq_part_list_r BasicBlock ((cmd_BB_gen c nil BBnow BBnum).(BBn) :: nil) (cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks) (BBs ++ (cmd_BB_gen c nil BBnow BBnum).(BasicBlocks)).
+  rewrite <- app_assoc in H2. pose proof H2 H0. rewrite H3. rewrite H. tauto.
+Qed.
 
 Lemma list_cmd_BB_delta:
   forall (cmds: list cmd)(BBs BBwo_last: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
 (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).(BasicBlocks) = BBwo_last -> (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BasicBlocks) = BBs ++ BBwo_last.
 Proof.
-(*TODO bh*)
-Admitted.
+  intros. pose proof add_BBs_in_generation_reserves_BB cmds BBs BBnow BBnum.
+  unfold to_result in H0.
+  pose proof eq_BBn_list BBs nil BBnow BBnum cmds. rewrite H1 in H0.
+  pose proof cut_eq_part_list_r BasicBlock ((list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).(BBn) :: nil) (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BasicBlocks) (BBs ++ (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum).(BasicBlocks)).
+  rewrite <- app_assoc in H2. pose proof H2 H0. rewrite H3. rewrite H. tauto.
+Qed.
 
 Lemma P_BBgen_con:
     forall (c: cmd) (cmds: list cmd),
@@ -1551,50 +1559,50 @@ Proof.
   set (BBnow' := (cmd_BB_gen c BBs BBnow startnum).(BBn)).
   set (BBdelta' := BBwo_last' ++ BBnow'::nil).
   assert((cmd_BB_gen c BBs BBnow startnum).(BasicBlocks) = BBs ++ BBwo_last').
-{
-  pose proof cmd_BB_delta c BBs BBwo_last' BBnow startnum. apply H4. tauto.
-}
-  assert(to_result(cmd_BB_gen c BBs BBnow startnum) = BBs ++ BBdelta').
-{
-  subst BBdelta'.
-  pose proof cmd_BB_delta c BBs BBwo_last' BBnow startnum. 
-  unfold to_result. rewrite H5. subst BBnow'. rewrite <- app_assoc. reflexivity. tauto.
-}
+  {
+    pose proof cmd_BB_delta c BBs BBwo_last' BBnow startnum. apply H4. tauto.
+  }
+    assert(to_result(cmd_BB_gen c BBs BBnow startnum) = BBs ++ BBdelta').
+  {
+    subst BBdelta'.
+    pose proof cmd_BB_delta c BBs BBwo_last' BBnow startnum. 
+    unfold to_result. rewrite H5. subst BBnow'. rewrite <- app_assoc. reflexivity. tauto.
+  }
   specialize (H startnum endnum' BBs BBnow BBdelta' H1). destruct H. tauto. tauto. tauto.
   set (BBwo_last'' := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow' endnum').(BasicBlocks)).
   set (BBnow'' := (list_cmd_BB_gen cmd_BB_gen cmds (BBs++BBwo_last') BBnow' endnum').(BBn)).
   set (BBdelta'' := BBwo_last'' ++ BBnow''::nil).
   specialize (H0 endnum' endnum (BBs++BBwo_last') BBnow' BBdelta'').
   assert(jump_kind BBnow'.(jump_info) = UJump /\ jump_dest_2 BBnow'.(jump_info) = None).
-{
-  pose proof JmpInfo_inherit BBs BBnow startnum c. subst BBnow'. rewrite H7. tauto.
-}
+  {
+    pose proof JmpInfo_inherit BBs BBnow startnum c. subst BBnow'. rewrite H7. tauto.
+  }
   assert(endnum = (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBwo_last') BBnow' endnum').(next_block_num)).
-{
-  cbn[list_cmd_BB_gen] in H2. subst endnum' BBnow'. rewrite H2. 
-  rewrite <- H4. reflexivity.
-}
+  {
+    cbn[list_cmd_BB_gen] in H2. subst endnum' BBnow'. rewrite H2. 
+    rewrite <- H4. reflexivity.
+  }
   assert((list_cmd_BB_gen cmd_BB_gen cmds nil BBnow' endnum').(BasicBlocks) = BBwo_last'').
-{
-  tauto.
-}
+  {
+    tauto.
+  }
   assert(to_result (list_cmd_BB_gen cmd_BB_gen cmds (BBs ++ BBwo_last') BBnow' endnum') = (BBs ++ BBwo_last') ++ BBdelta'').
-{
-  subst BBdelta''.
-  pose proof list_cmd_BB_delta cmds (BBs++BBwo_last') BBwo_last'' BBnow' endnum'.
-  unfold to_result.
-  specialize (H10 H9).
-  rewrite H10.
-  subst BBnow''.
-  rewrite app_assoc.
-  reflexivity.
-}
+  {
+    subst BBdelta''.
+    pose proof list_cmd_BB_delta cmds (BBs++BBwo_last') BBwo_last'' BBnow' endnum'.
+    unfold to_result.
+    specialize (H10 H9).
+    rewrite H10.
+    subst BBnow''.
+    rewrite app_assoc.
+    reflexivity.
+  }
   assert((BBnow'.(block_num) < endnum')%nat).
-{
-  pose proof inherit_lt_num_prop BBs BBnow startnum c lt_prop. 
-  subst BBnow'.
-  subst endnum'. tauto.
-}
+  {
+    pose proof inherit_lt_num_prop BBs BBnow startnum c lt_prop. 
+    subst BBnow'.
+    subst endnum'. tauto.
+  }
   specialize (H0 H7 H8 H10 H11). split.
   + admit.
   + split. 
