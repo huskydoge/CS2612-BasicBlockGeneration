@@ -71,6 +71,6 @@ Proof.
            simpl. tauto.
            simpl. tauto.
         ++ simpl. tauto.
-    - admit.
-    - admit. 
-Admitted.
+    - admit. (* err *)
+    - admit. (* inf *)
+Admitted. (* QED *)

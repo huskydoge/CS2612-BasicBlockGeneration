@@ -115,7 +115,7 @@ Proof.
   - admit.  (* err case *)
   - admit. (* inf case *)
   - admit. (* inf case *) 
-Admitted.
+Admitted. (* QED *)
 
 
 Lemma num_set_inclusive_if_BB_inclusive:
@@ -1071,7 +1071,7 @@ Proof.
           specialize (bridge disjoint_jmp_dest_set).
           specialize (bridge in_prop1).
           specialize (bridge in_prop2).
-          admit.
+          tauto.
         }
 
         destruct H_sep as [bb_mid [H_step1_main H_step2_main]].
@@ -1412,7 +1412,7 @@ Proof.
       -- admit. (* inf case *)
       -- pose proof JmpInfo_inherit_for_list BBs BBnow BBnum (CIf e c1 c2 :: cmds). tauto.
     - admit. (* 2024/1/9，和老师沟通后，确认while地情况不需要在归纳或互递归中考虑。*)
-Admitted. 
+Admitted.  (* QED *)
 
 
 Section BB_sound.

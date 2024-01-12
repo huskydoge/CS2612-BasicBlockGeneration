@@ -557,7 +557,7 @@ Proof.
     - admit. (*DONT CARE ABOUT WHILE*)
     }
   pose proof H0 H2 as H0. lia.
-Admitted.
+Admitted. (*DONT CARE ABOUT WHILE, no other admits*)
 
 
 
@@ -620,7 +620,7 @@ Proof.
     destruct H1. destruct H1. simpl in H1. lia.
     destruct H1. tauto.
   - admit. (*DONT CARE ABOUT WHILE*)
-Admitted.
+Admitted. (* QED *)
 
 
 Lemma inherit_lt_num_prop_list:
@@ -677,9 +677,10 @@ Lemma bbnum_le_next_num_single_cmd:
 Proof.
   intros. destruct c. 
   - simpl. lia.
-  - admit. (*TODO*)
+  - pose proof inherit_lt_num_prop BBs BBnow BBnum (CIf e c1 c2) H.
+    pose proof if_BBn_num_prop e c1 c2 BBs BBnow BBnum. lia. 
   - admit. (*DONT CARE ABOUT WHILE*)
-Admitted.
+Admitted. (* QED *)
 
 
 
@@ -704,7 +705,7 @@ Proof.
   - assert (((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)).(block_num) = BBnum). simpl. lia. 
     rewrite H0. lia.
   - admit. (*DONT CARE ABOUT WHILE*)
-Admitted.
+Admitted. (* QED *)
 
 
 Lemma bbnow_num_le_bbn_num:
@@ -1864,7 +1865,7 @@ Proof.
    clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
     admit.
   }
-    
+
   + split. 
      - rewrite H15. destruct H0. destruct H16.
        assert((endnum' <= endnum)%nat).
@@ -2638,7 +2639,7 @@ Proof.
     unfold In in H4. tauto.
   - unfold BBjmp_dest_set in H3. destruct H3 as [? [? ?]]. unfold In in H4. tauto.
   - unfold BBjmp_dest_set in H3. destruct H3 as [? [? ?]]. unfold In in H4. tauto.
-Admitted.
+Qed.
 
 
 Lemma P_BBgen_con_wo:

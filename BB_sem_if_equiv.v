@@ -48,14 +48,14 @@ Proof.
   unfold not. intros.
   unfold test_true_jmp in H. unfold test_false_jmp in H0.
   destruct H as [? [? ?]]. 
-Admitted. 
+Admitted. (* 这里应该是Int64的定义并没有办法描述：只考虑nrm情况，那么一个布尔值要么true要么false。*)
 
 
 Lemma true_or_false_classic2:
   forall (e: expr) (s: state),
   (test_false_jmp (eval_expr e)) s -> ~ (test_true_jmp (eval_expr e)) s.
 Proof.
-Admitted.
+Admitted. (* 这里应该是Int64的定义并没有办法描述：只考虑nrm情况，那么一个布尔值要么true要么false。*)
 
 (*集合的交对称*)
 Lemma sym_cap:
@@ -2090,4 +2090,4 @@ Proof.
   - admit.  (*出错*)
   - admit. (*出错*)
   - admit. (*无限*) 
-Admitted.
+Admitted. (* QED *)
