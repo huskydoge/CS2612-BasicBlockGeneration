@@ -2794,15 +2794,11 @@ Proof.
     apply H2. apply H3.
   }
   pose proof H6 H3 as H6.  rename H6 into H4.
-    unfold section in H4. unfold Nat.le in H4. unfold Nat.lt in H4.
-    assert ((jump_dest_1 BBnow.(jump_info) < BBnum)%nat). lia.
-    assert ((jump_dest_1 BBnow.(jump_info) >= BBnum)%nat). lia.
-    lia.
-  - unfold unit_set in H4. clear H4. 
-    unfold tl in p2. unfold tl in p3. rewrite app_nil_l in p2. rewrite app_nil_l in p3.
-    clear p1. 
-(*TODO px*)
-Admitted.
+  unfold section in H4. unfold Nat.le in H4. unfold Nat.lt in H4.
+  assert ((jump_dest_1 BBnow.(jump_info) < BBnum)%nat). lia.
+  assert ((jump_dest_1 BBnow.(jump_info) >= BBnum)%nat). lia.
+  lia.
+Qed.
 
 
 (*对于CIf，其BBnow的num肯定和新生成的BBs(去掉最后BBn)的num不交*)
