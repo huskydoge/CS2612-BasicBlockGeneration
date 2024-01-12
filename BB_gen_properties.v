@@ -1910,7 +1910,9 @@ Proof.
           ++ simpl in H20. destruct H20. 
           rewrite <- H20 in k2.
           rewrite <- k2.
-          admit. (*TODO find a lemma to prove number: BBnow'' >= BBnow', BBnow' >= start_num(by property of if) *)
+          pose proof if_BBn_num_prop e c1 c2 BBs BBnow startnum. 
+          pose proof bbnow_num_le_bbn_num (BBs ++ b :: l) BBnow' endnum' cmds H11.
+          tauto.
           tauto.
           ++ 
           assert(b0.(block_num) = BBnow'.(block_num)). 
