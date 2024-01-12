@@ -1205,6 +1205,17 @@ Proof.
   reflexivity.
 Qed.
 
+
+Lemma tl_In_sublist_then_in_list_head:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (x: BasicBlock),
+    In x (tl BBs) -> In x (tl (BBs ++ BBnow :: nil)).
+Proof.
+  intros. induction BBs.
+  - unfold In in H. tauto.
+  - simpl. unfold tl in H.
+    apply In_sublist_then_in_list_head. apply H.
+Qed.
+
 (*Start: Main for range =============================================================================================================================================================================================*)
 
 Lemma Q_if_BBgen_range:
@@ -1817,33 +1828,33 @@ Proof.
   }
   specialize (H0 H7 H8 H10 H11). 
   assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BasicBlocks) =BBs ++ BBwo_last' ++ BBwo_last'').
-{
-   cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
-   pose proof list_cmd_BB_delta cmds (BBs++BBwo_last') BBwo_last'' ((cmd_BB_gen c BBs BBnow startnum).(BBn)) ((cmd_BB_gen c BBs BBnow startnum).(next_block_num)) H9.
-   rewrite app_assoc. tauto.
-}
-  assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BBn) = BBnow'').
-{
-  cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
-  tauto.
-}
-  assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(next_block_num) = endnum).
-{
-  cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
-  rewrite H8. tauto.
-}
-(* properties on delta, wo_last and now*)
-  assert(BBdelta = BBwo_last' ++ BBdelta'').
-{
-  assert(BBs ++ BBwo_last' ++ BBwo_last'' ++ BBnow''::nil = BBs ++ BBdelta).
-  unfold to_result in H3.
-  rewrite <- H3. rewrite app_assoc. rewrite app_assoc. rewrite app_assoc in H12.
-  rewrite <- H12.
-  rewrite <- H13.
-  tauto.
-  apply app_inv_head in H15.
-  subst BBdelta''. rewrite H15. tauto.
-}
+  {
+    cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+    pose proof list_cmd_BB_delta cmds (BBs++BBwo_last') BBwo_last'' ((cmd_BB_gen c BBs BBnow startnum).(BBn)) ((cmd_BB_gen c BBs BBnow startnum).(next_block_num)) H9.
+    rewrite app_assoc. tauto.
+  }
+    assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BBn) = BBnow'').
+  {
+    cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+    tauto.
+  }
+    assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(next_block_num) = endnum).
+  {
+    cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+    rewrite H8. tauto.
+  }
+  (* properties on delta, wo_last and now*)
+    assert(BBdelta = BBwo_last' ++ BBdelta'').
+  {
+    assert(BBs ++ BBwo_last' ++ BBwo_last'' ++ BBnow''::nil = BBs ++ BBdelta).
+    unfold to_result in H3.
+    rewrite <- H3. rewrite app_assoc. rewrite app_assoc. rewrite app_assoc in H12.
+    rewrite <- H12.
+    rewrite <- H13.
+    tauto.
+    apply app_inv_head in H15.
+    subst BBdelta''. rewrite H15. tauto.
+  }
   split.
    + rewrite H15.
     destruct H0.
@@ -1855,13 +1866,19 @@ Proof.
     assert(all_ge (BBnum_set (tl(BBwo_last'))) startnum).
   {
     clear H17 H15 H14 H13 H12 H11 H10 H9 H8 H7 H6 H5 H4 H3 H2 H1 H16 H0 BBdelta'' BBnow'' BBwo_last'' endnum.
-    (* TODO, use H and BBdelta' *)
-    admit.
+    unfold all_ge. intros. unfold all_ge in H. specialize (H n).
+    assert (BBnum_set (tl BBdelta') n). {
+      subst BBdelta'. unfold BBnum_set in H0. destruct H0 as [? [? ?]].
+      unfold BBnum_set. exists x.
+      pose proof tl_In_sublist_then_in_list_head BBwo_last' BBnow' x H0. split.
+      apply H2. apply H1.
+    }
+    apply H. apply H1.
   }
     assert(all_ge (BBnum_set BBdelta'') startnum).
   {
     (* TODO cannot handle the first block *)
-   clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
+    clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
     admit.
   }
     
