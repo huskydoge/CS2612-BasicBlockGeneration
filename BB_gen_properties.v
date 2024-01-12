@@ -2590,7 +2590,7 @@ Proof.
     apply cut_eq_part_list_l in H2. rewrite H2. tauto.
   }
   rewrite H2. simpl. repeat split.
-  - unfold all_gt. intros. unfold BBnum_set in H3. destruct H3 as [? [? ?]].
+  - unfold all_ge. intros. unfold BBnum_set in H3. destruct H3 as [? [? ?]].
     unfold In in H4. tauto.
   - unfold all_lt. intros. unfold BBnum_set in H3. destruct H3 as [? [? ?]].
     unfold In in H4. tauto.
