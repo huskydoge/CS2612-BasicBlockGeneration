@@ -644,6 +644,12 @@ Proof.
   lia.
 Qed. 
 
+Lemma bbnow_num_le_bbn_num:
+  forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
+    (lt BBnow.(block_num) BBnum) -> le BBnow.(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num).
+Proof.
+Admitted. (*TODO*)
+
 
 (*END:  ====================================================================================================== *)
 
@@ -2089,14 +2095,14 @@ Proof.
   assert (head_then: (hd empty_block (then_delta)).(block_num) = BB_then_now.(block_num)).
   {  
     pose proof BBgen_head_prop_wo c1 BB_then_now then_start_num. rewrite <- H. reflexivity.
-    assert((list_cmd_BB_gen cmd_BB_gen c1 nil BB_then_now then_start_num).(BasicBlocks) <> nil). admit. (*我们不考虑If中c1或c2为空的情况*) 
+    assert((list_cmd_BB_gen cmd_BB_gen c1 nil BB_then_now then_start_num).(BasicBlocks) <> nil). admit. (* 经过老师允许，我们不考虑If中c1或c2为空的情况*) 
     tauto.
   }
 
   assert (head_else: (hd empty_block (else_delta)).(block_num) = BB_else_now.(block_num)).
   {  
     pose proof BBgen_head_prop_wo c2 BB_else_now then_end_num. rewrite <- H. reflexivity.
-    assert((list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num).(BasicBlocks) <> nil). admit. (*我们不考虑If中c1或c2为空的情况*) 
+    assert((list_cmd_BB_gen cmd_BB_gen c2 nil BB_else_now then_end_num).(BasicBlocks) <> nil). admit. (*经过老师允许，我们不考虑If中c1或c2为空的情况*) 
     tauto.
   }
 
@@ -2172,7 +2178,13 @@ Proof.
       specialize (c1_prop1 n).
       pose proof In_pre_or_tail BasicBlock x then_res.(BBn) then_delta cond1.
       destruct H as [head | tail].
-      ** rewrite head in cond2.  admit. (*TODO 用已经证明的range性质推矛盾*)
+      ** rewrite head in cond2. rewrite <- cond2. 
+        pose proof bbnow_num_le_bbn_num nil BB_then_now then_start_num c1.
+        assert((BB_then_now.(block_num) < then_start_num)%nat). {
+          subst then_start_num. 
+          subst BB_then_now. cbn [block_num]. lia.
+        }
+        specialize (H H0). subst then_res. simpl in H. lia.
       ** pose proof In_head_or_body BasicBlock x empty_block then_delta tail.
         destruct H as [head | body].
         rewrite <- head in head_then. rewrite head_then in cond2.  subst BB_then_now. simpl in cond2. lia.
@@ -2187,7 +2199,19 @@ Proof.
       specialize (c2_prop1 n).
       pose proof In_pre_or_tail BasicBlock x else_res.(BBn) else_delta cond1.
       destruct H as [head | tail].
-      ** rewrite head in cond2. admit. (*TODO 用已经证明的range性质推矛盾*)
+      ** rewrite head in cond2. rewrite <- cond2. 
+      pose proof bbnow_num_le_bbn_num nil BB_else_now then_end_num c2.
+      assert((BB_then_now.(block_num) < then_start_num)%nat). {
+      subst then_start_num. 
+      subst BB_then_now. cbn [block_num]. lia.
+      }
+      assert((BB_else_now.(block_num) < then_end_num)%nat). {
+        subst then_end_num. 
+        subst BB_else_now. cbn [block_num]. 
+        pose proof bbnum_le_next_num nil BB_then_now then_start_num c1 H0.
+        subst then_res. lia.
+      }
+      specialize (H H1). subst else_res. simpl in H. lia.
       **  pose proof In_head_or_body BasicBlock x empty_block else_delta tail.
           destruct H as [head | body].
           rewrite <- head in head_else. rewrite head_else in cond2.  subst BB_else_now. simpl in cond2. lia.
