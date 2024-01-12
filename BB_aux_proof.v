@@ -1919,7 +1919,7 @@ Proof.
 Admitted.
 
 
-(* Lemma an_over_pass_bridge: 
+Lemma an_over_pass_bridge: 
   forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
   bs1 <> bs2 ->
@@ -1960,7 +1960,7 @@ Proof.
       tauto.
   - contradiction.
   (*TODO *)
-Admitted. *)
+Admitted.
 
 
 (*对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
@@ -1976,7 +1976,7 @@ Admitted. *)
 1. (bs1, x) 在 BB_list_sem (BBnow1 :: nil ++ BBs1) 中
 2. (x, bs2) 在 BB_list_sem (BBnow2 :: BBs2) 中
 *)
-
+(* 
 Lemma an_over_pass_bridge: 
   forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
@@ -1994,7 +1994,7 @@ Proof.
   intros.
   pose proof classic (exists x, Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2). destruct H7. tauto.
   unfold not in H7. assert (False).
-  admit.
+  admit. *)
 
 
   (* remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs. 

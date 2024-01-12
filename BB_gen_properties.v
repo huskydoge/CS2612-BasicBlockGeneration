@@ -134,9 +134,11 @@ Lemma In_pre_or_tail:
   forall (A: Type) (a b: A)(l: list A),
   In a (l ++ b::nil) -> a = b \/ In a l.
 Proof.
-  (*TODO*)
-Admitted.
-
+  intros. induction l.
+  - simpl in H. destruct H as [? | ?]. left. rewrite H. tauto. tauto.
+  - simpl in H. destruct H as [? | ?]. right. rewrite H. unfold In. left. tauto.
+    pose proof IHl H. destruct H0. left. tauto. right. unfold In. right. tauto. 
+Qed.
 
 Definition empty_block := {|
   block_num := 0;
@@ -1061,8 +1063,10 @@ Lemma BBgen_head_prop_wo:
   res.(BasicBlocks) <> nil ->
   (hd empty_block (res.(BasicBlocks))).(block_num) = BBnow.(block_num).
 Proof.
-  (*TODO px*)
-Admitted.
+  intros.
+  pose proof BBgen_head_prop cmds BBnow BBnum. simpl in H0.
+  rewrite hd_A_and_B_is_hd_A_if_A_not_nil in H0. apply H0. apply H.
+Qed.
 
 
 
@@ -2365,15 +2369,39 @@ forall  (x: var_name) (e: expr),
 Proof. 
   intros. unfold Q_BBgen_range_wo. intros. simpl in H0.
   unfold to_result in H1. simpl in H1. 
-  (*TODO px*)
-Admitted.
+  assert (BBdelta = nil). {
+    assert (BBs ++ nil = BBs ++ BBdelta). {
+      rewrite app_nil_r. apply H1.
+    }
+    apply cut_eq_part_list_l in H3. rewrite H3. tauto.
+  }
+  rewrite H3. simpl. repeat split.
+  - unfold all_gt. intros. unfold BBnum_set in H4. destruct H4 as [? [? ?]].
+    unfold In in H4. tauto.
+  - unfold all_lt. intros. unfold BBnum_set in H4. destruct H4 as [? [? ?]].
+    unfold In in H4. tauto.
+  - unfold BBjmp_dest_set in H4. destruct H4 as [? [? ?]]. unfold In in H4. tauto.
+  - unfold BBjmp_dest_set in H4. destruct H4 as [? [? ?]]. unfold In in H4. tauto.
+Qed.
 
 Lemma P_BBgen_nil_wo:
     P_BBgen_range_wo cmd_BB_gen nil.
 Proof.
   unfold P_BBgen_range_wo. intros. simpl in H0. unfold to_result in H1. simpl in H1. rename H2 into new. 
-  (*TODO px*)
-Admitted.
+  assert (BBdelta = nil). {
+    assert (BBs ++ nil = BBs ++ BBdelta). {
+      rewrite app_nil_r. apply H1.
+    }
+    apply cut_eq_part_list_l in H2. rewrite H2. tauto.
+  }
+  rewrite H2. simpl. repeat split.
+  - unfold all_gt. intros. unfold BBnum_set in H3. destruct H3 as [? [? ?]].
+    unfold In in H4. tauto.
+  - unfold all_lt. intros. unfold BBnum_set in H3. destruct H3 as [? [? ?]].
+    unfold In in H4. tauto.
+  - unfold BBjmp_dest_set in H3. destruct H3 as [? [? ?]]. unfold In in H4. tauto.
+  - unfold BBjmp_dest_set in H3. destruct H3 as [? [? ?]]. unfold In in H4. tauto.
+Qed.
 
 
 Lemma P_BBgen_con_wo:
@@ -2794,11 +2822,12 @@ Proof.
     apply H2. apply H3.
   }
   pose proof H6 H3 as H6.  rename H6 into H4.
-    unfold section in H4. unfold Nat.le in H4. unfold Nat.lt in H4.
-    assert ((jump_dest_1 BBnow.(jump_info) < BBnum)%nat). lia.
-    assert ((jump_dest_1 BBnow.(jump_info) >= BBnum)%nat). lia.
-    lia.
+  unfold section in H4. unfold Nat.le in H4. unfold Nat.lt in H4.
+  assert ((jump_dest_1 BBnow.(jump_info) < BBnum)%nat). lia.
+  assert ((jump_dest_1 BBnow.(jump_info) >= BBnum)%nat). lia.
+  lia.
 Qed.
+
 
 (*对于CIf，其BBnow的num肯定和新生成的BBs(去掉最后BBn)的num不交*)
 Lemma disjoint_num_prop_wo_last_if:
