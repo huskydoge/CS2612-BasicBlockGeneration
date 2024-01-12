@@ -1754,7 +1754,6 @@ Proof.
     + tauto.
 Qed.
 
-
 Lemma P_BBgen_con:
     forall (c: cmd) (cmds: list cmd),
     Q_BBgen_range c ->
@@ -1816,7 +1815,7 @@ Proof.
     subst BBnow'.
     subst endnum'. tauto.
   }
-  specialize (H0 H7 H8 H10 H11). split.
+  specialize (H0 H7 H8 H10 H11). 
   assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BasicBlocks) =BBs ++ BBwo_last' ++ BBwo_last'').
 {
    cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
@@ -1845,7 +1844,8 @@ Proof.
   apply app_inv_head in H15.
   subst BBdelta''. rewrite H15. tauto.
 }
-  + rewrite H15.
+  split.
+   + rewrite H15.
     destruct H0.
      assert((endnum' >= startnum)%nat).
   {
@@ -1867,8 +1867,51 @@ Proof.
   }
   admit. (* TODO, use H18 and H19 to get the final theorem *)
   + split. 
-     - admit.
-     - admit.
+     - rewrite H15. destruct H0. destruct H16.
+       assert((endnum' <= endnum)%nat).
+     {
+        admit.
+     }
+       assert(all_lt (BBnum_set (tl BBwo_last')) endnum).
+     {
+        clear H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H17 H16 H0.
+        admit. (* TODO, use H18 and H6 and BBdelta' *)
+     }
+      assert(all_lt (BBnum_set (tl BBdelta'')) endnum).
+     {
+        tauto.
+     }
+      clear H18 H17 H16 H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H0.
+      admit. (* TODO, use H19 and H20*)
+     - rewrite H15. 
+      assert(BBjmp_dest_set BBwo_last' ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
+     {
+        destruct H6. sets_unfold. intros. sets_unfold in H16. pose proof H16 a. destruct H18.
+        ++
+        subst BBdelta'. unfold BBjmp_dest_set. unfold BBjmp_dest_set in H17. destruct H17.
+        exists x. destruct H17. split. apply in_app_iff. left. tauto. tauto.
+        ++ left. unfold section. unfold section in H18. destruct H18.
+        assert((endnum' <= endnum)%nat).
+       {
+          admit. (*copy the proof in the first -*)
+       }
+        split. tauto. lia.
+        ++ right. tauto.
+     }
+      assert(BBjmp_dest_set (BBdelta'') ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
+     {
+        subst BBdelta. destruct H0. destruct H15. sets_unfold. intros. sets_unfold in H17. specialize (H17 a). destruct H17.
+        tauto.
+        left.
+        assert((endnum'>=startnum)%nat).
+       {
+          admit. (*copy the proof in the first +*)
+       }
+        unfold section. split. unfold section in H17. lia. unfold section in H17. tauto.
+        pose proof JmpInfo_inherit BBs BBnow startnum c.
+        right. subst BBnow'. rewrite H19 in H17. tauto.
+     }
+      admit. (*use H16 and H17 *) 
 Admitted. (* yz *)
 
 
