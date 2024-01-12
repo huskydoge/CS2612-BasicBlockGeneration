@@ -7,6 +7,8 @@ We thank Prof. Cao and two TAs for their great help throughout the semester as w
 
 ## Compilation Order
 
+### Use CoqIDE
+
 `compcert_lib` and `sets` are the given packages for homeworks and lecture notes.
 
 - `grammar.v`: the basic grammar of the task
@@ -20,6 +22,15 @@ We thank Prof. Cao and two TAs for their great help throughout the semester as w
 - `BB_sem_if_equiv.v`: proves the equivalence of a single `CIf` command and the corresponding Basic Block results.
 - `BB_sem_while_equiv.v`: **NOT** required after discussion with the instructor. But it must be compiled for the final theorem.
 - `BB_sem_equiv.v`: proves the final theorem integrating the three types of commands.
+
+### Terminal
+
+In Repo's root path, first enter:
+```shell
+coq_makefile -f _CoqProject *.v   -o Makefile
+```
+then enter `make` and all the files will be compiled automatically.
+
 
 ## Notice
 
