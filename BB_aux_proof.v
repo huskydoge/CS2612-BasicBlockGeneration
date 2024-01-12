@@ -1998,7 +1998,7 @@ Proof.
   pose proof classic (exists x, Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2). destruct H7. tauto.
   unfold not in H7. assert (False).
   admit.
-Admitted.
+Admitted. (* QUIT *)
 
 
   (* remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs. 

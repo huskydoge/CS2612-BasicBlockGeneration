@@ -1777,7 +1777,6 @@ Proof.
       -- destruct H as [c1 c2]. rewrite <- H3 in H2. rewrite c2 in H2. discriminate H2.
     + tauto.
 Qed.
-
 Lemma P_BBgen_con:
     forall (c: cmd) (cmds: list cmd),
     Q_BBgen_range c ->
@@ -1869,13 +1868,17 @@ Proof.
     subst BBdelta''. rewrite H15. tauto.
   }
   split.
-   + rewrite H15.
+  + rewrite H15.
     destruct H0.
      assert((endnum' >= startnum)%nat).
   {
     subst endnum'.
     pose proof bbnum_le_next_num_single_cmd BBs BBnow startnum c lt_prop. lia.
   }
+    destruct c.
+   * simpl in BBwo_last'. subst BBwo_last'. simpl.
+      unfold all_ge. intros. unfold all_ge in H. specialize (H0 n H18). lia.
+   *
     assert(all_ge (BBnum_set (tl(BBwo_last'))) startnum).
   {
     clear H17 H15 H14 H13 H12 H11 H10 H9 H8 H7 H6 H5 H4 H3 H2 H1 H16 H0 BBdelta'' BBnow'' BBwo_last'' endnum.
@@ -1890,7 +1893,7 @@ Proof.
   }
     assert(all_ge (BBnum_set (tl BBdelta'')) startnum).
     {
-      admit.
+      unfold all_ge. intros. unfold all_ge in H0. specialize(H0 n H19). lia.
     }
     destruct BBwo_last' eqn:?.
     - simpl. unfold all_ge. unfold all_ge in H19. intros. rename H20 into a1. specialize (H19 n).
@@ -1903,8 +1906,14 @@ Proof.
         unfold BBnum_set. exists x. split. tauto. tauto.
         }
         specialize (H18 pre). lia.
-      -- subst BBdelta''. admit.
-
+      -- subst BBdelta''. destruct BBwo_last''. 
+          ++ simpl in H20. destruct H20. 
+          rewrite <- H20 in k2.
+          rewrite <- k2.
+          admit. (*TODO find a lemma to prove number: BBnow'' >= BBnow', BBnow' >= start_num(by property of if) *)
+          tauto.
+          ++ admit.
+  * admit. (* DONT CARE ABOUT WHILE *)
   + split. 
   - rewrite H15. destruct H0. destruct H16.
   assert((endnum' <= endnum)%nat).
@@ -1983,8 +1992,15 @@ Proof.
         ++ left. unfold section. unfold section in H18. destruct H18.
         assert((endnum' <= endnum)%nat).
        {
-          pose proof bbnum_le_next_num_single_cmd BBs BBnow startnum c lt_prop. admit. (*copy the proof in the first -*)
-       }
+          cbn[list_cmd_BB_gen] in H14.
+          pose proof bbnum_le_next_num (cmd_BB_gen c BBs BBnow startnum).(BasicBlocks) (cmd_BB_gen c BBs BBnow startnum).(BBn) (cmd_BB_gen c BBs BBnow startnum).(next_block_num) cmds.
+          assert ((((cmd_BB_gen c BBs BBnow startnum).(BBn)).(block_num) <
+       (cmd_BB_gen c BBs BBnow startnum).(next_block_num))%nat). {
+         apply H11.
+          }
+        pose proof H20 H21 as H20. clear H21.
+        lia.
+        }
         split. tauto. lia.
         ++ right. tauto.
      }
