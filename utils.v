@@ -199,13 +199,13 @@ Proof.
 Qed.
 
 
-
+Search (_ ++ _::nil).
 
 
 Lemma tail_eq_prop:
   forall (A: Type) (l1 l2: list A) (a b: A),
   l1 ++ a::nil = l2 ++ b::nil -> a = b.
 Proof.
-  apply app_inj_tail_iff.
+  apply app_inj_tail.
 Qed.
 
