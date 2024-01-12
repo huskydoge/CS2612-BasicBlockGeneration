@@ -608,8 +608,18 @@ Lemma inherit_lt_num_prop_list:
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: list cmd),
     (lt BBnow.(block_num) BBnum) -> (lt (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (list_cmd_BB_gen cmd_BB_gen c BBs BBnow BBnum).(next_block_num)).
 Proof.
-  intros. (*TODO*)
-Admitted.
+  intros. revert BBs BBnow BBnum H.
+  induction c; intros.
+  - simpl. tauto.
+  - cbn[list_cmd_BB_gen].
+    remember ((cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks)) as BBs_a.
+    remember ((cmd_BB_gen a BBs BBnow BBnum).(BBn)) as BBnow_a.
+    remember ((cmd_BB_gen a BBs BBnow BBnum).(next_block_num)) as BBnum_a.
+    specialize (IHc BBs_a BBnow_a BBnum_a).
+    pose proof inherit_lt_num_prop BBs BBnow BBnum a H.
+    subst BBnow_a. subst BBnum_a.
+    pose proof IHc H0. tauto.
+Qed.
 
 
 
