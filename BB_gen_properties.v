@@ -1857,8 +1857,22 @@ Proof.
       - unfold not. intros. destruct e0. tauto. discriminate H1.   
     }
     pose proof hd_position e0_not_nil as hd_position.
-    (*TODO bh continue finishing it *)
-Admitted. 
+    subst BBswo_. rewrite hd_position.
+    remember ({|
+      block_num := S BBnum;
+      commands := nil;
+      jump_info := {|
+                   jump_kind := UJump;
+                   jump_dest_1 := BBnum;
+                   jump_dest_2 := None;
+                   jump_condition := None |} |}) as BBnow_then.
+    assert (e0 ++ e1 = to_result(list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then
+            (S (S (S BBnum))))). {
+      unfold to_result. subst e0. subst e1. tauto.
+    }
+    pose proof BBgen_head_prop c1 BBnow_then (S ( S (S BBnum))).
+    simpl in H2. subst e0. subst e1. rewrite H2. subst BBnow_then. simpl. tauto.
+Qed. 
 
 
 
@@ -2205,6 +2219,8 @@ Proof.
 
   intros contra. rewrite contra in H2. subst BBswo_. sets_unfold in H2.
   clear A3 B3.
+
+  
   (*TODO yz key1, B1 B2 H2 contradiction *)
 
 Admitted.
