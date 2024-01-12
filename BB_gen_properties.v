@@ -1055,7 +1055,7 @@ Lemma BBgen_head_prop_wo:
   res.(BasicBlocks) <> nil ->
   (hd empty_block (res.(BasicBlocks))).(block_num) = BBnow.(block_num).
 Proof.
-  (*TODO*)
+  (*TODO px*)
 Admitted.
 
 
@@ -2773,29 +2773,28 @@ Proof.
   * 所以会导出矛盾
   *)
 
-  pose proof BBgen_range_single_soundness_correct (CIf e c1 c2).
-  unfold Q_BBgen_range in H4.
-  specialize (H4 BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) nil BBnow (BBnow'_ :: nil ++ BBs'_)).
-  assert (all_ge (BBnum_set (tl (BBnow'_ :: nil ++ BBs'_))) BBnum /\
-    all_lt (BBnum_set (tl (BBnow'_ :: nil ++ BBs'_)))
+  pose proof BBgen_range_wo_single_soundness_correct (CIf e c1 c2).
+  unfold Q_BBgen_range_wo in H4.
+  specialize (H4 BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) nil BBnow (BBnow'_ :: nil ++ BBswo_)).
+  assert (all_gt (BBnum_set (tl (BBnow'_ :: nil ++ BBswo_))) BBnum /\
+    all_lt (BBnum_set (tl (BBnow'_ :: nil ++ BBswo_)))
     (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) /\
-    BBjmp_dest_set (BBnow'_ :: nil ++ BBs'_)
-     ⊆ section BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num)
-      ∪ unit_set (jump_dest_1 BBnow.(jump_info))). {
+    BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_)
+     ⊆ section BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num)). {
       apply H4. apply Hn1. tauto.
-      unfold to_result. rewrite H. rewrite H0. simpl. tauto. apply Hn2.
+      unfold to_result. rewrite H. simpl. reflexivity. apply Hn2.
     }
   clear H4. destruct H5 as [? [? ?]].
   sets_unfold in H6. rename H3 into p1. rename H4 into p2. rename H5 into p3.
   specialize (H6 (jump_dest_1 BBnow.(jump_info))).
-  assert (BBjmp_dest_set (BBnow'_ :: nil ++ BBs'_) (jump_dest_1 BBnow.(jump_info))). {
+  assert (BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_) (jump_dest_1 BBnow.(jump_info))). {
     unfold BBjmp_dest_set. unfold BBjmp_dest_set in H2.
-    destruct H2 as [? [? ?]]. exists x. rewrite H0.
+    destruct H2 as [? [? ?]]. exists x. 
     pose proof In_sublist_then_in_list_head BasicBlock x (BBnow'_ :: nil ++ BBswo_) ((cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BBn) :: nil) H2. split.
-    apply H4. apply H3.
+    apply H2. apply H3.
   }
-  pose proof H6 H3 as H6. destruct H6 as [? | ?].
-  - unfold section in H4. unfold Nat.le in H4. unfold Nat.lt in H4.
+  pose proof H6 H3 as H6.  rename H6 into H4.
+    unfold section in H4. unfold Nat.le in H4. unfold Nat.lt in H4.
     assert ((jump_dest_1 BBnow.(jump_info) < BBnum)%nat). lia.
     assert ((jump_dest_1 BBnow.(jump_info) >= BBnum)%nat). lia.
     lia.
@@ -2863,92 +2862,24 @@ Proof.
   intros.
   rename H1 into jmp_prop. rename H2 into num_prop.
 
-  pose proof Q_add_BBs_in_generation_reserves_BB_sound (CIf e c1 c2) BBs BBnow BBnum.
-  unfold to_result in H1.
-  pose proof cut_eq_part_list_r BasicBlock ((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn) :: nil) (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BasicBlocks) (BBs ++
-  (cmd_BB_gen (CIf e c1 c2) nil BBnow BBnum).(BasicBlocks)).
-  rewrite <- app_assoc in H2. pose proof H2 H1 as H2. rewrite H2 in H.
-  apply cut_eq_part_list_l in H. clear H1. clear H2.
-  cbn[cmd_BB_gen] in H. simpl in H.
-  remember ({|
-              block_num := BBnow.(block_num);
-              commands := BBnow.(cmd);
-              jump_info := {|
-                            jump_kind := CJump;
-                            jump_dest_1 := S BBnum;
-                            jump_dest_2 := Some (S (S BBnum));
-                            jump_condition := Some e |} |}) as BBnow'.
-  remember ({|
-            block_num := S BBnum;
-            commands := nil;
-            jump_info := {|
-                         jump_kind := UJump;
-                         jump_dest_1 := BBnum;
-                         jump_dest_2 := None;
-                         jump_condition := None |} |}) as BBnow_then.
-  remember ({|
-            block_num := S (S BBnum);
-            commands := nil;
-            jump_info := {|
-                         jump_kind := UJump;
-                         jump_dest_1 := BBnum;
-                         jump_dest_2 := None;
-                         jump_condition := None |} |}) as BBnow_else.
-  remember ((list_cmd_BB_gen cmd_BB_gen c1 nil BBnow_then (S (S (S BBnum))))) as BBgen_then.
-  pose proof H. apply head_eq_prop in H. rewrite H in H1.
-  assert ( BBnow'_ :: nil ++ to_result BBgen_then ++ to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num)) = BBnow'_ :: nil ++ BBswo_). {
-    simpl. apply H1.
-  }
-  clear H1.
-  pose proof cut_eq_part_list_l BasicBlock (BBnow'_:: nil) (to_result BBgen_then ++
-        to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num))) BBswo_ H2.
-  clear H2.                         
-  pose proof BBgen_range_list_soundness_correct c1.
-  pose proof BBgen_range_list_soundness_correct c2.
-  unfold P_BBgen_range in H2. 
-  specialize (H2 (S(S(S BBnum))) BBgen_then.(next_block_num) nil BBnow_then (to_result BBgen_then)).
-  assert (all_ge (BBnum_set (tl (to_result BBgen_then))) (S (S (S BBnum))) /\
-     all_lt (BBnum_set (tl (to_result BBgen_then))) BBgen_then.(next_block_num) /\
-     BBjmp_dest_set (to_result BBgen_then)
-     ⊆ section (S (S (S BBnum))) BBgen_then.(next_block_num) ∪ unit_set (jump_dest_1 BBnow_then.(jump_info))). {
-    apply H2.
-    + subst BBnow_then. simpl. tauto.
-    + subst BBgen_then. tauto.
-    + rewrite app_nil_l. subst BBgen_then. tauto.
-    + subst BBnow_then. simpl. lia.
+  pose proof BBgen_range_wo_single_soundness_correct (CIf e c1 c2).
+  unfold Q_BBgen_range_wo in H1.
+  specialize (H1 BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) BBs BBnow (BBnow'_::nil ++ BBswo_)).
+
+  assert(all_gt (BBnum_set (tl (BBnow'_ :: nil ++ BBswo_))) BBnum /\
+  all_lt (BBnum_set (tl (BBnow'_ :: nil ++ BBswo_))) (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num) /\
+  BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_) ⊆ section BBnum (cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(next_block_num)).
+  {
+    apply H1. apply jmp_prop. reflexivity. tauto. lia.
   }
 
-  clear H2. destruct H4 as [A1 [A2 A3]].
+  destruct H2 as [? [? ?]].
 
-  assert ((S (S BBnum) < BBgen_then.(next_block_num))%nat) as key1. {
-    unfold all_ge in A1. unfold Nat.le in A1.
-    unfold all_lt in A2. unfold Nat.lt in A2.
-    admit. (*TODO yz apparent *)
-  }
-  
-  unfold P_BBgen_range in H3. specialize (H3 BBgen_then.(next_block_num) (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num)).(next_block_num) nil BBnow_else (to_result (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num)))).
-
-  remember ((list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBgen_then.(next_block_num))) as BBgen_else.
-  assert (all_ge (BBnum_set (tl (to_result BBgen_else))) BBgen_then.(next_block_num) /\
-     all_lt (BBnum_set (tl (to_result BBgen_else))) BBgen_else.(next_block_num) /\
-     BBjmp_dest_set (to_result BBgen_else)
-     ⊆ section BBgen_then.(next_block_num) BBgen_else.(next_block_num)
-       ∪ unit_set (jump_dest_1 BBnow_else.(jump_info))). {
-    apply H3.
-    + subst BBnow_else. simpl. tauto.
-    + tauto.
-    + rewrite app_nil_l. tauto.
-    + subst BBnow_else. simpl. apply key1.
+  simpl in H2. unfold all_gt in H2. specialize H2 with (BB.(block_num)).
+  assert(BBnum_set BBswo_ BB.(block_num)).
+  {
+    unfold BBnum_set. exists BB. split. tauto. tauto.
   }
 
-  clear H3. destruct H2 as [B1 [B2 B3]].
-  assert (BB.(block_num) ∈ BBnum_set BBswo_).  {
-    sets_unfold. unfold BBnum_set. exists BB. split. apply H0. tauto.
-  }
-
-  intros contra. rewrite contra in H2. subst BBswo_. sets_unfold in H2.
-  clear A3 B3.
-
-  (*TODO yz key1, B1 B2 H2 contradiction *)
-
-Admitted.
+  specialize (H2 H5). lia.
+Qed.
