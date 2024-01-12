@@ -1,4 +1,5 @@
 (*DONT CARE FOR WHILE*)
+(*DONT CARE FOR WHILE*)
 
 Require Import Coq.micromega.Psatz.
 Require Import Coq.ZArith.ZArith.
@@ -263,7 +264,7 @@ Lemma Qd_while_sound:
   forall (e: expr) (pre body: list cmd),
     Qd_while e pre body.
 Proof.
-Admitted.
+Admitted. (*DONT CARE FOR WHILE*)
 
 Lemma Q_while:
   forall (pre: list cmd) (e: expr) (body: list cmd),
@@ -367,4 +368,4 @@ Proof.
   + admit.
   + admit.
  *)
-Admitted.
+Admitted. (*DONT CARE FOR WHILE*)

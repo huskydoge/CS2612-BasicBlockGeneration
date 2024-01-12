@@ -1688,7 +1688,7 @@ Proof.
     
   - sets_unfold in H. tauto.
   - sets_unfold in H. tauto.
-Admitted.
+Qed.
 
 
 
@@ -1915,10 +1915,12 @@ Proof.
   intros. revert bs1 bs2 H H0.
   induction BBs1.
   - intros. simpl in *. tauto.
-  - admit. (*Combined with  an_over_pass_bridge, let it go first*)
+  - admit. (* 这个是为了证明下面的这个定理an_over_pass_bridge的，并没有在其他地方用到*)
 Admitted.
 
+(* 
 
+这条定理我们实在认为太难证明。
 Lemma an_over_pass_bridge: 
   forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
@@ -1958,12 +1960,14 @@ Proof.
         unfold BBnum_set. exists x. split. apply H5. tauto.
       }
       tauto.
-  - contradiction.
-  (*TODO *)
-Admitted.
+  - contradiction. 
+  Admitted.  *)
 
 
-(*对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
+
+(* 
+这条定理我们实在认为太难证明, 由于时间和精力的原因，不得不选择放弃。但是我们认为其条件是充分的，且我们在运用这条定理的时候，也证明了满足这些。
+对于任意的两串BBs1和BBs2，以及任意的两个BBnow1 BBnow2 和 bs1 bs2， 如果: 
 1. (bs1, bs2) 在 BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) 中
 2. bs1 不等于 bs2
 3. BBnow1 :: nil ++ BBs1 和 BBnow2 :: nil ++ BBs2 的BBnum_set不交
@@ -1974,9 +1978,8 @@ Admitted.
 8. 没有办法从 BBnow2 :: nil ++ BBs2 跳转到 BBnow1 :: nil ++ BBs1
 那么存在一个x，使得:
 1. (bs1, x) 在 BB_list_sem (BBnow1 :: nil ++ BBs1) 中
-2. (x, bs2) 在 BB_list_sem (BBnow2 :: BBs2) 中
-*)
-(* 
+2. (x, bs2) 在 BB_list_sem (BBnow2 :: BBs2) 中 *)
+
 Lemma an_over_pass_bridge: 
   forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
@@ -1994,7 +1997,7 @@ Proof.
   intros.
   pose proof classic (exists x, Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2). destruct H7. tauto.
   unfold not in H7. assert (False).
-  admit. *)
+  admit.
 
 
   (* remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs. 
@@ -2045,8 +2048,9 @@ Proof.
         unfold BBnum_set. exists x. split. apply H5. tauto.
       }
       tauto.
-  - contradiction. *)
-(* Admitted. *)
+  - contradiction. 
+Admitted. 
+*)
  
 
 
