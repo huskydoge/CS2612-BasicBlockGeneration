@@ -1788,11 +1788,60 @@ Proof.
     subst endnum'. tauto.
   }
   specialize (H0 H7 H8 H10 H11). split.
-  + admit. (*TODO*)
+  assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BasicBlocks) =BBs ++ BBwo_last' ++ BBwo_last'').
+{
+   cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+   pose proof list_cmd_BB_delta cmds (BBs++BBwo_last') BBwo_last'' ((cmd_BB_gen c BBs BBnow startnum).(BBn)) ((cmd_BB_gen c BBs BBnow startnum).(next_block_num)) H9.
+   rewrite app_assoc. tauto.
+}
+  assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(BBn) = BBnow'').
+{
+  cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+  tauto.
+}
+  assert((list_cmd_BB_gen cmd_BB_gen (c :: cmds) BBs BBnow startnum).(next_block_num) = endnum).
+{
+  cbn[list_cmd_BB_gen]. rewrite H4. subst endnum'. subst BBnow'.
+  rewrite H8. tauto.
+}
+(* properties on delta, wo_last and now*)
+  assert(BBdelta = BBwo_last' ++ BBdelta'').
+{
+  assert(BBs ++ BBwo_last' ++ BBwo_last'' ++ BBnow''::nil = BBs ++ BBdelta).
+  unfold to_result in H3.
+  rewrite <- H3. rewrite app_assoc. rewrite app_assoc. rewrite app_assoc in H12.
+  rewrite <- H12.
+  rewrite <- H13.
+  tauto.
+  apply app_inv_head in H15.
+  subst BBdelta''. rewrite H15. tauto.
+}
+  + rewrite H15.
+    destruct H0.
+     assert((endnum' >= startnum)%nat).
+  {
+    subst endnum'.
+    admit.
+    (* TODO pose proof bbnum_le_next_num BBs BBnow startnum c, but use the version of c as single cmd, I dont know*)
+  }
+    assert(all_ge (BBnum_set (tl(BBwo_last'))) startnum).
+  {
+    clear H17 H15 H14 H13 H12 H11 H10 H9 H8 H7 H6 H5 H4 H3 H2 H1 H16 H0 BBdelta'' BBnow'' BBwo_last'' endnum.
+    (* TODO, use H and BBdelta' *)
+    admit.
+  }
+    assert(all_ge (BBnum_set BBdelta'') startnum).
+  {
+    (* TODO cannot handle the first block *)
+   clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
+    admit.
+  }
+  admit. (* TODO, use H18 and H19 to get the final theorem *)
   + split. 
      - admit.
      - admit.
 Admitted. (* yz *)
+
 
 Section BB_gen_range_sound.
 
@@ -2527,8 +2576,10 @@ Lemma P_BBgen_con_wo:
     P_BBgen_range_wo cmd_BB_gen cmds ->
     P_BBgen_range_wo cmd_BB_gen (c::cmds).
 Proof.
-  (*TODO*)
-Admitted. (* px *)
+  intros. unfold Q_BBgen_range_wo in H. unfold P_BBgen_range_wo. intros.
+  remember ((cmd_BB_gen c BBs BBnow startnum).(next_block_num)) as midnum.
+  admit.
+Admitted. 
 
 Section BB_gen_range_wo_sound.
 
