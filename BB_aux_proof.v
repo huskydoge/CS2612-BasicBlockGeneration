@@ -1915,8 +1915,8 @@ Proof.
   intros. revert bs1 bs2 H H0.
   induction BBs1.
   - intros. simpl in *. tauto.
-  - admit. (* 这个是为了证明下面的这个定理an_over_pass_bridge的，并没有在其他地方用到*)
-Admitted.
+  - admit. (* !这个是为了证明下面的这个定理quit掉的an_over_pass_bridge的，并没有在其他地方用到*)
+Admitted. (*QUIT*)
 
 (* 
 
