@@ -705,13 +705,7 @@ Proof.
     + destruct Qb_if_while as [contra _]. unfold is_asgn in contra. tauto.
   - unfold P. intros.
     assert (endinfo_prop: (endinfo_property BBnow)). {
-    (* 我们需要让传入的BBnow的endinfo，其实不是任何num，更多的是像一种标志。这个性质会在后面用到。
-      本来我们可以这样解决这个问题：让所有BBnum从1开始，把endinfo设置为0，这样在Q和P中仅仅加入一条
-      jmp_dest_1 BBnow.(jump_info) < BBnow.(block_num) 就可以解决了。
-    *)
-    (* !然而, 在构思初期，我们就在BBgen里，让其顺序排为BBnum = BBthen_num < BBelse_num < BBnext_num, 
-    导致在BBthen的跳转目标为BBnext_num的情况下，我们不能用同一个Q或P去推理。因为不满足jmp_dest_1 BBnow.(jump_info) < BBnow.(block_num) *)
-      admit.  
+      unfold endinfo_property. lia.
     }
     specialize (Qb_prop BBs BBnow BBnum).
     destruct H as [bbnow_T1 [bbnow_T2 bbnow_T3]].
@@ -913,7 +907,7 @@ Proof.
       }
 
       assert (n3: (BBnow_mid.(block_num) < BBnum'_)%nat). {
-        rewrite HeqBBnow_mid. simpl. rewrite A4. admit. (*bh*)
+        lia.
       }
 
       specialize (P_prop n1 B2 n2 n3).
