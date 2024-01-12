@@ -1918,12 +1918,22 @@ Proof.
           assert(b0.(block_num) = BBnow'.(block_num)). 
           {
              pose proof BBgen_head_prop_wo cmds BBnow' endnum'.
-             admit.   
+             simpl in H21.
+             rewrite H9 in H21.
+             assert (nil <> b0 :: BBwo_last''). apply nil_cons.
+             assert (b0 :: BBwo_last'' <> nil). {
+                unfold not. intros. unfold not in H22. apply H22.
+                rewrite H23. tauto.
+             }
+             pose proof H21 H23. unfold hd in H24. unfold BBnow'.
+             pose proof if_BBn_num_prop e c1 c2 BBs BBnow.
+             specialize (H25 startnum). rewrite H25. apply H24.
           }
           simpl in H0. destruct H20.
           rewrite <- H20 in k2.
           rewrite H21 in k2.
-          admit. (* prove num: BBnow' >= startnum by if *)
+          pose proof if_BBn_num_prop e c1 c2 BBs BBnow startnum.
+          subst BBnow'. rewrite <- k2. lia. 
           unfold all_ge in H0. specialize (H0 n). unfold BBnum_set in H0.
           assert((exists BB : BasicBlock, In BB (BBwo_last'' ++ BBnow'' :: nil) /\ BB.(block_num) = n)).
           {
@@ -2041,7 +2051,7 @@ Proof.
       left. tauto. right. tauto. 
       destruct H17. unfold BBjmp_dest_set. exists x. tauto.
       left. tauto. right. tauto. 
-Admitted. (* yz *)
+Admitted.
 
 
 Section BB_gen_range_sound.

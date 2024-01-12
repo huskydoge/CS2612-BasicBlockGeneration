@@ -11,8 +11,8 @@ We thank Prof. Cao and two TAs for their great help throughout the semester as w
 
 - `grammar.v`: the basic grammar of the task
 - `BB_generation.v`: defines the generation process of the Basic Blocks.
-- `BB_denotations.v`: defines the denotation of Basic Blocks.
 - `cmd_denotations.v`: defines the notations of original SimpleWhile commands.
+- `BB_denotations.v`: defines the denotation of Basic Blocks.
 - `utils.v`: some fundamental lemmas used for subsequent tasks
 - `BB_gen_properties.v`: defines and proves some lemmas regarding the basic properties of the generation process of Basic Blocks.
 - `BB_aux_proof.v`: defines important propositions and proves lemmas using `BB_gen_properties.v` and `utils.v`.
