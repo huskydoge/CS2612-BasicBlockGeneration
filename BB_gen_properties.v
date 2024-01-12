@@ -2797,7 +2797,12 @@ Proof.
             }
             specialize (k tmp). rewrite H9 in k. simpl in k. rewrite case1 in k. rewrite cond2' in k. rewrite k.
             destruct c.  
-            --- simpl in H4. (*H4矛盾 px*) admit.
+            --- simpl in H4. pose proof H4. assert (BBs ++ nil = BBs ++ b :: BBwo_last'). {
+                  rewrite app_nil_r. apply H21.
+                }
+                pose proof cut_eq_part_list_l BasicBlock BBs nil (b :: BBwo_last') H22.
+                pose proof nil_cons. specialize (H24  BasicBlock b BBwo_last').
+                contradiction.
             --- pose proof if_BBn_num_prop e c1 c2 BBs BBnow startnum. subst BBnow'. simpl. lia. 
             --- admit. (*DONT CARE ABOUT WHILE*)
 
