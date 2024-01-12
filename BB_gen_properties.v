@@ -1881,7 +1881,7 @@ Proof.
     clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
     admit.
   }
-    
+    admit.
   + split. 
      - rewrite H15. destruct H0. destruct H16.
        assert((endnum' <= endnum)%nat).
@@ -1921,13 +1921,18 @@ Proof.
         left.
         assert((endnum'>=startnum)%nat).
        {
-          admit. (*copy the proof in the first +*)
+          pose proof bbnum_le_next_num_single_cmd BBs BBnow startnum c lt_prop. lia. (*copy the proof in the first +*)
        }
         unfold section. split. unfold section in H17. lia. unfold section in H17. tauto.
         pose proof JmpInfo_inherit BBs BBnow startnum c.
         right. subst BBnow'. rewrite H19 in H17. tauto.
      }
-      admit. (*use H16 and H17 *) 
+      sets_unfold. intros. sets_unfold in H16. sets_unfold in H17. specialize (H16 a). specialize (H17 a).
+      unfold BBjmp_dest_set in H18. destruct H18. destruct H18. apply in_app_iff in H18.
+      destruct H18. destruct H16. unfold BBjmp_dest_set. exists x. tauto.
+      left. tauto. right. tauto. 
+      destruct H17. unfold BBjmp_dest_set. exists x. tauto.
+      left. tauto. right. tauto. 
 Admitted. (* yz *)
 
 
