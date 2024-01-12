@@ -357,7 +357,6 @@ Proof.
   tauto.
 Qed.
 
-(*TODO ! 这里num之间的关系要整理一下，说不定有些定理是没有必要的*)
 (*如果传入的BBnow的num小于BBnum（似乎不需要用到），那么BBnum的num小于等于next_block_num ====================================================================================================== *)
 (*要写成互递归了，因为要拿到c1中间的结果进行比较*)
 
@@ -944,7 +943,7 @@ Qed.
 
 
 
-(*TODO IMPORTANT：第一个Block的num就是BBnow的blocknum *)
+(* 第一个Block的num就是BBnow的blocknum *)
 Lemma BBgen_head_prop:
   forall (cmds : list cmd)(BBnow : BasicBlock) (BBnum : nat),
   let res := (list_cmd_BB_gen cmd_BB_gen cmds nil BBnow BBnum) in
@@ -1660,7 +1659,7 @@ Proof.
     subst endnum'. tauto.
   }
   specialize (H0 H7 H8 H10 H11). split.
-  + admit.
+  + admit. (*TODO*)
   + split. 
      - admit.
      - admit.
