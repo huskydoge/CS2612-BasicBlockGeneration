@@ -23,5 +23,6 @@ We thank Prof. Cao and two TAs for their great help throughout the semester as w
 
 - All the `while` branches and theorems (including those in inductive proofs) have be Admitted with the acknowledgement of the instructor.
 - We assume that the program will never go wrong or infinite. Therefore, we have Admitted the following lemmas: `true_or_false_classic1`, `true_or_false_classic2`, `No_err_and_inf_for_expr`.
+- For the `CIf` case, we have assumed that the cmds in the branches `c1` and `c2` cannot be `nil` with the acknowledgement of the instructor.
 - We have proved all the theorems except two: `an_over_pass_bridge` and `BB_list_sem_simplify_r` (both in `BB_aux_proof.v`). The two theorems is used in the `If` branch of the `Pcons` part of the main theorem. Suppose `BBs_if ++ BBnext :: BBs` where `BBs_if` is the generated result of the first `CIf` cmd and `Bnrm (BB_list_sem (BBs_if ++ BBnext :: BBs)) bs1 bs2`. Given the requirements stated in the lemma, there exists a middle state `x` such that `Bnrm (BB_list_sem BBs_if) bs1 x` and `Bnrm (BB_list_sem (BBnext :: BBs)) x bs2`. We believe that it is theoretically correct.
 
