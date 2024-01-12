@@ -1071,6 +1071,60 @@ Proof.
           specialize (bridge disjoint_jmp_dest_set).
           specialize (bridge in_prop1).
           specialize (bridge in_prop2).
+          assert(tmp: BBjmp_dest_set (BBnow_start :: nil ++ BBswo_) ∩ BBnum_set BBs'_p == ∅).
+          {
+            sets_unfold. intros. split.
+            - intros. 
+              destruct Q_prop as [_ [_ Q_prop]]. destruct P_prop as [P_prop _]. 
+              sets_unfold in Q_prop. specialize (Q_prop a1). simpl in P_prop. unfold all_ge in P_prop. specialize (P_prop a1).
+              destruct H2 as [H2_1 H2_2]. specialize (P_prop H2_2).
+              assert(p: BBjmp_dest_set (BBnow'_ :: BBs'_) a1). { 
+                unfold BBjmp_dest_set. unfold BBjmp_dest_set in H2_1.
+                destruct H2_1 as [H2_1_BB H2_1_conds]. destruct H2_1_conds as [H2_1_1 H2_1_2].
+                simpl in H2_1_1. destruct H2_1_1 as [case1 | case2].
+                + exists BBnow'_. split. left. tauto. rewrite <- case1 in H2_1_2. rewrite HeqBBnow_start in H2_1_2. simpl in H2_1_2. tauto.
+                + exists H2_1_BB. split. 
+                  * right. rewrite <- wo_tran. apply in_app_iff. left. tauto.
+                  * tauto.
+              }
+              specialize (Q_prop p). unfold section in Q_prop. 
+              destruct Q_prop as [Q_prop1 | Q_prop2].
+              *  lia.
+              * unfold unit_set in Q_prop2. lia.
+            - intros. tauto.
+          }
+          assert(tmp2: BBjmp_dest_set (BBnow'_p :: nil ++ BBs'_p) ∩ BBnum_set (BBnow_start :: nil ++ BBswo_) == ∅ ). {
+            sets_unfold. intros. split.
+            - intros.
+              destruct P_prop as [_ [_ P_prop]]. destruct Q_prop as [ Q1 [Q_prop _] ].
+              sets_unfold in P_prop. specialize (P_prop a1). simpl in Q_prop. unfold all_ge in Q_prop. specialize (Q_prop a1).
+              destruct H2 as [H2_1 H2_2].
+              simpl in H2_1.
+              specialize (P_prop H2_1).
+              clear H2_1. 
+              unfold BBnum_set in H2_2. destruct H2_2 as [H2_2_BB H2_2_conds].
+              destruct H2_2_conds as [H2_2_1 H2_2_2].
+              simpl in H2_2_1. destruct H2_2_1 as [case1 | case2].
+              * rewrite <- case1 in H2_2_2. rewrite HeqBBnow_start in H2_2_2. simpl in H2_2_2. 
+                destruct P_prop as [P_prop1 | P_prop2].
+                ** unfold section in P_prop1. rewrite BBnow'_prop in H2_2_2. simpl in H2_2_2. lia.
+                ** unfold unit_set in P_prop2. rewrite BBnow'_prop in H2_2_2. simpl in H2_2_2. 
+                   pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2). rewrite <- HeqBBnow_mid in H2.
+                   rewrite H2 in P_prop2. lia.
+              * assert (tmp1: BBnum_set BBs'_ a1). {
+                  unfold BBnum_set. exists H2_2_BB. split.
+                  + rewrite <- wo_tran. apply in_app_iff. left. tauto.
+                  + tauto.  
+              }
+              specialize (Q_prop tmp1). destruct P_prop as [P_prop1 | P_prop2].
+              ** unfold section in P_prop1. lia.
+              ** unfold unit_set in P_prop2. 
+                pose proof JmpInfo_inherit BBs BBnow BBnum (CIf e c1 c2). rewrite <- HeqBBnow_mid in H2.
+                rewrite H2 in P_prop2. simpl in Q1. unfold all_ge in Q1. specialize (Q1 a1 tmp1). lia.
+
+            - intros. tauto.
+          }
+          specialize (bridge tmp tmp2).
           tauto.
         }
 
