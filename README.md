@@ -7,6 +7,8 @@ We thank Prof. Cao and two TAs for their great help throughout the semester as w
 
 ## Compilation Order
 
+`compcert_lib` and `sets` are the given packages for homeworks and lecture notes.
+
 - `grammar.v`: the basic grammar of the task
 - `BB_generation.v`: defines the generation process of the Basic Blocks.
 - `BB_denotations.v`: defines the denotation of Basic Blocks.
