@@ -1887,7 +1887,7 @@ Proof.
      - rewrite H15. destruct H0. destruct H16.
        assert((endnum' <= endnum)%nat).
      {
-        admit.
+        admit. (*TODO*)
      }
        assert(all_lt (BBnum_set (tl BBwo_last')) endnum).
      {
