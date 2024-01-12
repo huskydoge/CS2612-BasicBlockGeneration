@@ -27,7 +27,7 @@ We thank Prof. Cao and two TAs for their great help throughout the semester as w
 
 In Repo's root path, first enter:
 ```shell
-coq_makefile -f _CoqProject *.v   -o Makefile
+coq_makefile -f _CoqProject */*.v   -o Makefile
 ```
 then enter `make` and all the files will be compiled automatically.
 
