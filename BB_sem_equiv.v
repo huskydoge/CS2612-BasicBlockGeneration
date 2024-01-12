@@ -957,7 +957,7 @@ Proof.
               rewrite <- case1' in cond2_2. rewrite B4 in cond2_2. rewrite BBnow_mid_num_prop in cond2_2. 
               rewrite <- cond2_2 in Q_prop2. 
               rewrite BBnow_mid_num_prop in T2. 
-              pose proof neq_ssnum BBs BBswo_ cond1_BB BBnow BBnow'_ BBnum e c1 c2 A3 case2. lia.
+              pose proof neq_ssnum BBs BBswo_ cond1_BB BBnow BBnow'_ BBnum e c1 c2 A3 case2 m1 H0. lia.
               simpl in case2. simpl in case2'. 
               unfold all_ge in P_prop1. specialize (P_prop1 cond2_BB.(block_num)).
               assert (t: BBnum_set BBs'_p cond2_BB.(block_num)). {
