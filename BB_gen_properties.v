@@ -1909,7 +1909,14 @@ Proof.
   - rewrite H15. destruct H0. destruct H16.
   assert((endnum' <= endnum)%nat).
   {
-    admit. (*TODO*)
+    cbn[list_cmd_BB_gen] in H14.
+    pose proof bbnum_le_next_num (cmd_BB_gen c BBs BBnow startnum).(BasicBlocks) (cmd_BB_gen c BBs BBnow startnum).(BBn) (cmd_BB_gen c BBs BBnow startnum).(next_block_num) cmds.
+    assert ((((cmd_BB_gen c BBs BBnow startnum).(BBn)).(block_num) <
+       (cmd_BB_gen c BBs BBnow startnum).(next_block_num))%nat). {
+      apply H11.
+    }
+    pose proof H18 H19 as H18. clear H19.
+    lia.
   }
     assert(all_lt (BBnum_set (tl BBwo_last')) endnum).
   {
