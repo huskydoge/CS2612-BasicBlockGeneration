@@ -1901,7 +1901,20 @@ Proof.
      }
       clear H18 H17 H16 H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H0.
       unfold all_lt. intros. unfold BBnum_set in H0. destruct H0. destruct H0.
-      admit. (* TODO *)
+      destruct BBwo_last'. 
+      --
+      simpl in H0.
+      assert(In x BBdelta''). 
+      {
+      destruct BBdelta''. simpl in H0. tauto. simpl in H0.
+      apply in_cons. tauto.
+      }
+      unfold all_lt in H20. specialize (H20 n).
+      assert(BBnum_set BBdelta'' n).
+      {
+       unfold BBnum_set. exists x. tauto.
+      }
+      specialize (H20 H3). tauto.
      - rewrite H15. 
       assert(BBjmp_dest_set BBwo_last' ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
      {
