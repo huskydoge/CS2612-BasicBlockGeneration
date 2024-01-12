@@ -1976,7 +1976,7 @@ Admitted.
 1. (bs1, x) 在 BB_list_sem (BBnow1 :: nil ++ BBs1) 中
 2. (x, bs2) 在 BB_list_sem (BBnow2 :: BBs2) 中
 *)
-(*
+
 Lemma an_over_pass_bridge: 
   forall (BBs1 BBs2: list BasicBlock)(BBnow1 BBnow2: BasicBlock)(bs1 bs2: BB_state),
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2 )) bs1 bs2 ->
@@ -1991,9 +1991,28 @@ Lemma an_over_pass_bridge:
   Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\
   Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2).
 Proof.
-  intros. 
-  remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs. 
-  pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H. rename H5 into Hn1. rename H6 into Hn2. rename H7 into H5. destruct H5.
+  intros.
+  pose proof classic (exists x, Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 x /\ Bnrm (BB_list_sem (BBnow2 :: BBs2)) x bs2). destruct H7. tauto.
+  unfold not in H7. assert (False).
+  admit.
+
+
+  (* remember (BBnow1 :: nil ++ BBs1 ++ BBnow2 :: nil ++ BBs2) as BBs. 
+  assert (exists bs : BB_state, Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 bs /\ bs.(BB_num) ∈ BBnum_set (BBnow2 :: nil ++ BBs2)). {
+    pose proof classic (exists bs : BB_state,
+    Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 bs /\ BB_num bs ∈ BBnum_set (BBnow2 :: nil ++ BBs2)). destruct H7. tauto.
+    assert (forall bs: BB_state, Bnrm (BB_list_sem (BBnow1 :: nil ++ BBs1)) bs1 bs -> ~ BB_num bs ∈ BBnum_set (BBnow2 :: nil ++ BBs2)). {
+      intros.
+      unfold not in H7. unfold not. intros. apply H7. exists bs. split. apply H8. apply H9.
+    }
+    clear H7. 
+
+    admit.
+    (* specialize (H8 bs2).  *)
+  }
+  my_destruct H7. exists x. split. apply H7.  *)
+
+  (* pose proof BBs_list_sem_exists_BB_bs1_x BBs bs1 bs2 H. rename H5 into Hn1. rename H6 into Hn2. rename H7 into H5. destruct H5.
   - my_destruct H5. subst BBs.
     assert (In x (BBnow1 :: nil ++ BBs1) \/ In x (BBnow2 :: nil ++ BBs2)). {
       pose proof In_l1_or_l2 BasicBlock (BBnow1 :: nil ++ BBs1) (BBnow2 :: nil ++ BBs2) x H5.
@@ -2014,8 +2033,8 @@ Proof.
       * pose proof BB_jmp_sem_num_in_BBjmp_dest_set. 
         assert (notin: ~ (x0.(BB_num)) ∈ (BBnum_set (BBnow1 :: BBs1))). 
         {
-          unfold not. intros. rename H9 into focus. unfold BBnum_set in focus.
-          sets_unfold in focus.
+          unfold not. intros. rename H9 into focus.
+          
         } (*Failure*)
         pose proof BB_list_sem_simplify_r (BBnow1::BBs1) (BBnow2::BBs2) x0 bs2 H7 notin. tauto.
     + pose proof BB_sem_start_BB_num bs1 x0 x H6.
@@ -2026,10 +2045,10 @@ Proof.
         unfold BBnum_set. exists x. split. apply H5. tauto.
       }
       tauto.
-  - contradiction.
+  - contradiction. *)
 Admitted.
  
-*)
+
 
 Lemma Iter_nrm_BBs_n_add_expansion_tran:
   forall (BBs: list BasicBlock) (bs1 bs2: BB_state) (a b: nat),
