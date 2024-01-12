@@ -134,9 +134,11 @@ Lemma In_pre_or_tail:
   forall (A: Type) (a b: A)(l: list A),
   In a (l ++ b::nil) -> a = b \/ In a l.
 Proof.
-  (*TODO*)
-Admitted.
-
+  intros. induction l.
+  - simpl in H. destruct H as [? | ?]. left. rewrite H. tauto. tauto.
+  - simpl in H. destruct H as [? | ?]. right. rewrite H. unfold In. left. tauto.
+    pose proof IHl H. destruct H0. left. tauto. right. unfold In. right. tauto. 
+Qed.
 
 Definition empty_block := {|
   block_num := 0;
