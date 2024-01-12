@@ -2341,15 +2341,39 @@ forall  (x: var_name) (e: expr),
 Proof. 
   intros. unfold Q_BBgen_range_wo. intros. simpl in H0.
   unfold to_result in H1. simpl in H1. 
-  (*TODO px*)
-Admitted.
+  assert (BBdelta = nil). {
+    assert (BBs ++ nil = BBs ++ BBdelta). {
+      rewrite app_nil_r. apply H1.
+    }
+    apply cut_eq_part_list_l in H3. rewrite H3. tauto.
+  }
+  rewrite H3. simpl. repeat split.
+  - unfold all_gt. intros. unfold BBnum_set in H4. destruct H4 as [? [? ?]].
+    unfold In in H4. tauto.
+  - unfold all_lt. intros. unfold BBnum_set in H4. destruct H4 as [? [? ?]].
+    unfold In in H4. tauto.
+  - unfold BBjmp_dest_set in H4. destruct H4 as [? [? ?]]. unfold In in H4. tauto.
+  - unfold BBjmp_dest_set in H4. destruct H4 as [? [? ?]]. unfold In in H4. tauto.
+Qed.
 
 Lemma P_BBgen_nil_wo:
     P_BBgen_range_wo cmd_BB_gen nil.
 Proof.
   unfold P_BBgen_range_wo. intros. simpl in H0. unfold to_result in H1. simpl in H1. rename H2 into new. 
-  (*TODO px*)
-Admitted.
+  assert (BBdelta = nil). {
+    assert (BBs ++ nil = BBs ++ BBdelta). {
+      rewrite app_nil_r. apply H1.
+    }
+    apply cut_eq_part_list_l in H2. rewrite H2. tauto.
+  }
+  rewrite H2. simpl. repeat split.
+  - unfold all_gt. intros. unfold BBnum_set in H3. destruct H3 as [? [? ?]].
+    unfold In in H4. tauto.
+  - unfold all_lt. intros. unfold BBnum_set in H3. destruct H3 as [? [? ?]].
+    unfold In in H4. tauto.
+  - unfold BBjmp_dest_set in H3. destruct H3 as [? [? ?]]. unfold In in H4. tauto.
+  - unfold BBjmp_dest_set in H3. destruct H3 as [? [? ?]]. unfold In in H4. tauto.
+Qed.
 
 
 Lemma P_BBgen_con_wo:
@@ -2776,6 +2800,8 @@ Proof.
     assert ((jump_dest_1 BBnow.(jump_info) >= BBnum)%nat). lia.
     lia.
   - unfold unit_set in H4. clear H4. 
+    unfold tl in p2. unfold tl in p3. rewrite app_nil_l in p2. rewrite app_nil_l in p3.
+    clear p1. 
 (*TODO px*)
 Admitted.
 
