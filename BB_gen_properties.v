@@ -1894,12 +1894,14 @@ Proof.
         clear H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H17 H16 H0.
         admit. (* TODO, use H18 and H6 and BBdelta' *)
      }
-      assert(all_lt (BBnum_set (tl BBdelta'')) endnum).
+      assert(all_lt (BBnum_set (BBdelta'')) endnum).
      {
-        tauto.
+        clear H19 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H17 H0.
+        admit. (* TODO similar, handle the first block *)
      }
       clear H18 H17 H16 H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H0.
-      admit. (* TODO, use H19 and H20*)
+      unfold all_lt. intros. unfold BBnum_set in H0. destruct H0. destruct H0.
+      admit. (* TODO *)
      - rewrite H15. 
       assert(BBjmp_dest_set BBwo_last' ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
      {
