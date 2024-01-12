@@ -199,7 +199,11 @@ Proof.
 Qed.
 
 
-Search (_ ++ _::nil).
+Definition is_asgn (c: cmd): Prop :=
+  match c with
+  | CAsgn _ _ => True
+  | _ => False
+  end.
 
 
 Lemma tail_eq_prop:

@@ -1014,7 +1014,7 @@ Proof.
               ++ unfold unit_set in Q_prop3_2. pose proof unique_endinfo_if BBs BBswo_  BBs'_ e c1 c2 BBnow BBnow'_ BBnum A3.
                 symmetry in wo_tran. rewrite Heqc0 in wo_tran. specialize (H2 wo_tran  endinfo_prop). sets_unfold in H2.
                 rewrite <- Q_prop3_2 in H2. 
-                specialize (H2 contra). lia.
+                specialize (H2 m1 H0 contra). lia.
             * unfold unit_set in P_prop3_2. pose proof JmpInfo_inherit BBs BBnow BBnum c. rewrite Heqc0 in H2.
               assert (contra: BBjmp_dest_set (BBnow'_ :: nil ++ BBswo_) a1).
               {
@@ -1141,7 +1141,7 @@ Proof.
                 + tauto.
                 + rewrite key2 in cond2. tauto.
             }
-            specialize (H2 t). tauto.
+            specialize (H2 m1 H0 t). tauto.
           (* bb_mid = bs2, bs2的num就是endinfo，但是从case-a中知道，bb_mid不可能拿到endinfo，因为它并不在BBn的jmpdest里*)
             ++ symmetry in wo_tran. rewrite Heqc0 in wo_tran. pose proof unique_endinfo_if BBs BBswo_ BBs'_ e c1 c2 BBnow BBnow'_ BBnum A3 wo_tran endinfo_prop as key.
              sets_unfold in key. rewrite case_b' in case_a. rewrite C4 in case_a.

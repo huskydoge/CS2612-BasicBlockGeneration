@@ -343,129 +343,6 @@ Proof.
 Qed.
 
 
-(* TODO 证明======================================================================================================================================== *)
-
-
-Definition Q_inherit_not_jmp_to_self (c: cmd): Prop :=
-  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
-    (gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))) ->
-    (gt BBnum BBnow.(block_num)) ->
-    gt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info)).
-
-Definition P_inherit_not_jmp_to_self(cmds: list cmd): Prop :=
-  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
-  (gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))) ->
-  (gt BBnum BBnow.(block_num)) ->
-  gt (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(jump_info)).
-
-Lemma Q_inherit_not_jmp_to_self_asgn: 
-  forall  (x: var_name) (e: expr),
-  Q_inherit_not_jmp_to_self (CAsgn x e).
-Proof. 
-  unfold Q_inherit_not_jmp_to_self. intros.
-  simpl.
-  tauto.
-Qed.
-
-Lemma Q_inherit_not_jmp_to_self_if:
-  forall  (e: expr) (c1: list cmd) (c2: list cmd),
-  P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
-  Q_inherit_not_jmp_to_self (CIf e c1 c2).
-Proof.
-  intros. unfold Q_inherit_not_jmp_to_self. intros.
-  unfold P_inherit_not_jmp_to_self in H.
-  unfold P_inherit_not_jmp_to_self in H0.
-  cbn[cmd_BB_gen]. simpl.
-  (* 先使用else的分支说明BBnum > BBthen_num *)
-  specialize (H BBs BBnow BBnum). pose proof H H1 as H.
-  lia.
-Qed.
-
-Lemma Q_inherit_not_jmp_to_self_while:
-  forall  (e: expr) (c1: list cmd) (c2: list cmd),
-  P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
-  Q_inherit_not_jmp_to_self (CWhile c1 e c2).
-Proof.
-Admitted.  (*we DONT CARE while*)
-
-Lemma P_inherit_not_jmp_to_self_nil:
-  P_inherit_not_jmp_to_self nil.
-Proof.
-  unfold P_inherit_not_jmp_to_self. intros. cbn[list_cmd_BB_gen]. simpl. apply H.
-Qed.
-
-
-Lemma P_inherit_not_jmp_to_self_cons:
-forall (c: cmd) (cmds: list cmd),
-  Q_inherit_not_jmp_to_self c ->
-  P_inherit_not_jmp_to_self cmds ->
-  P_inherit_not_jmp_to_self (c :: cmds).
-Proof.
-  unfold P_inherit_not_jmp_to_self. unfold Q_inherit_not_jmp_to_self. intros.
-  cbn[list_cmd_BB_gen]. specialize (H BBs BBnow BBnum H1). 
-  specialize (H0  ((cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks))  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)) ((cmd_BB_gen c BBs BBnow BBnum).(next_block_num)) H).
-  tauto.
-Qed. 
-
-Section inherit_not_jmp_to_self_sound.
-
-Variable inherit_not_jmp_to_self_sound: forall (c: cmd), Q_inherit_not_jmp_to_self c.
-
-Fixpoint inherit_list_not_jmp_to_self_sound (cmds: list cmd): P_inherit_not_jmp_to_self cmds :=
-  match cmds with
-  | nil => P_inherit_not_jmp_to_self_nil 
-  | c :: cmds0 => P_inherit_not_jmp_to_self_cons c cmds0 (inherit_not_jmp_to_self_sound c) (inherit_list_not_jmp_to_self_sound cmds0)
-  end.
-
-End inherit_not_jmp_to_self_sound.
-
-Fixpoint inherit_not_jmp_to_self_sound (c: cmd): Q_inherit_not_jmp_to_self c :=
-  match c with
-  | CAsgn x e => Q_inherit_not_jmp_to_self_asgn x e
-  | CIf e cmds1 cmds2 =>
-      Q_inherit_not_jmp_to_self_if e cmds1 cmds2
-        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds1)
-        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds2)
-  | CWhile cmds1 e cmds2 =>
-      Q_inherit_not_jmp_to_self_while e cmds1 cmds2
-        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds1)
-        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds2)
-  end.
-
-Lemma inherit_not_jmp_to_self_soundness_correct:
-  forall (c: cmd),
-  Q_inherit_not_jmp_to_self c.
-Proof.
-  apply inherit_not_jmp_to_self_sound.
-Qed.
-
-Lemma inherit_list_not_jmp_to_self_soundness_correct:
-  forall (cmds: list cmd),
-  P_inherit_not_jmp_to_self cmds.
-Proof.
-  apply inherit_list_not_jmp_to_self_sound.
-  pose proof inherit_not_jmp_to_self_soundness_correct.
-  apply H.
-Qed.
-
-
-
-(*如果BBnow不会jmp到他自己，那么其继承者也不会*)
-Lemma inherit_not_jmp_to_self:
-  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
-    gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info)) ->
-    gt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info)).
-Proof.
-  pose proof inherit_not_jmp_to_self_soundness_correct.
-  intros.
-  unfold Q_inherit_not_jmp_to_self in H.
-  specialize (H c BBs BBnow BBnum H0). tauto.
-Qed.
-
-
-
-
-
 (* ======================================================================================================================================= *)
 
 
@@ -488,7 +365,7 @@ Qed.
 
 Definition Q_inherit_lt_num_prop_mutual (c: cmd): Prop :=
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
-    (lt BBnow.(block_num) BBnum) -> le BBnum (cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
+    (lt BBnow.(block_num) BBnum) -> (is_asgn(c) /\ le BBnum (cmd_BB_gen c BBs BBnow BBnum).(next_block_num)) \/ (~is_asgn(c)) /\ lt BBnum (cmd_BB_gen c BBs BBnow BBnum).(next_block_num).
 
 Definition P_inherit_lt_num_prop_mutual (cmds: list cmd): Prop := 
   forall (BBs : list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
@@ -537,18 +414,33 @@ Proof.
     pose proof H H2 as H. lia.
   }
 
+  right. split.
+  - tauto.
+  - 
+
+  assert(m: (BBnow_then.(block_num) < S (S (S BBnum)))%nat). {
+    subst BBnow_then. simpl. lia.
+  }
+
+  specialize (H m).
+  rewrite <- HeqBBnum' in H.
+
+  assert ((BBnow_else.(block_num) < BBnum')%nat). {
+    subst BBnow_else. simpl. lia. 
+  }
+
   assert ((BBnum' <= (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBnum').(next_block_num))%nat). {
-    apply H0. subst BBnow_else. simpl. clear H0. admit. (*TODO*)
+    apply H0. subst BBnow_else. simpl. lia. 
   }
   lia.
-Admitted.
+Qed.
 
 
 Lemma Q_inherit_lt_num_prop_mutual_while:
   forall (e: expr) (c1: list cmd) (c2: list cmd),
     P_inherit_lt_num_prop_mutual c1 -> P_inherit_lt_num_prop_mutual c2 -> Q_inherit_lt_num_prop_mutual (CWhile c1 e c2).
 Proof.
-Admitted. (*DONT CARE for WHILE*)
+Admitted. (*DONT CARE ABOUT WHILE*)
 
 Lemma P_inherit_lt_num_prop_mutual_nil:
   P_inherit_lt_num_prop_mutual nil.
@@ -575,15 +467,16 @@ Proof.
     simpl.
     destruct c.
     - simpl. simpl in Heqmidnum. lia.
-    - transitivity (S (S BBnum)).
+    - 
       assert(((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)).(block_num) = BBnum). {
         cbn [cmd_BB_gen]. simpl. reflexivity. 
       }
-      rewrite H2. lia.
-      simpl in Heqmidnum.  admit.
-      }
-      specialize (H0 H2).
-      lia.
+        destruct H. destruct H. simpl in H. lia.
+        destruct H.
+        rewrite H2 in H0. lia.
+    - admit. (*DONT CARE ABOUT WHILE*)
+    }
+  pose proof H0 H2 as H0. lia.
 Admitted.
 
 
@@ -637,6 +530,16 @@ Lemma inherit_lt_num_prop:
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
     (lt BBnow.(block_num) BBnum) -> (lt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (cmd_BB_gen c BBs BBnow BBnum).(next_block_num)).
 Proof.
+  intros. destruct c. 
+  - simpl. lia.
+  - assert (((cmd_BB_gen (CIf e c1 c2) BBs BBnow BBnum).(BBn)).(block_num) = BBnum). simpl. lia. 
+    rewrite H0.
+    pose proof inherit_lt_num_prop_mutual_sound (CIf e c1 c2). 
+    unfold Q_inherit_lt_num_prop_mutual in H1. 
+    specialize (H1 BBs BBnow BBnum H).
+    destruct H1. destruct H1. simpl in H1. lia.
+    destruct H1. tauto.
+  - admit. (*DONT CARE ABOUT WHILE*)
 Admitted.
 
 
@@ -684,6 +587,141 @@ Qed.
 
 
 (*END:  ====================================================================================================== *)
+
+
+(* ======================================================================================================================================== *)
+
+
+Definition Q_inherit_not_jmp_to_self (c: cmd): Prop :=
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+    (gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))) ->
+    (gt BBnum BBnow.(block_num)) ->
+    gt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info)).
+
+Definition P_inherit_not_jmp_to_self(cmds: list cmd): Prop :=
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
+  (gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))) ->
+  (gt BBnum BBnow.(block_num)) ->
+  gt (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(jump_info)).
+
+Lemma Q_inherit_not_jmp_to_self_asgn: 
+  forall  (x: var_name) (e: expr),
+  Q_inherit_not_jmp_to_self (CAsgn x e).
+Proof. 
+  unfold Q_inherit_not_jmp_to_self. intros.
+  simpl.
+  tauto.
+Qed.
+
+Lemma Q_inherit_not_jmp_to_self_if:
+  forall  (e: expr) (c1: list cmd) (c2: list cmd),
+  P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
+  Q_inherit_not_jmp_to_self (CIf e c1 c2).
+Proof.
+  intros. unfold Q_inherit_not_jmp_to_self. intros.
+  unfold P_inherit_not_jmp_to_self in H.
+  unfold P_inherit_not_jmp_to_self in H0.
+  cbn[cmd_BB_gen]. simpl.
+  specialize (H BBs BBnow BBnum). pose proof H H1 as H.
+  lia.
+Qed.
+
+Lemma Q_inherit_not_jmp_to_self_while:
+  forall  (e: expr) (c1: list cmd) (c2: list cmd),
+  P_inherit_not_jmp_to_self (c1) -> P_inherit_not_jmp_to_self (c2) ->
+  Q_inherit_not_jmp_to_self (CWhile c1 e c2).
+Proof.
+Admitted.  (* DONT CARE ABOUT while *)
+
+Lemma P_inherit_not_jmp_to_self_nil:
+  P_inherit_not_jmp_to_self nil.
+Proof.
+  unfold P_inherit_not_jmp_to_self. intros. cbn[list_cmd_BB_gen]. simpl. apply H.
+Qed.
+
+
+Lemma P_inherit_not_jmp_to_self_cons:
+forall (c: cmd) (cmds: list cmd),
+  Q_inherit_not_jmp_to_self c ->
+  P_inherit_not_jmp_to_self cmds ->
+  P_inherit_not_jmp_to_self (c :: cmds).
+Proof.
+  unfold P_inherit_not_jmp_to_self. unfold Q_inherit_not_jmp_to_self. intros.
+  cbn[list_cmd_BB_gen]. specialize (H BBs BBnow BBnum H1).
+  specialize (H H2). 
+  remember (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) as BBn.
+  remember (jump_dest_1 ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info)) as dest1.
+  specialize (H0  ((cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks))  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)) ((cmd_BB_gen c BBs BBnow BBnum).(next_block_num))).
+  rewrite <- HeqBBn in *. rewrite <- Heqdest1 in *.
+  assert(tmp: ((cmd_BB_gen c BBs BBnow BBnum).(next_block_num) > BBn)%nat). {
+    rewrite HeqBBn. 
+    pose proof inherit_lt_num_prop BBs BBnow BBnum c. 
+    assert((BBnow.(block_num) < BBnum)%nat). lia. 
+    specialize (H3 H4). lia.
+  }
+  pose proof H0 H tmp. 
+  tauto.
+Qed. 
+
+Section inherit_not_jmp_to_self_sound.
+
+Variable inherit_not_jmp_to_self_sound: forall (c: cmd), Q_inherit_not_jmp_to_self c.
+
+Fixpoint inherit_list_not_jmp_to_self_sound (cmds: list cmd): P_inherit_not_jmp_to_self cmds :=
+  match cmds with
+  | nil => P_inherit_not_jmp_to_self_nil 
+  | c :: cmds0 => P_inherit_not_jmp_to_self_cons c cmds0 (inherit_not_jmp_to_self_sound c) (inherit_list_not_jmp_to_self_sound cmds0)
+  end.
+
+End inherit_not_jmp_to_self_sound.
+
+Fixpoint inherit_not_jmp_to_self_sound (c: cmd): Q_inherit_not_jmp_to_self c :=
+  match c with
+  | CAsgn x e => Q_inherit_not_jmp_to_self_asgn x e
+  | CIf e cmds1 cmds2 =>
+      Q_inherit_not_jmp_to_self_if e cmds1 cmds2
+        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds1)
+        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds2)
+  | CWhile cmds1 e cmds2 =>
+      Q_inherit_not_jmp_to_self_while e cmds1 cmds2
+        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds1)
+        (inherit_list_not_jmp_to_self_sound inherit_not_jmp_to_self_sound cmds2)
+  end.
+
+Lemma inherit_not_jmp_to_self_soundness_correct:
+  forall (c: cmd),
+  Q_inherit_not_jmp_to_self c.
+Proof.
+  apply inherit_not_jmp_to_self_sound.
+Qed.
+
+Lemma inherit_list_not_jmp_to_self_soundness_correct:
+  forall (cmds: list cmd),
+  P_inherit_not_jmp_to_self cmds.
+Proof.
+  apply inherit_list_not_jmp_to_self_sound.
+  pose proof inherit_not_jmp_to_self_soundness_correct.
+  apply H.
+Qed.
+
+
+
+(*如果BBnow不会jmp到他自己，那么其继承者也不会*)
+Lemma inherit_not_jmp_to_self:
+  forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat) (c: cmd),
+    gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info)) ->
+    gt BBnum BBnow.(block_num) ->
+    gt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info)).
+Proof.
+  pose proof inherit_not_jmp_to_self_soundness_correct.
+  intros.
+  unfold Q_inherit_not_jmp_to_self in H.
+  specialize (H c BBs BBnow BBnum H0).
+  specialize (H H1). tauto. 
+Qed.
+
+
+
 
 
 (* END ===================================================================================================*)
@@ -1477,7 +1515,7 @@ Proof.
         ** lia.
     + left. unfold section. lia.
     + left. unfold section. lia.
-Admitted.
+Qed.
 
 Lemma Q_while_BBgen_range:
 forall (e: expr) (c1 c2: list cmd),
@@ -1487,7 +1525,7 @@ forall (e: expr) (c1 c2: list cmd),
 
     Q_BBgen_range (CWhile c1 e c2).
 Proof.
-Admitted. (*DONT CARE, 老师说while分支都不管*)
+Admitted. (*DONT CARE ABOUT WHILE*)
 
 Lemma length_eq : forall (A : Type) (xs ys : list A),
   xs = ys -> length xs = length ys.

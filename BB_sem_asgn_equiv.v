@@ -15,6 +15,7 @@ Require Import Main.BB_generation.
 Require Import Coq.Lists.List.
 Require Import Main.BB_denotations.
 Require Import Main.BB_aux_proof.
+Require Import Main.utils.
 
 Import Denotation.
 Import EDenote.

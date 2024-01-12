@@ -1691,11 +1691,7 @@ Proof.
 Admitted.
 
 
-Definition is_asgn (c: cmd): Prop :=
-  match c with
-  | CAsgn _ _ => True
-  | _ => False
-  end.
+
  
 
 Definition Qb(c: cmd): Prop :=
