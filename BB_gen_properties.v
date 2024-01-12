@@ -825,6 +825,33 @@ Qed.
 
 (*END：列表集合的一些性质 =============================================================================================================================================================== *)
 
+(* Jmp Info的继承性质  ============================================================================================================ *)
+
+(*Jmp Info是会被继承下去的！*)
+Lemma JmpInfo_inherit:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (c: cmd),
+  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
+Proof.
+  destruct c. 
+  + reflexivity.
+  + cbn [cmd_BB_gen]. simpl. reflexivity.
+  + cbn [cmd_BB_gen]. simpl. reflexivity.
+Qed.
+
+Lemma JmpInfo_inherit_for_list:
+  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
+  ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
+Proof.
+  intros. revert BBs BBnow BBnum.
+  induction cmds; intros.
+  + cbn[list_cmd_BB_gen]. simpl. tauto.
+  + cbn[list_cmd_BB_gen].
+    pose proof JmpInfo_inherit BBs BBnow BBnum a. 
+    specialize (IHcmds (cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks) (cmd_BB_gen a BBs BBnow BBnum).(BBn)  (cmd_BB_gen a BBs BBnow BBnum).(next_block_num)).
+    rewrite IHcmds. apply H.
+Qed.
+
+(* ============================================================================================================ *)
 
 
 
@@ -1492,12 +1519,17 @@ Proof.
   rename H4 into lt_prop.
   set (endnum' := (cmd_BB_gen c BBs BBnow startnum).(next_block_num)).
   set (BBdelta' := to_result (cmd_BB_gen c nil BBnow startnum)).
+  set (BBnow' := (cmd_BB_gen c BBs BBnow startnum).(BBn)).
   assert(to_result (cmd_BB_gen c BBs BBnow startnum) = BBs ++ BBdelta').
 {
   pose proof cmd_BB_delta c BBs BBdelta' BBnow startnum. destruct H4. tauto. reflexivity.
 }
   specialize (H startnum endnum' BBs BBnow BBdelta' H1). destruct H. tauto. tauto. tauto.
+  specialize (H0 endnum' endnum (BBs++BBdelta') BBnow' BBdelta).
+  assert(jump_kind BBnow'.(jump_info) = UJump /\ jump_dest_2 BBnow'.(jump_info) = None).
+{
   admit.
+}
 Admitted. (* yz *)
 
 Section BB_gen_range_sound.
@@ -1838,33 +1870,6 @@ Qed.
 (* ================================================================================= *)
 
 
-(* Jmp Info的继承性质  ============================================================================================================ *)
-
-(*Jmp Info是会被继承下去的！*)
-Lemma JmpInfo_inherit:
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (c: cmd),
-  ((cmd_BB_gen c BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
-Proof.
-  destruct c. 
-  + reflexivity.
-  + cbn [cmd_BB_gen]. simpl. reflexivity.
-  + cbn [cmd_BB_gen]. simpl. reflexivity.
-Qed.
-
-Lemma JmpInfo_inherit_for_list:
-  forall (BBs: list BasicBlock) (BBnow: BasicBlock) (BBnum: nat) (cmds: list cmd),
-  ((list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn)).(jump_info) = BBnow.(jump_info).
-Proof.
-  intros. revert BBs BBnow BBnum.
-  induction cmds; intros.
-  + cbn[list_cmd_BB_gen]. simpl. tauto.
-  + cbn[list_cmd_BB_gen].
-    pose proof JmpInfo_inherit BBs BBnow BBnum a. 
-    specialize (IHcmds (cmd_BB_gen a BBs BBnow BBnum).(BasicBlocks) (cmd_BB_gen a BBs BBnow BBnum).(BBn)  (cmd_BB_gen a BBs BBnow BBnum).(next_block_num)).
-    rewrite IHcmds. apply H.
-Qed.
-
-(* ============================================================================================================ *)
 
 (*特殊符号性质：BBnow的传入的endinfo其实不能算在BBnumset里, 这个定义的目的是让这个num仅仅只能通过“传递”拿到，而不可能和其他任何num重叠。*)
 (*当然，我们已经意识到，这个条件其实太强了；但是也很好地帮我们解决了一些逻辑上显然的情况*)
