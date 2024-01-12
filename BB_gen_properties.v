@@ -2220,7 +2220,6 @@ Proof.
   intros contra. rewrite contra in H2. subst BBswo_. sets_unfold in H2.
   clear A3 B3.
 
-  
   (*TODO yz key1, B1 B2 H2 contradiction *)
 
 Admitted.
