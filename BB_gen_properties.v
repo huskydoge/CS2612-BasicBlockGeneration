@@ -349,11 +349,13 @@ Qed.
 Definition Q_inherit_not_jmp_to_self (c: cmd): Prop :=
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
     (gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))) ->
+    (gt BBnum BBnow.(block_num)) ->
     gt (cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (cmd_BB_gen c BBs BBnow BBnum).(BBn).(jump_info)).
 
 Definition P_inherit_not_jmp_to_self(cmds: list cmd): Prop :=
   forall (BBs: list BasicBlock) (BBnow : BasicBlock) (BBnum : nat),
   (gt BBnow.(block_num) (jump_dest_1 BBnow.(jump_info))) ->
+  (gt BBnum BBnow.(block_num)) ->
   gt (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(block_num) (jump_dest_1 (list_cmd_BB_gen cmd_BB_gen cmds BBs BBnow BBnum).(BBn).(jump_info)).
 
 Lemma Q_inherit_not_jmp_to_self_asgn: 
@@ -530,7 +532,7 @@ Proof.
   }
 
   assert ((BBnum' <= (list_cmd_BB_gen cmd_BB_gen c2 nil BBnow_else BBnum').(next_block_num))%nat). {
-    apply H0. subst BBnow_else. simpl. clear H0. admit.
+    apply H0. subst BBnow_else. simpl. clear H0. admit. (*TODO*)
   }
   lia.
 Admitted.
@@ -554,7 +556,16 @@ Lemma P_inherit_lt_num_prop_mutual_cons:
     P_inherit_lt_num_prop_mutual cmds ->
     P_inherit_lt_num_prop_mutual (c :: cmds).
 Proof.
-  Admitted. (*bh*)
+  intros. unfold P_inherit_lt_num_prop_mutual. intros.
+  simpl. 
+  unfold Q_inherit_lt_num_prop_mutual in H.
+  specialize (H BBs BBnow BBnum H1).
+  remember (cmd_BB_gen c BBs BBnow BBnum).(next_block_num) as midnum.
+  unfold P_inherit_lt_num_prop_mutual in H0.
+  specialize (H0 ((cmd_BB_gen c BBs BBnow BBnum).(BasicBlocks)) ((cmd_BB_gen c BBs BBnow BBnum).(BBn)) midnum).
+  assert(((cmd_BB_gen c BBs BBnow BBnum).(BBn).(block_num) < midnum)%nat).
+
+
 
 Section inherit_lt_num_prop_mutual.
 
@@ -1507,7 +1518,7 @@ Lemma cmd_BB_delta:
   forall (c: cmd)(BBs BBdelta: list BasicBlock)(BBnow: BasicBlock)(BBnum: nat),
 to_result(cmd_BB_gen c nil BBnow BBnum) = BBdelta -> to_result(cmd_BB_gen c BBs BBnow BBnum) = BBs ++ BBdelta.
 Proof.
-(*TODO*)
+(*TODO bh*)
 Admitted.
 
 Lemma P_BBgen_con:
