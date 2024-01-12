@@ -1216,6 +1216,18 @@ Proof.
     apply In_sublist_then_in_list_head. apply H.
 Qed.
 
+
+
+Lemma hd_equality:
+  forall (x: BasicBlock) (tl: list BasicBlock) (BBs: list BasicBlock),  
+    BBs = x :: tl -> x = hd empty_block BBs.
+Proof.
+  intros. destruct BBs.
+  - apply nil_cons in H. tauto.
+  - simpl. apply head_eq_prop in H. rewrite H. tauto.
+Qed.
+
+
 (*Start: Main for range =============================================================================================================================================================================================*)
 
 Lemma Q_if_BBgen_range:
@@ -1876,57 +1888,74 @@ Proof.
     apply H. apply H1.
   }
     assert(all_ge (BBnum_set BBdelta'') startnum).
-  {
-    (* TODO cannot handle the first block *)
-    clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
-    admit.
-  }
-    
+    {
+      (* TODO cannot handle the first block *)
+      clear H18 H15 H14 H13 H12 H10 H9 H8 H7 H6 H H5 H4 H3 H2 H1 H16.
+      destruct BBdelta'' eqn:?.
+      - unfold all_ge. intros. unfold all_ge in H0. specialize (H0 n). unfold tl in H0.
+        pose proof H0 H. lia.
+      - unfold tl in H0. unfold all_ge. intros. unfold all_ge in H0. specialize (H0 n).
+        unfold BBnum_set in H. destruct H as [? [? ?]]. unfold In in H. destruct H as [? | ?].
+        + pose proof BBgen_head_prop cmds BBnow' endnum'. simpl in H2.
+          assert (b = hd empty_block BBdelta''). {
+            pose proof hd_equality b l BBdelta'' Heql. apply H3.
+          }
+          subst BBdelta''. subst BBwo_last''. subst BBnow''.
+          pose proof eq_BBn_list (BBs ++ BBwo_last') nil BBnow' endnum' cmds.
+          rewrite H4 in H3. rewrite <- H3 in H2.
+          rewrite <- H1. rewrite <- H. rewrite H2.
+          admit.
+        + unfold BBnum_set in H0. assert (Nat.le endnum' n). {
+            apply H0. exists x. split. apply H. apply H1.
+          }
+          lia.
+    }
+    admit. (*TODO combine H18 H19 *)
   + split. 
      - rewrite H15. destruct H0. destruct H16.
        assert((endnum' <= endnum)%nat).
-     {
-        admit.
-     }
-       assert(all_lt (BBnum_set (tl BBwo_last')) endnum).
-     {
-        clear H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H17 H16 H0.
-        admit. (* TODO, use H18 and H6 and BBdelta' *)
-     }
-      assert(all_lt (BBnum_set (tl BBdelta'')) endnum).
-     {
-        tauto.
-     }
-      clear H18 H17 H16 H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H0.
-      admit. (* TODO, use H19 and H20*)
-     - rewrite H15. 
-      assert(BBjmp_dest_set BBwo_last' ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
-     {
-        destruct H6. sets_unfold. intros. sets_unfold in H16. pose proof H16 a. destruct H18.
-        ++
-        subst BBdelta'. unfold BBjmp_dest_set. unfold BBjmp_dest_set in H17. destruct H17.
-        exists x. destruct H17. split. apply in_app_iff. left. tauto. tauto.
-        ++ left. unfold section. unfold section in H18. destruct H18.
-        assert((endnum' <= endnum)%nat).
-       {
-          admit. (*copy the proof in the first -*)
-       }
-        split. tauto. lia.
-        ++ right. tauto.
-     }
-      assert(BBjmp_dest_set (BBdelta'') ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
-     {
-        subst BBdelta. destruct H0. destruct H15. sets_unfold. intros. sets_unfold in H17. specialize (H17 a). destruct H17.
-        tauto.
-        left.
-        assert((endnum'>=startnum)%nat).
-       {
-          admit. (*copy the proof in the first +*)
-       }
-        unfold section. split. unfold section in H17. lia. unfold section in H17. tauto.
-        pose proof JmpInfo_inherit BBs BBnow startnum c.
-        right. subst BBnow'. rewrite H19 in H17. tauto.
-     }
+      {
+          admit.
+      }
+        assert(all_lt (BBnum_set (tl BBwo_last')) endnum).
+      {
+          clear H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H17 H16 H0.
+          admit. (* TODO, use H18 and H6 and BBdelta' *)
+      }
+        assert(all_lt (BBnum_set (tl BBdelta'')) endnum).
+      {
+          tauto.
+      }
+        clear H18 H17 H16 H15 H14 H13 H12 H11 H10 H9 H8 H7 H5 H4 lt_prop H3 H2 H1 H0.
+        admit. (* TODO, use H19 and H20*)
+      - rewrite H15. 
+        assert(BBjmp_dest_set BBwo_last' ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
+        {
+            destruct H6. sets_unfold. intros. sets_unfold in H16. pose proof H16 a. destruct H18.
+            ++
+            subst BBdelta'. unfold BBjmp_dest_set. unfold BBjmp_dest_set in H17. destruct H17.
+            exists x. destruct H17. split. apply in_app_iff. left. tauto. tauto.
+            ++ left. unfold section. unfold section in H18. destruct H18.
+            assert((endnum' <= endnum)%nat).
+          {
+              admit. (*copy the proof in the first -*)
+          }
+            split. tauto. lia.
+            ++ right. tauto.
+        }
+        assert(BBjmp_dest_set (BBdelta'') ⊆ section startnum endnum ∪ unit_set (jump_dest_1 BBnow.(jump_info))).
+      {
+          subst BBdelta. destruct H0. destruct H15. sets_unfold. intros. sets_unfold in H17. specialize (H17 a). destruct H17.
+          tauto.
+          left.
+          assert((endnum'>=startnum)%nat).
+        {
+            admit. (*copy the proof in the first +*)
+        }
+          unfold section. split. unfold section in H17. lia. unfold section in H17. tauto.
+          pose proof JmpInfo_inherit BBs BBnow startnum c.
+          right. subst BBnow'. rewrite H19 in H17. tauto.
+      }
       admit. (*use H16 and H17 *) 
 Admitted. (* yz *)
 
